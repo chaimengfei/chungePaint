@@ -26,6 +26,7 @@
             <text class="product-name">{{ product.name }}</text>
             <text class="product-price">¥{{ product.seller_price }}</text>
             <text class="product-unit">{{ product.unit }}</text>
+            <button class="add-btn" @click="addToCart(product.id)">加入购物车</button>
           </view>
         </view>
       </view>
@@ -38,6 +39,8 @@
 
 <script>
 import { getProductList } from '@/api/product.js'
+import { addToCart } from '@/api/cart.js'
+
 export default {
   data() {
     return {
@@ -51,43 +54,65 @@ export default {
     this.fetchData()
   },
   methods: {
-	async fetchData() {
-	  try {
-		const res = await getProductList()
-		
-		this.categories = res.categories
-		this.products = res.products
-		
-		// 默认选中第一个分类
-		if (this.categories.length > 0) {
-		  this.activeCategory = this.categories[0].id
-		  this.currentProducts = this.products[this.activeCategory] || []
-		}
-	  } catch (err) {
-		console.error('请求失败:', err)
-		uni.showToast({
-		  title: '数据加载失败',
-		  icon: 'none'
-		})
-	  }
-	},
+    async fetchData() {
+      try {
+        const res = await getProductList()
+        this.categories = res.categories
+        this.products = res.products
+        
+        // 默认选中第一个分类
+        if (this.categories.length > 0) {
+          this.activeCategory = this.categories[0].id
+          this.currentProducts = this.products[this.activeCategory] || []
+        }
+      } catch (err) {
+        console.error('请求失败:', err)
+        uni.showToast({
+          title: '数据加载失败',
+          icon: 'none'
+        })
+      }
+    },
     
-    // 切换分类
     changeCategory(categoryId) {
       this.activeCategory = categoryId
       this.currentProducts = this.products[categoryId] || []
+    },
+    
+    // 添加商品到购物车
+    async addToCart(productId) {
+      try {
+        const res = await addToCart({ product_id: productId })
+        if (res.data.code === 0) {
+          uni.showToast({
+            title: '已加入购物车',
+            icon: 'success'
+          })
+          
+          // 更新底部购物车徽标
+          uni.setTabBarBadge({
+            index: 1,
+            text: '1' // 实际应该获取购物车总数
+          })
+        } else {
+          uni.showToast({
+            title: res.data.message || '添加购物车失败',
+            icon: 'none'
+          })
+        }
+      } catch (err) {
+        console.error('添加购物车失败:', err)
+        uni.showToast({
+          title: '添加购物车失败',
+          icon: 'none'
+        })
+      }
     }
   }
 }
 </script>
 
 <style>
-/* 全局样式 */
-page {
-  height: 100%;
-  background-color: #f8f8f8;
-}
-
 .container {
   display: flex;
   height: 100%;
@@ -177,5 +202,17 @@ page {
   padding: 100rpx 0;
   color: #999;
   font-size: 28rpx;
+}
+
+/* 加入购物车按钮样式 */
+.add-btn {
+  background-color: #e93b3d;
+  color: white;
+  font-size: 24rpx;
+  height: 50rpx;
+  line-height: 50rpx;
+  margin-top: 10rpx;
+  border-radius: 25rpx;
+  padding: 0 20rpx;
 }
 </style>

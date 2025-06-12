@@ -47,8 +47,8 @@
       {
         "pagePath": "pages/index/index",
         "text": "选购",
-        "iconPath": "static/tabbar/product_selected.png",
-        "selectedIconPath": "static/tabbar/product_unselected.png"
+        "iconPath": "static/tabbar/product_unselected.png",
+        "selectedIconPath": "static/tabbar/product_selected.png"
       },
       {
         "pagePath": "pages/cart/index",
