@@ -1,4 +1,4 @@
-const BASE_URL = 'http://192.168.1.6:8009'
+import { BASE_URL } from './common'
 
 export const getCartList = () => {
   return uni.request({

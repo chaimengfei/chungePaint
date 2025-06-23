@@ -26,7 +26,10 @@
             <text class="product-name">{{ product.name }}</text>
             <text class="product-price">¥{{ product.seller_price }}</text>
             <text class="product-unit">{{ product.unit }}</text>
-            <button class="add-btn" @click="addToCart(product.id)">加入购物车</button>
+            <view class="action-buttons">
+              <button class="add-btn" @click="addToCart(product.id)">加入购物车</button>
+              <button class="buy-btn" @click="buyNow(product)">立即购买</button>
+            </view>
           </view>
         </view>
       </view>
@@ -107,63 +110,64 @@ export default {
           icon: 'none'
         })
       }
+    },
+    
+    // 立即购买
+    buyNow(product) {
+      // 构造订单数据
+      const orderItems = [{
+        product_id: product.id,
+        product_name: product.name,
+        product_image: product.image,
+        product_price: product.seller_price,
+        quantity: 1,
+        unit: product.unit
+      }]
+      
+      // 计算总金额
+      const totalAmount = product.seller_price
+      
+      // 跳转到订单确认页
+      uni.navigateTo({
+        url: `/pages/order/confirm?items=${encodeURIComponent(JSON.stringify(orderItems))}&total=${totalAmount}`
+      })
     }
   }
 }
 </script>
 
-<style>
+<style scoped>
 .container {
   display: flex;
   height: 100%;
 }
 
-/* 分类列表样式 */
 .category-list {
-  width: 200rpx;
-  height: 100%;
+  width: 25%;
   background-color: #f5f5f5;
 }
 
 .category-item {
-  padding: 30rpx 20rpx;
-  font-size: 28rpx;
-  color: #333;
+  padding: 20rpx;
   text-align: center;
-  border-bottom: 1rpx solid #eee;
+  border-bottom: 1px solid #eee;
 }
 
 .category-item.active {
   background-color: #fff;
   color: #e93b3d;
   font-weight: bold;
-  position: relative;
 }
 
-.category-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 6rpx;
-  background-color: #e93b3d;
-}
-
-/* 商品列表样式 */
 .product-list {
-  flex: 1;
-  padding: 20rpx;
-  height: 100%;
+  width: 75%;
+  padding: 10rpx;
 }
 
 .product-item {
   display: flex;
-  margin-bottom: 30rpx;
   padding: 20rpx;
-  background-color: #fff;
-  border-radius: 10rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid #eee;
 }
 
 .product-image {
@@ -174,45 +178,54 @@ export default {
 
 .product-info {
   flex: 1;
-  margin-left: 20rpx;
+  padding-left: 20rpx;
   display: flex;
   flex-direction: column;
 }
 
 .product-name {
   font-size: 28rpx;
-  color: #333;
-  margin-bottom: 15rpx;
+  margin-bottom: 10rpx;
 }
 
 .product-price {
-  font-size: 32rpx;
   color: #e93b3d;
+  font-size: 32rpx;
   font-weight: bold;
   margin-bottom: 10rpx;
 }
 
 .product-unit {
-  font-size: 24rpx;
   color: #999;
+  font-size: 24rpx;
+  margin-bottom: 15rpx;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.add-btn, .buy-btn {
+  height: 50rpx;
+  line-height: 50rpx;
+  font-size: 24rpx;
+  padding: 0 20rpx;
+}
+
+.add-btn {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.buy-btn {
+  background-color: #e93b3d;
+  color: #fff;
 }
 
 .empty {
   text-align: center;
   padding: 100rpx 0;
   color: #999;
-  font-size: 28rpx;
-}
-
-/* 加入购物车按钮样式 */
-.add-btn {
-  background-color: #e93b3d;
-  color: white;
-  font-size: 24rpx;
-  height: 50rpx;
-  line-height: 50rpx;
-  margin-top: 10rpx;
-  border-radius: 25rpx;
-  padding: 0 20rpx;
 }
 </style>
