@@ -32,7 +32,7 @@
 				</view>
 				<view class="total">
 					<text>合计: ¥{{ totalPrice }}</text>
-					<button class="checkout-btn">结算({{ selectedCount }})</button>
+					<button class="checkout-btn" @click="goToCheckout">结算({{ selectedCount }})</button>
 				</view>
 			</view>
 		</view>
@@ -52,6 +52,8 @@
 		updateCartItem,
 		deleteCartItem
 	} from '@/api/cart.js'
+	
+	import { checkoutOrder } from '@/api/order.js'
 
 	export default {
 		data() {
@@ -77,6 +79,12 @@
 			// 选中商品数量
 			selectedCount() {
 				return this.cartItems.filter(item => item.selected).length
+			},
+			// 选中的购物车ID数组
+			selectedCartIds() {
+				return this.cartItems
+					.filter(item => item.selected)
+					.map(item => item.id)
 			}
 		},
 		methods: {
@@ -126,6 +134,42 @@
 				uni.switchTab({
 					url: '/pages/index/index'
 				})
+			},
+
+			// 跳转到结算页面
+			async goToCheckout() {
+				if (this.selectedCount === 0) {
+					uni.showToast({
+						title: '请至少选择一件商品',
+						icon: 'none'
+					})
+					return
+				}
+				
+				try {
+					// 调用结算接口
+					const res = await checkoutOrder({
+						cart_ids: this.selectedCartIds
+					})
+					
+					if (res.data.code === 0) {
+						// 跳转到结算页面，传递结算数据
+						uni.navigateTo({
+							url: `/pages/order/checkout?cart_ids=${JSON.stringify(this.selectedCartIds)}`
+						})
+					} else {
+						uni.showToast({
+							title: res.data.msg || '结算失败',
+							icon: 'none'
+						})
+					}
+				} catch (err) {
+					console.error('结算失败:', err)
+					uni.showToast({
+						title: '结算失败',
+						icon: 'none'
+					})
+				}
 			},
 
 			// 切换商品选中状态

@@ -23,6 +23,44 @@ export const getOrderList = (params = {}) => {
   })
 }
 
+
+/**
+ * 获取订单详情
+ * @param {number} id - 订单ID
+ */
+// 获取订单详情
+export const getOrderDetail = (id) => {
+  return new Promise((resolve, reject) => {
+    uni.request({
+      url: `${BASE_URL}/api/order/detail?id=${id}`,
+      method: 'GET',
+      success: (res) => {
+        resolve(res.data)
+      },
+      fail: (err) => {
+        reject(err)
+      }
+    })
+  })
+}
+
+// 购物车结算(后面会兼容直接下单)
+export const checkoutOrder = (data) => {
+  return new Promise((resolve, reject) => {
+    uni.request({
+      url: `${BASE_URL}/api/cart/checkout`,
+      method: 'POST',
+      data,
+      success: (res) => {
+        resolve(res)
+      },
+      fail: (err) => {
+        reject(err)
+      }
+    })
+  })
+}
+
 /**
  * 创建订单
  * @param {Object} data 订单数据
@@ -101,26 +139,6 @@ export const payOrder = (data) => {
       url: `${BASE_URL}/api/order/pay`,
       method: 'POST',
       data,
-      success: (res) => {
-        resolve(res.data)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
-}
-
-/**
- * 获取订单详情
- * @param {number} id - 订单ID
- */
-// 获取订单详情
-export const getOrderDetail = (id) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/order/detail?id=${id}`,
-      method: 'GET',
       success: (res) => {
         resolve(res.data)
       },

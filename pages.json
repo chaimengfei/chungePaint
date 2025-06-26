@@ -25,6 +25,12 @@
 		"navigationStyle": "custom"  // 可选：如果需要自定义导航栏
 	  }
 	},
+	{
+	  "path": "pages/order/checkout",
+	  "style": {
+		"navigationBarTitleText": "确认订单" // 页面标题
+	  }
+	},
     {
       "path": "pages/user/index",
       "style": {
