@@ -44,41 +44,15 @@ export const getOrderDetail = (id) => {
   })
 }
 
-// 购物车结算(后面会兼容直接下单)
+// 结算订单
 export const checkoutOrder = (data) => {
   return new Promise((resolve, reject) => {
     uni.request({
-      url: `${BASE_URL}/api/cart/checkout`,
+      url: `${BASE_URL}/api/order/checkout`,
       method: 'POST',
       data,
       success: (res) => {
         resolve(res)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
-}
-
-/**
- * 创建订单
- * @param {Object} data 订单数据
- * @param {Array} [data.cart_ids] - 购物车ID数组
- * @param {number} [data.product_id] - 立即购买商品ID
- * @param {number} [data.quantity] - 立即购买数量
- * @param {number} [data.address_id] - 收货地址ID
- * @param {number} [data.coupon_id] - 优惠券ID
- * @param {string} [data.note] - 订单备注
- */
-export const createOrder = (data) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/order/create`,
-      method: 'POST',
-      data,
-      success: (res) => {
-        resolve(res.data)
       },
       fail: (err) => {
         reject(err)

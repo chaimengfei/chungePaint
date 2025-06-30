@@ -72,7 +72,7 @@
           :disabled="!selectedAddress || submitting" 
           @click="submitOrder"
         >
-          {{ submitting ? '提交中...' : '提交订单' }}
+          {{ submitting ? '支付中...' : '立即支付' }}
         </button>
       </view>
     </view>
@@ -94,7 +94,7 @@
 </template>
 
 <script>
-import {  checkoutOrder, createOrder } from '@/api/order.js'
+import { checkoutOrder } from '@/api/order.js'
 
 export default {
   data() {
@@ -104,18 +104,17 @@ export default {
       error: null,
       submitting: false,
       cartIds: [],
-      selectedAddress: null, // 选择的收货地址
-      orderNote: '', // 订单备注
-      addressList: [] // 地址列表
+      selectedAddress: null,
+      orderNote: '',
+      addressList: []
     }
   },
   onLoad(options) {
-	  console.log(options,'999999')
     if (options.cart_ids) {
       try {
         this.cartIds = JSON.parse(options.cart_ids)
         this.fetchCheckoutData()
-        this.loadAddressList() // 加载收货地址
+        this.loadAddressList()
       } catch (e) {
         this.handleError('参数解析失败')
       }
@@ -128,7 +127,6 @@ export default {
     async fetchCheckoutData() {
       this.loading = true
       this.error = null
-      
       try {
         const res = await checkoutOrder({
           cart_ids: this.cartIds
@@ -150,10 +148,6 @@ export default {
     // 加载收货地址
     async loadAddressList() {
       try {
-        // 这里替换为实际获取地址列表的API调用
-        // const res = await getAddressList()
-        // this.addressList = res.data.list
-        
         // 模拟数据
         this.addressList = [{
           id: 1,
@@ -192,7 +186,7 @@ export default {
       })
     },
     
-    // 提交订单
+    // 提交订单并支付
     async submitOrder() {
       if (!this.selectedAddress) {
         uni.showToast({
@@ -204,47 +198,44 @@ export default {
 
       this.submitting = true
       uni.showLoading({
-        title: '提交中...',
+        title: '支付中...',
         mask: true
       })
       
       try {
-        const orderData = {
-          cart_ids: this.cartIds,
-          product_id: 0, // 根据实际情况填写
-          quantity: 0,   // 根据实际情况填写
-          address_id: this.selectedAddress.id,
-          coupon_id: 0, // 如果有优惠券
-          note: this.orderNote
-        }
-
-        const res = await createOrder(orderData)
+        // 直接使用结算接口返回的order_no进行支付
+        await uni.requestPayment({
+          provider: 'wxpay',
+          orderInfo: {
+            orderNo: this.orderData.order_no,
+            amount: this.orderData.payment_amount
+          }
+        })
         
-        if (res.data.code === 0) {
-          uni.hideLoading()
-          uni.showToast({
-            title: res.data.message || '订单创建成功',
-            icon: 'success'
-          })
-          
-          // 提交成功后跳转到订单详情页
-          setTimeout(() => {
-            uni.redirectTo({
-              url: `/pages/order/detail?order_no=${res.data.message.split(':')[1].trim()}`
-            })
-          }, 1500)
-        } else {
-          throw new Error(res.data.message || '订单创建失败')
-        }
-      } catch (err) {
-        console.error('提交订单失败:', err)
-        uni.hideLoading()
         uni.showToast({
-          title: err.message || '提交订单失败',
+          title: '支付成功',
+          icon: 'success'
+        })
+        
+        // 支付成功后跳转到订单详情页
+        setTimeout(() => {
+          uni.redirectTo({
+            url: `/pages/order/detail?order_no=${this.orderData.order_no}`
+          })
+        }, 1500)
+      } catch (err) {
+        console.error('支付失败:', err)
+        let errMsg = '支付失败'
+        if (err.errMsg === 'requestPayment:fail cancel') {
+          errMsg = '您已取消支付'
+        }
+        uni.showToast({
+          title: errMsg,
           icon: 'none'
         })
       } finally {
         this.submitting = false
+        uni.hideLoading()
       }
     }
   }
@@ -252,25 +243,31 @@ export default {
 </script>
 
 <style scoped>
+/* 原有样式保持不变 */
 .container {
-  padding-bottom: 120rpx;
-  background-color: #f7f7f7;
+  padding-bottom: 100px;
+  background-color: #f5f5f5;
   min-height: 100vh;
 }
 
 .section {
-  margin: 20rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  padding: 24rpx;
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.02);
+  background-color: #fff;
+  margin-bottom: 10px;
+  padding: 15px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #333;
 }
 
 .address-section {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 20rpx;
+  padding: 15px;
 }
 
 .address-info {
@@ -278,53 +275,51 @@ export default {
 }
 
 .address-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10rpx;
+  margin-bottom: 8px;
 }
 
 .address-header .name {
-  font-size: 30rpx;
+  font-size: 16px;
   font-weight: bold;
-  margin-right: 20rpx;
+  margin-right: 10px;
 }
 
 .address-header .phone {
-  font-size: 28rpx;
+  font-size: 14px;
   color: #666;
 }
 
 .address-detail {
-  font-size: 28rpx;
-  color: #333;
-  line-height: 1.6;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
 }
 
 .add-address {
   flex: 1;
   text-align: center;
-  color: #999;
-  padding: 20rpx 0;
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  margin-bottom: 20rpx;
-  color: #333;
+  color: #e93b3d;
+  font-size: 14px;
 }
 
 .order-item {
   display: flex;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.order-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .product-image {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 8rpx;
-  margin-right: 20rpx;
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  margin-right: 10px;
 }
 
 .product-info {
@@ -335,64 +330,67 @@ export default {
 }
 
 .product-name {
-  font-size: 28rpx;
+  font-size: 14px;
   color: #333;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .product-spec {
-  font-size: 24rpx;
+  font-size: 12px;
   color: #999;
-  margin-top: 8rpx;
+  margin: 5px 0;
 }
 
 .price-line {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-top: 15rpx;
+  align-items: center;
 }
 
 .product-price {
-  font-size: 30rpx;
+  font-size: 16px;
   color: #e93b3d;
   font-weight: bold;
 }
 
 .product-quantity {
-  font-size: 26rpx;
+  font-size: 14px;
   color: #666;
 }
 
 .price-row {
   display: flex;
   justify-content: space-between;
-  padding: 16rpx 0;
-  font-size: 28rpx;
+  margin-bottom: 10px;
+  font-size: 14px;
   color: #666;
 }
 
 .price-row.total {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f5f5f5;
+  font-size: 16px;
   font-weight: bold;
-  font-size: 32rpx;
-  color: #e93b3d;
-  border-top: 1rpx solid #eee;
-  margin-top: 10rpx;
-  padding-top: 20rpx;
+  color: #333;
 }
 
 .remark-section {
-  margin-bottom: 30rpx;
+  padding-bottom: 20px;
 }
 
 .remark-input {
   width: 100%;
-  height: 120rpx;
-  font-size: 28rpx;
-  padding: 10rpx;
+  height: 80px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  font-size: 14px;
   box-sizing: border-box;
-  background-color: #f9f9f9;
-  border-radius: 8rpx;
 }
 
 .footer {
@@ -400,14 +398,13 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 100rpx;
-  background: #fff;
+  height: 50px;
+  background-color: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20rpx;
-  border-top: 1rpx solid #eee;
-  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+  padding: 0 15px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .price-total {
@@ -416,24 +413,26 @@ export default {
 }
 
 .price-total .price {
-  font-size: 32rpx;
-  color: #e93b3d;
+  font-size: 18px;
   font-weight: bold;
-  margin-left: 10rpx;
+  color: #e93b3d;
+  margin-left: 5px;
 }
 
 .submit-btn {
-  background: #e93b3d;
+  background-color: #e93b3d;
   color: white;
-  height: 80rpx;
-  line-height: 80rpx;
-  padding: 0 60rpx;
-  border-radius: 40rpx;
-  font-size: 30rpx;
+  border-radius: 20px;
+  padding: 0 25px;
+  height: 36px;
+  line-height: 36px;
+  font-size: 14px;
+  border: none;
 }
 
 .submit-btn[disabled] {
-  background: #ccc;
+  background-color: #ccc;
+  color: #fff;
 }
 
 .loading-mask {
@@ -442,7 +441,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -455,16 +454,24 @@ export default {
   align-items: center;
 }
 
+.loading-content text {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
 .error-message {
-  padding: 30rpx;
+  padding: 20px;
   text-align: center;
   color: #e93b3d;
 }
 
 .retry-btn {
-  margin-top: 20rpx;
-  background: #e93b3d;
+  margin-top: 10px;
+  background-color: #e93b3d;
   color: white;
-  width: 200rpx;
+  border-radius: 4px;
+  padding: 5px 15px;
+  font-size: 14px;
 }
 </style>

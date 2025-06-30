@@ -145,31 +145,10 @@
 					})
 					return
 				}
-				
-				try {
-					// 调用结算接口
-					const res = await checkoutOrder({
-						cart_ids: this.selectedCartIds
-					})
-					
-					if (res.data.code === 0) {
-						// 跳转到结算页面，传递结算数据
-						uni.navigateTo({
-							url: `/pages/order/checkout?cart_ids=${JSON.stringify(this.selectedCartIds)}`
-						})
-					} else {
-						uni.showToast({
-							title: res.data.msg || '结算失败',
-							icon: 'none'
-						})
-					}
-				} catch (err) {
-					console.error('结算失败:', err)
-					uni.showToast({
-						title: '结算失败',
-						icon: 'none'
-					})
-				}
+				// 跳转到结算页面，传递结算数据
+				uni.navigateTo({
+					url: `/pages/order/checkout?cart_ids=${JSON.stringify(this.selectedCartIds)}`
+				})
 			},
 
 			// 切换商品选中状态
