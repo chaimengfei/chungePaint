@@ -36,7 +36,13 @@
       "style": {
         "navigationBarTitleText": "我的"
       }
-    }
+    },
+	{
+	  "path": "pages/user/login",
+	  "style": {
+	    "navigationBarTitleText": "登陆"
+	  }
+	}
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

@@ -3,7 +3,7 @@
     <view class="user-header">
       <image class="avatar" src="/static/images/default-avatar.png"></image>
       <text class="username">未登录</text>
-      <button class="login-btn" @click="login">登录/注册</button>
+      <button v-if="!isLogin" class="login-btn" @click="goLogin">登录/注册</button>
     </view>
     
     <view class="menu-list">
@@ -25,10 +25,22 @@
 
 <script>
 export default {
+  data() {
+    return {
+      userInfo: {},
+      isLogin: false
+    }
+  },
+  onShow() {
+    const token = uni.getStorageSync('token')
+    const user = uni.getStorageSync('userInfo')
+    this.isLogin = !!token
+    this.userInfo = user || {}
+  },
   methods: {
-    login() {
+    goLogin() {
       uni.navigateTo({
-        url: '/pages/login/index'
+        url: '/pages/user/login'
       })
     }
   }
