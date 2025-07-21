@@ -23,7 +23,7 @@
 
 			
 			const loginRes = await goLogin({code:code})
-			
+			console.log(11111,loginRes)
 			const { token, user_info } = loginRes.data.data
 
 			// 存储 token
