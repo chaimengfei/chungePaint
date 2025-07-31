@@ -52,8 +52,10 @@
 		updateCartItem,
 		deleteCartItem
 	} from '@/api/cart.js'
-	
-	import { checkoutOrder } from '@/api/order.js'
+
+	import {
+		checkoutOrder
+	} from '@/api/order.js'
 
 	export default {
 		data() {

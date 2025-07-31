@@ -30,7 +30,7 @@
 			uni.setStorageSync('token', token)
 			uni.setStorageSync('userInfo', user_info)
 
-			// 全局设置 token
+			// 设置全局请求头中的 Authorization token，在 uni-app 中常用于登录后将 token 附加到所有请求上
 			uni.$u.http.setConfig((config) => {
 			  config.header.Authorization = `Bearer ${token}`
 			  return config

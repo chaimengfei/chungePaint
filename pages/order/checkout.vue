@@ -1,15 +1,16 @@
 <template>
   <view class="container">
-    <!-- 结算页面内容 -->
     <view v-if="orderData">
-      <!-- 收货地址 -->
+      <!-- 地址 -->
       <view class="section address-section" @click="selectAddress">
         <view v-if="selectedAddress" class="address-info">
           <view class="address-header">
             <text class="name">{{ selectedAddress.recipient_name }}</text>
             <text class="phone">{{ selectedAddress.recipient_phone }}</text>
           </view>
-          <text class="address-detail">{{ selectedAddress.province }}{{ selectedAddress.city }}{{ selectedAddress.district }}{{ selectedAddress.detail }}</text>
+          <text class="address-detail">
+            {{ selectedAddress.province }}{{ selectedAddress.city }}{{ selectedAddress.district }}{{ selectedAddress.detail }}
+          </text>
         </view>
         <view v-else class="add-address">
           <text>+ 添加收货地址</text>
@@ -17,7 +18,7 @@
         <uni-icons type="arrowright" size="20" color="#999"></uni-icons>
       </view>
 
-      <!-- 商品清单 -->
+      <!-- 商品 -->
       <view class="section">
         <view class="section-title">商品清单</view>
         <view v-for="item in orderData.order_items" :key="item.product_id" class="order-item">
@@ -32,51 +33,30 @@
           </view>
         </view>
       </view>
-      
-      <!-- 订单金额 -->
+
+      <!-- 金额 -->
       <view class="section">
         <view class="section-title">订单金额</view>
-        <view class="price-row">
-          <text>商品总价</text>
-          <text>¥{{ orderData.total_amount }}</text>
-        </view>
-        <view class="price-row">
-          <text>运费</text>
-          <text>¥{{ orderData.shipping_fee }}</text>
-        </view>
-        <view class="price-row total">
-          <text>应付总额</text>
-          <text>¥{{ orderData.payment_amount }}</text>
-        </view>
+        <view class="price-row"><text>商品总价</text><text>¥{{ orderData.total_amount }}</text></view>
+        <view class="price-row"><text>运费</text><text>¥{{ orderData.shipping_fee }}</text></view>
+        <view class="price-row total"><text>应付总额</text><text>¥{{ orderData.payment_amount }}</text></view>
       </view>
 
       <!-- 备注 -->
       <view class="section remark-section">
         <view class="section-title">备注</view>
-        <textarea 
-          v-model="orderNote" 
-          placeholder="请输入备注信息(选填)" 
-          class="remark-input"
-          maxlength="100"
-        ></textarea>
+        <textarea v-model="orderNote" placeholder="请输入备注信息(选填)" class="remark-input" maxlength="100"></textarea>
       </view>
-      
-      <!-- 提交按钮 -->
+
+      <!-- 支付按钮 -->
       <view class="footer">
-        <view class="price-total">
-          <text>合计:</text>
-          <text class="price">¥{{ orderData.payment_amount }}</text>
-        </view>
-        <button 
-          class="submit-btn" 
-          :disabled="!selectedAddress || submitting" 
-          @click="submitOrder"
-        >
+        <view class="price-total"><text>合计:</text><text class="price">¥{{ orderData.payment_amount }}</text></view>
+        <button class="submit-btn" :disabled="!selectedAddress || submitting" @click="submitOrder">
           {{ submitting ? '支付中...' : '立即支付' }}
         </button>
       </view>
     </view>
-    
+
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-mask">
       <view class="loading-content">
@@ -84,8 +64,8 @@
         <text>加载中...</text>
       </view>
     </view>
-    
-    <!-- 错误提示 -->
+
+    <!-- 错误 -->
     <view v-if="error" class="error-message">
       <text>{{ error }}</text>
       <button class="retry-btn" @click="fetchCheckoutData">重试</button>
@@ -95,144 +75,111 @@
 
 <script>
 import { checkoutOrder } from '@/api/order.js'
+import { getAddressList } from '@/api/address.js'
 
 export default {
   data() {
     return {
+      cartIds: [],
       orderData: null,
+      selectedAddress: null,
+      orderNote: '',
       loading: true,
       error: null,
       submitting: false,
-      cartIds: [],
-      selectedAddress: null,
-      orderNote: '',
-      addressList: []
+	  incomingAddressId: null
     }
   },
   onLoad(options) {
     if (options.cart_ids) {
       try {
         this.cartIds = JSON.parse(options.cart_ids)
-        this.fetchCheckoutData()
-        this.loadAddressList()
-      } catch (e) {
+      } catch {
         this.handleError('参数解析失败')
+        return
       }
+      this.fetchCheckoutData()
     } else {
       this.handleError('缺少必要参数')
     }
   },
+  onShow() {
+    const address = uni.getStorageSync('selected_address')
+    if (address) {
+      this.selectedAddress = address
+      uni.removeStorageSync('selected_address')
+    }
+  },
   methods: {
-    // 获取结算数据
     async fetchCheckoutData() {
       this.loading = true
       this.error = null
       try {
-        const res = await checkoutOrder({
-          cart_ids: this.cartIds
-        })
-        
+        const res = await checkoutOrder({ cart_ids: this.cartIds })
         if (res.data.code === 0) {
           this.orderData = res.data.data
+		   // ✅ 新增：把返回的 address_info 作为当前选中的地址
+		   this.selectedAddress = res.data.data.address_info || null
         } else {
-          this.handleError(res.data.msg || '获取结算数据失败')
+          this.handleError(res.data.msg || '获取结算信息失败')
         }
       } catch (err) {
-        console.error('结算接口错误:', err)
-        this.handleError('网络请求失败，请重试')
+        this.handleError('网络错误，请稍后重试')
       } finally {
         this.loading = false
       }
     },
-
-    // 加载收货地址
-    async loadAddressList() {
-      try {
-        // 模拟数据
-        this.addressList = [{
-          id: 1,
-          recipient_name: "张三",
-          recipient_phone: "13800138000",
-          province: "广东省",
-          city: "深圳市",
-          district: "南山区",
-          detail: "科技园路100号",
-          is_default: 1
-        }]
-        
-        // 设置默认地址
-        const defaultAddress = this.addressList.find(item => item.is_default === 1)
-        if (defaultAddress) {
-          this.selectedAddress = defaultAddress
-        }
-      } catch (err) {
-        console.error('获取地址失败:', err)
-      }
-    },
-
-    // 选择地址
     selectAddress() {
-      uni.navigateTo({
-        url: '/pages/address/list?selectMode=1'
-      })
+		if (this.orderData?.address_info) {
+			// 如果已有地址，进入选择地址页面
+			uni.navigateTo({
+			  url: '/pages/address/list?selectMode=1'
+			})
+		} else {
+			// 如果没有地址，直接跳转到创建地址页面
+			uni.navigateTo({
+			  url: '/pages/address/edit'
+			})
+		}
     },
-
-    // 处理错误
-    handleError(message) {
-      this.error = message
+    handleError(msg) {
+      this.error = msg
       uni.showToast({
-        title: message,
+        title: msg,
         icon: 'none'
       })
     },
-    
-    // 提交订单并支付
     async submitOrder() {
       if (!this.selectedAddress) {
-        uni.showToast({
-          title: '请选择收货地址',
-          icon: 'none'
-        })
-        return
+        return uni.showToast({ title: '请选择收货地址', icon: 'none' })
       }
 
       this.submitting = true
-      uni.showLoading({
-        title: '支付中...',
-        mask: true
-      })
-      
+      uni.showLoading({ title: '支付中...', mask: true })
+
       try {
         // 直接使用结算接口返回的order_no进行支付
         await uni.requestPayment({
           provider: 'wxpay',
-          orderInfo: {
-            orderNo: this.orderData.order_no,
-            amount: this.orderData.payment_amount
+          timeStamp: order.timeStamp,
+          nonceStr: order.nonceStr,
+          package: order.package,
+          signType: 'MD5',
+          paySign: order.paySign,
+          success: () => {
+            uni.showToast({ title: '支付成功', icon: 'success' })
+            setTimeout(() => {
+              uni.redirectTo({ url: `/pages/order/detail?order_no=${order.order_no}` })
+            }, 1500)
+          },
+          fail: (err) => {
+            const msg = err.errMsg === 'requestPayment:fail cancel' ? '已取消支付' : '支付失败'
+            uni.showToast({ title: msg, icon: 'none' })
           }
         })
-        
-        uni.showToast({
-          title: '支付成功',
-          icon: 'success'
-        })
-        
-        // 支付成功后跳转到订单详情页
-        setTimeout(() => {
-          uni.redirectTo({
-            url: `/pages/order/detail?order_no=${this.orderData.order_no}`
-          })
-        }, 1500)
       } catch (err) {
-        console.error('支付失败:', err)
-        let errMsg = '支付失败'
-        if (err.errMsg === 'requestPayment:fail cancel') {
-          errMsg = '您已取消支付'
-        }
-        uni.showToast({
-          title: errMsg,
-          icon: 'none'
-        })
+        console.error('提交失败', err)
+        uni.showToast({ title: err.message || '下单失败', icon: 'none' })
       } finally {
         this.submitting = false
         uni.hideLoading()
