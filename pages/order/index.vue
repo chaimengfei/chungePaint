@@ -24,7 +24,7 @@
           v-for="order in orders" 
           :key="order.id" 
           class="order-item"
-          @click="viewOrderDetail(order.id)"
+          @click="viewOrderDetail(order.order_no)"
         >
           <view class="order-header">
             <text class="order-no">订单号: {{ order.order_no }}</text>
@@ -56,7 +56,7 @@
               <button 
                 v-if="order.order_status === 1" 
                 class="action-btn cancel-btn"
-                @click.stop="cancelOrder(order.id)"
+                @click.stop="cancelOrder(order.order_no)"
               >
                 取消订单
               </button>
@@ -70,7 +70,7 @@
               <button 
                 v-if="order.order_status === 4 || order.order_status === 5" 
                 class="action-btn view-btn"
-                @click.stop="viewOrderDetail(order.id)"
+                @click.stop="viewOrderDetail(order.order_no)"
               >
                 查看详情
               </button>
@@ -149,7 +149,6 @@ export default {
           this.page++
         }
       } catch (err) {
-        console.error('获取订单失败:', err)
         uni.showToast({
           title: '获取订单失败',
           icon: 'none'
@@ -194,9 +193,9 @@ export default {
     },
     
     // 查看订单详情
-    viewOrderDetail(orderId) {
+    viewOrderDetail(orderNo) {
       uni.navigateTo({
-        url: `/pages/order/detail?id=${orderId}`
+        url: `/pages/order/detail?order_no=orderNo`
       })
     },
     
@@ -208,14 +207,14 @@ export default {
     },
     
     // 取消订单
-    async cancelOrder(orderId) {
+    async cancelOrder(orderNo) {
       uni.showModal({
         title: '提示',
         content: '确定要取消该订单吗？',
         success: async (res) => {
           if (res.confirm) {
             try {
-              const res = await cancelOrder(orderId)
+              const res = await cancelOrder(orderNo)
               if (res.code === 0) {
                 uni.showToast({
                   title: '订单已取消',
@@ -224,7 +223,6 @@ export default {
                 this.refreshOrders()
               }
             } catch (err) {
-              console.error('取消订单失败:', err)
               uni.showToast({
                 title: '取消订单失败',
                 icon: 'none'
@@ -252,7 +250,6 @@ export default {
                 this.refreshOrders()
               }
             } catch (err) {
-              console.error('确认收货失败:', err)
               uni.showToast({
                 title: '确认收货失败',
                 icon: 'none'

@@ -108,7 +108,6 @@
 						this.updateCartBadge()
 					}
 				} catch (err) {
-					console.error('获取购物车失败:', err)
 					uni.showToast({
 						title: '获取购物车失败',
 						icon: 'none'
@@ -181,7 +180,6 @@
 						this.updateCartBadge()
 					}
 				} catch (err) {
-					console.error('修改数量失败:', err)
 					uni.showToast({
 						title: '修改数量失败',
 						icon: 'none'
@@ -192,9 +190,7 @@
 			// 删除商品
 			async deleteItem(item) {
 				try {
-					const res = await deleteCartItem({
-						cart_id: item.id
-					})
+					const res = await deleteCartItem(item.id)
 					if (res.data.code === 0) {
 						this.cartItems = this.cartItems.filter(cartItem => cartItem.id !== item.id)
 						this.updateCartBadge()
@@ -202,9 +198,9 @@
 							title: '删除成功',
 							icon: 'success'
 						})
+						this.loadCartData()
 					}
 				} catch (err) {
-					console.error('删除失败:', err)
 					uni.showToast({
 						title: '删除失败',
 						icon: 'none'

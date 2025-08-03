@@ -108,6 +108,8 @@ export default {
     if (address) {
       this.selectedAddress = address
       uni.removeStorageSync('selected_address')
+    }else {
+      this.loadAddress(); // 没有缓存才调用接口获取
     }
   },
   methods: {
@@ -142,7 +144,30 @@ export default {
 			})
 		}
     },
-    handleError(msg) {
+    async loadAddress() {
+        try {
+		  const res = await getAddressList()
+
+		  if (res.code === 0) {
+		    const list = res.data || [];
+			if (list.length > 0) {
+			  // 优先默认地址，否则取第一个
+			  const defaultAddr = list.find(addr => addr.is_default);
+			  this.selectedAddress = defaultAddr || list[0];
+			} else {
+			  // 如果列表为空，跳转引导用户新建地址
+			  setTimeout(() => {
+			    uni.navigateTo({ url: '/pages/address/edit' });
+			  }, 300);
+			}
+		  } else {
+		    this.handleError(res.data.msg || '获取地址失败')
+		  }
+        } catch (err) {
+          console.error('获取地址失败', err);
+        }
+     },
+	handleError(msg) {
       this.error = msg
       uni.showToast({
         title: msg,
@@ -153,32 +178,41 @@ export default {
       if (!this.selectedAddress) {
         return uni.showToast({ title: '请选择收货地址', icon: 'none' })
       }
-
+	  if (!this.orderData || !this.orderData.order_no) {
+		return uni.showToast({ title: '订单信息异常', icon: 'none' })
+	  }
       this.submitting = true
       uni.showLoading({ title: '支付中...', mask: true })
 
       try {
         // 直接使用结算接口返回的order_no进行支付
-        await uni.requestPayment({
-          provider: 'wxpay',
-          timeStamp: order.timeStamp,
-          nonceStr: order.nonceStr,
-          package: order.package,
-          signType: 'MD5',
-          paySign: order.paySign,
-          success: () => {
-            uni.showToast({ title: '支付成功', icon: 'success' })
-            setTimeout(() => {
-              uni.redirectTo({ url: `/pages/order/detail?order_no=${order.order_no}` })
-            }, 1500)
-          },
-          fail: (err) => {
-            const msg = err.errMsg === 'requestPayment:fail cancel' ? '已取消支付' : '支付失败'
-            uni.showToast({ title: msg, icon: 'none' })
-          }
-        })
+        // await uni.requestPayment({
+        //   provider: 'wxpay',
+        //   timeStamp: order.timeStamp,
+        //   nonceStr: order.nonceStr,
+        //   package: order.package,
+        //   signType: 'MD5',
+        //   paySign: order.paySign,
+        //   success: () => {
+        //     uni.showToast({ title: '支付成功', icon: 'success' })
+        //     setTimeout(() => {
+        //       uni.redirectTo({ url: `/pages/order/detail?order_no=${order.order_no}` })
+        //     }, 1500)
+        //   },
+        //   fail: (err) => {
+        //     const msg = err.errMsg === 'requestPayment:fail cancel' ? '已取消支付' : '支付失败'
+        //     uni.showToast({ title: msg, icon: 'none' })
+        //   }
+        // })
+		
+		// 👉 这里你暂未对接微信支付参数（paySign等），先跳转到订单详情
+		uni.showToast({ title: '订单提交成功', icon: 'success' })
+		setTimeout(() => {
+		  uni.redirectTo({
+			url: `/pages/order/detail?order_no=${this.orderData.order_no}`
+		  })
+		}, 1500)
       } catch (err) {
-        console.error('提交失败', err)
         uni.showToast({ title: err.message || '下单失败', icon: 'none' })
       } finally {
         this.submitting = false

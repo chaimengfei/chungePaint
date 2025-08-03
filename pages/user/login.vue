@@ -23,7 +23,6 @@
 
 			
 			const loginRes = await goLogin({code:code})
-			console.log(11111,loginRes)
 			const { token, user_info } = loginRes.data.data
 
 			// 存储 token
@@ -43,7 +42,6 @@
 			  uni.navigateBack()
 			}, 500)
 		  } catch (err) {
-			console.error(err)
 			uni.showToast({ title: '登录失败', icon: 'none' })
 		  }
 		}

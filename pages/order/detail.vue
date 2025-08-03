@@ -69,79 +69,101 @@
 
     <!-- 底部操作栏 -->
     <view class="action-bar" v-if="order.order_status === 1">
-      <button class="action-btn secondary" @click="cancelOrder">取消订单</button>
+      <button class="action-btn secondary" @click="cancelOrderFn">取消订单</button>
       <button class="action-btn primary" @click="payOrder">立即支付</button>
     </view>
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { getOrderDetail, cancelOrder } from '@/api/order.js'
 
-export default {
-  data() {
-    return {
-      order: {
-        order_items: [],
-        receiver_name: '',
-        receiver_phone: '',
-        receiver_address: ''
-      }
+const order = ref({
+  order_items: [],
+  receiver_name: '',
+  receiver_phone: '',
+  receiver_address: '',
+  order_status: 0,
+  payment_type: 0,
+  total_amount: 0,
+  shipping_fee: 0,
+  payment_amount: 0,
+  created_at: '',
+  order_no: '',
+  id: 0
+})
+
+// 加载订单详情
+const loadData = async (orderNo) => {
+  try {
+    const res = await getOrderDetail(orderNo)
+    if (res.code === 0) {
+      order.value = res.data
     }
-  },
-  computed: {
-    statusText() {
-      const statusMap = {
-        1: '待付款',
-        2: '待发货',
-        3: '待收货',
-        4: '已取消',
-        5: '已完成'
-      }
-      return statusMap[this.order.order_status] || '未知状态'
-    },
-    paymentTypeText() {
-      return ['微信支付', '支付宝', '余额支付'][this.order.payment_type - 1] || '未支付'
-    }
-  },
-  onLoad(options) {
-    this.loadData(options.id)
-  },
-  methods: {
-    async loadData(orderId) {
-      try {
-        const res = await getOrderDetail(orderId)
-        if (res.code === 0) {
-          this.order = res.data
-        }
-      } catch (err) {
-        uni.showToast({ title: '加载失败', icon: 'none' })
-      }
-    },
-    navigateBack() {
-      uni.navigateBack()
-    },
-    formatTime(timeStr) {
-      return new Date(timeStr).toLocaleString()
-    },
-    async cancelOrder() {
-      uni.showModal({
-        title: '确认取消订单？',
-        success: async (res) => {
-          if (res.confirm) {
-            await cancelOrder(this.order.id)
-            uni.showToast({ title: '已取消' })
-            this.loadData(this.order.id)
-          }
-        }
-      })
-    },
-    payOrder() {
-      uni.navigateTo({
-        url: `/pages/order/pay?id=${this.order.id}`
-      })
-    }
+  } catch (err) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
+}
+
+// 页面加载
+onLoad((options) => {
+  const orderNo = options.order_no
+  if (!orderNo) {
+    uni.showToast({ title: '订单号缺失', icon: 'none' })
+    return
+  }
+  loadData(orderNo)
+})
+
+// 计算订单状态
+const statusText = computed(() => {
+  const statusMap = {
+    1: '待付款',
+    2: '待发货',
+    3: '待收货',
+    4: '已取消',
+    5: '已完成'
+  }
+  return statusMap[order.value.order_status] || '未知状态'
+})
+
+// 计算支付方式
+const paymentTypeText = computed(() => {
+  const map = ['微信支付', '支付宝', '余额支付']
+  return map[order.value.payment_type - 1] || '未支付'
+})
+
+// 返回上一页
+const navigateBack = () => {
+  uni.navigateBack()
+}
+
+// 格式化时间
+const formatTime = (timeStr) => {
+  return new Date(timeStr).toLocaleString()
+}
+
+// 取消订单
+const cancelOrderFn = () => {
+  uni.showModal({
+    title: '确认取消订单？',
+    success: async (res) => {
+      if (res.confirm) {
+        await cancelOrder(order.value.order_no)
+        uni.showToast({ title: '已取消' })
+        loadData(order.value.order_no)
+      }
+    }
+  })
+}
+
+// 去支付
+const payOrder = () => {
+  uni.navigateTo({
+    url: `/pages/order/pay?id=${order.value.id}`
+  })
 }
 </script>
 

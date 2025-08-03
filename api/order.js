@@ -29,10 +29,10 @@ export const getOrderList = (params = {}) => {
  * @param {number} id - 订单ID
  */
 // 获取订单详情
-export const getOrderDetail = (id) => {
+export const getOrderDetail = (orderNo) => {
   return new Promise((resolve, reject) => {
     uni.request({
-      url: `${BASE_URL}/api/order/detail?id=${id}`,
+      url: `${BASE_URL}/api/order/detail?order_no=${orderNo}`,
       method: 'GET',
       success: (res) => {
         resolve(res.data)
@@ -65,11 +65,14 @@ export const checkoutOrder = (data) => {
  * 取消订单
  * @param {number} id - 订单ID
  */
-export const cancelOrder = (id) => {
+export const cancelOrder = (orderNo) => {
   return new Promise((resolve, reject) => {
     uni.request({
-      url: `${BASE_URL}/api/order/cancel?id=${id}`,
+      url: `${BASE_URL}/api/order/cancel`,
       method: 'POST',
+	  data: {
+	    order_no: orderNo
+	  },
       success: (res) => {
         resolve(res.data)
       },

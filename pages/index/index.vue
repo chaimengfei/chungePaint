@@ -69,7 +69,6 @@ export default {
           this.currentProducts = this.products[this.activeCategory] || []
         }
       } catch (err) {
-        console.error('请求失败:', err)
         uni.showToast({
           title: '数据加载失败',
           icon: 'none'
@@ -104,7 +103,6 @@ export default {
           })
         }
       } catch (err) {
-        console.error('添加购物车失败:', err)
         uni.showToast({
           title: '添加购物车失败',
           icon: 'none'
