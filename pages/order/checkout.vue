@@ -21,14 +21,17 @@
       <!-- 商品 -->
       <view class="section">
         <view class="section-title">商品清单</view>
-        <view v-for="item in orderData.order_items" :key="item.product_id" class="order-item">
-          <image :src="item.product_image" class="product-image" mode="aspectFill"></image>
+        <view v-for="item in orderData.items" :key="item.product_id" class="order-item">
+          <image :src="item.product_image || '/static/images/empty-cart.png'" class="product-image" mode="aspectFill"></image>
           <view class="product-info">
             <text class="product-name">{{ item.product_name }}</text>
-            <text class="product-spec">{{ item.unit }}</text>
+            <text class="product-spec">{{ item.specification }}</text>
             <view class="price-line">
-              <text class="product-price">¥{{ item.product_price }}</text>
+              <text class="product-price">¥{{ item.unit_price }}</text>
               <text class="product-quantity">×{{ item.quantity }}</text>
+            </view>
+            <view class="total-price">
+              <text class="total-price-text">小计: ¥{{ item.total_price }}</text>
             </view>
           </view>
         </view>
@@ -38,7 +41,7 @@
       <view class="section">
         <view class="section-title">订单金额</view>
         <view class="price-row"><text>商品总价</text><text>¥{{ orderData.total_amount }}</text></view>
-        <view class="price-row"><text>运费</text><text>¥{{ orderData.shipping_fee }}</text></view>
+        <view class="price-row"><text>运费</text><text>¥{{ orderData.shipping_fee || 0 }}</text></view>
         <view class="price-row total"><text>应付总额</text><text>¥{{ orderData.payment_amount }}</text></view>
       </view>
 
@@ -341,6 +344,15 @@ export default {
 .product-quantity {
   font-size: 14px;
   color: #666;
+}
+
+.total-price {
+  margin-top: 5px;
+}
+
+.total-price-text {
+  font-size: 12px;
+  color: #999;
 }
 
 .price-row {
