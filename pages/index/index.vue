@@ -92,10 +92,14 @@ export default {
           })
           
           // 更新底部购物车徽标
-          uni.setTabBarBadge({
-            index: 1,
-            text: '1' // 实际应该获取购物车总数
-          })
+          try {
+            uni.setTabBarBadge({
+              index: 1,
+              text: '1' // 实际应该获取购物车总数
+            })
+          } catch (error) {
+            console.error('设置购物车徽标失败:', error)
+          }
         } else {
           uni.showToast({
             title: res.data.message || '添加购物车失败',

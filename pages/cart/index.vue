@@ -117,16 +117,20 @@
 
 			// 更新购物车徽标
 			updateCartBadge() {
-				const totalCount = this.cartItems.reduce((total, item) => total + item.quantity, 0)
-				if (totalCount > 0) {
-					uni.setTabBarBadge({
-						index: 1,
-						text: totalCount.toString()
-					})
-				} else {
-					uni.removeTabBarBadge({
-						index: 1
-					})
+				try {
+					const totalCount = this.cartItems.reduce((total, item) => total + (item.quantity || 0), 0)
+					if (totalCount > 0) {
+						uni.setTabBarBadge({
+							index: 1,
+							text: totalCount.toString()
+						})
+					} else {
+						uni.removeTabBarBadge({
+							index: 1
+						})
+					}
+				} catch (error) {
+					console.error('更新购物车徽标失败:', error)
 				}
 			},
 
