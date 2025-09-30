@@ -42,7 +42,7 @@
 
 <script>
 import { getProductList } from '@/api/product.js'
-import { addToCart } from '@/api/cart.js'
+import { addToCart, getCartList } from '@/api/cart.js'
 
 export default {
   data() {
@@ -92,14 +92,7 @@ export default {
           })
           
           // 更新底部购物车徽标
-          try {
-            uni.setTabBarBadge({
-              index: 1,
-              text: '1' // 实际应该获取购物车总数
-            })
-          } catch (error) {
-            console.error('设置购物车徽标失败:', error)
-          }
+          this.updateCartBadge()
         } else {
           uni.showToast({
             title: res.data.message || '添加购物车失败',
@@ -133,6 +126,30 @@ export default {
       uni.navigateTo({
         url: `/pages/order/confirm?items=${encodeURIComponent(JSON.stringify(orderItems))}&total=${totalAmount}`
       })
+    },
+    
+    // 更新购物车徽标
+    async updateCartBadge() {
+      try {
+        const res = await getCartList()
+        if (res.data.code === 0) {
+          const cartItems = res.data.data || []
+          const uniqueItemCount = cartItems.length
+          
+          if (uniqueItemCount > 0) {
+            uni.setTabBarBadge({
+              index: 1,
+              text: uniqueItemCount.toString()
+            })
+          } else {
+            uni.removeTabBarBadge({
+              index: 1
+            })
+          }
+        }
+      } catch (error) {
+        console.error('更新购物车徽标失败:', error)
+      }
     }
   }
 }

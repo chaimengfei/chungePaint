@@ -7,10 +7,16 @@
         class="address-item"
         @tap="chooseAddress(item)"
       >
+        <view class="address-left">
+          <view class="radio-container" @tap.stop="setDefaultAddress(item)">
+            <radio :checked="item.is_default" color="#e93b3d" />
+            <text class="radio-label">默认</text>
+          </view>
+        </view>
         <view class="address-info">
           <view class="name-phone">
-            <text>{{ item.name }}</text>
-            <text class="phone">{{ item.phone }}</text>
+            <text>{{ item.recipient_name }}</text>
+            <text class="phone">{{ item.recipient_phone }}</text>
           </view>
           <view class="detail">{{ item.province }}{{ item.city }}{{ item.district }} {{ item.detail }}</view>
         </view>
@@ -28,6 +34,7 @@
 
 <script>
 import { getAddressList,deleteAddress } from '@/api/address.js'
+import { BASE_URL } from '@/api/common.js'
 
 export default {
   data() {
@@ -48,7 +55,7 @@ export default {
     },
     editAddress(address) {
       uni.navigateTo({
-        url: `/pages/address/edit.vue?id=${address.id}`
+        url: `/pages/address/edit?id=${address.address_id}`
       });
     },
     deleteAddress(id) {
@@ -71,6 +78,51 @@ export default {
         uni.setStorageSync('selected_address', item);
         uni.navigateBack();
       }
+    },
+    // 设置默认地址
+    async setDefaultAddress(item) {
+      try {
+        // 如果已经是默认地址，则不需要操作
+        if (item.is_default) {
+          return;
+        }
+        
+        uni.showLoading({ title: '设置中...' });
+        
+        const res = await uni.request({
+          url: `${BASE_URL}/api/address/set_default/${item.address_id}`,
+          method: 'POST',
+          header: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        uni.hideLoading();
+        
+        if (res.data.code === 0) {
+          // 更新本地数据
+          this.addressList.forEach(addr => {
+            addr.is_default = addr.address_id === item.address_id;
+          });
+          
+          uni.showToast({
+            title: '设置成功',
+            icon: 'success'
+          });
+        } else {
+          uni.showToast({
+            title: res.data.message || '设置失败',
+            icon: 'none'
+          });
+        }
+      } catch (err) {
+        uni.hideLoading();
+        console.error('设置默认地址失败:', err);
+        uni.showToast({
+          title: '设置失败',
+          icon: 'none'
+        });
+      }
     }
   }
 };
@@ -86,14 +138,42 @@ export default {
   padding: 20rpx;
   margin-bottom: 20rpx;
   background: #fff;
+  display: flex;
+  align-items: flex-start;
 }
+
+.address-left {
+  margin-right: 20rpx;
+  margin-top: 10rpx;
+}
+
+.radio-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.radio-label {
+  font-size: 24rpx;
+  color: #666;
+  margin-top: 8rpx;
+}
+.address-info {
+  flex: 1;
+}
+
 .name-phone {
   font-weight: bold;
   font-size: 30rpx;
   margin-bottom: 10rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .phone {
-  float: right;
+  font-size: 26rpx;
+  color: #666;
 }
 .detail {
   color: #666;

@@ -1,5 +1,32 @@
 <template>
 	<view class="container">
+		<!-- 默认地址信息 -->
+		<view v-if="defaultAddress" class="address-section" @click="goToAddressList">
+			<view class="address-tags">
+				<text v-if="defaultAddress.is_default" class="tag default-tag">默认</text>
+				<!-- <text class="tag home-tag">家</text> -->
+			</view>
+			<view class="address-info">
+				<view class="address-detail">
+					<text class="location">
+						<text v-if="defaultAddress.is_default" class="default-text">默认</text>
+						{{ defaultAddress.province }}{{ defaultAddress.city }}{{ defaultAddress.district }} {{ defaultAddress.detail }}
+					</text>
+				</view>
+			</view>
+			<view class="address-arrow">
+				<text>></text>
+			</view>
+		</view>
+
+		<!-- 无地址提示 -->
+		<view v-else class="no-address" @click="goToAddressList">
+			<view class="no-address-content">
+				<text class="no-address-text">请选择收货地址</text>
+				<text class="no-address-arrow">></text>
+			</view>
+		</view>
+
 		<view class="header">
 			<text class="title">购物车</text>
 		</view>
@@ -57,14 +84,28 @@
 		checkoutOrder
 	} from '@/api/order.js'
 
+	import {
+		getAddressList
+	} from '@/api/address.js'
+
 	export default {
 		data() {
 			return {
-				cartItems: [] // 购物车商品列表
+				cartItems: [], // 购物车商品列表
+				defaultAddress: null // 默认地址信息
 			}
 		},
 		onShow() {
 			this.loadCartData()
+			this.loadDefaultAddress()
+		},
+		onLoad() {
+			// 检查是否有选中的地址（从地址列表页面返回时）
+			const selectedAddress = uni.getStorageSync('selected_address')
+			if (selectedAddress) {
+				this.defaultAddress = selectedAddress
+				uni.removeStorageSync('selected_address')
+			}
 		},
 		computed: {
 			// 是否全选
@@ -118,11 +159,12 @@
 			// 更新购物车徽标
 			updateCartBadge() {
 				try {
-					const totalCount = this.cartItems.reduce((total, item) => total + (item.quantity || 0), 0)
-					if (totalCount > 0) {
+					// 显示购物车中不同商品的数量（商品种类数）
+					const uniqueItemCount = this.cartItems.length
+					if (uniqueItemCount > 0) {
 						uni.setTabBarBadge({
 							index: 1,
-							text: totalCount.toString()
+							text: uniqueItemCount.toString()
 						})
 					} else {
 						uni.removeTabBarBadge({
@@ -138,6 +180,26 @@
 			goToIndex() {
 				uni.switchTab({
 					url: '/pages/index/index'
+				})
+			},
+
+			// 加载默认地址
+			async loadDefaultAddress() {
+				try {
+					const res = await getAddressList()
+					if (res.data && res.data.length > 0) {
+						// 查找默认地址，如果没有默认地址则使用第一个地址
+						this.defaultAddress = res.data.find(addr => addr.is_default) || res.data[0]
+					}
+				} catch (err) {
+					console.error('获取地址列表失败:', err)
+				}
+			},
+
+			// 跳转到地址列表
+			goToAddressList() {
+				uni.navigateTo({
+					url: '/pages/address/list'
 				})
 			},
 
@@ -228,6 +290,104 @@
 	.title {
 		font-size: 36rpx;
 		font-weight: bold;
+	}
+
+	/* 地址信息样式 */
+	.address-section {
+		display: flex;
+		align-items: center;
+		padding: 20rpx;
+		background-color: #fff;
+		border-bottom: 1rpx solid #eee;
+		margin-bottom: 10rpx;
+	}
+
+	.address-tags {
+		display: flex;
+		flex-direction: column;
+		margin-right: 20rpx;
+	}
+
+	.tag {
+		font-size: 20rpx;
+		padding: 4rpx 8rpx;
+		border-radius: 4rpx;
+		margin-bottom: 4rpx;
+		text-align: center;
+	}
+
+	.default-tag {
+		background-color: #e93b3d;
+		color: white;
+	}
+
+	.home-tag {
+		background-color: #f0f0f0;
+		color: #666;
+	}
+
+	.address-info {
+		flex: 1;
+	}
+
+	.address-detail {
+		margin-bottom: 8rpx;
+	}
+
+	.location {
+		font-size: 28rpx;
+		color: #333;
+	}
+
+	.default-text {
+		color: #e93b3d;
+		font-weight: bold;
+		margin-right: 8rpx;
+	}
+
+	.recipient-info {
+		display: flex;
+		align-items: center;
+	}
+
+	.name {
+		font-size: 26rpx;
+		color: #333;
+		margin-right: 20rpx;
+	}
+
+	.phone {
+		font-size: 26rpx;
+		color: #666;
+	}
+
+	.address-arrow {
+		color: #999;
+		font-size: 32rpx;
+	}
+
+	/* 无地址提示样式 */
+	.no-address {
+		padding: 20rpx;
+		background-color: #fff;
+		border-bottom: 1rpx solid #eee;
+		margin-bottom: 10rpx;
+	}
+
+	.no-address-content {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.no-address-text {
+		font-size: 28rpx;
+		color: #999;
+	}
+
+	.no-address-arrow {
+		color: #999;
+		font-size: 32rpx;
 	}
 
 	.cart-item {
