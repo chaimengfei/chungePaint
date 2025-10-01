@@ -56,6 +56,10 @@ export default {
   onLoad() {
     this.fetchData()
   },
+  onShow() {
+    // 每次显示首页时更新购物车徽标
+    this.updateCartBadge()
+  },
   methods: {
     async fetchData() {
       try {
