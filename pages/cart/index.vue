@@ -40,8 +40,10 @@
 				</view>
 				<view class="item-right">
 					<text class="product-name">{{ item.product_name }}</text>
-					<text class="product-price">¥{{ item.product_seller_price }}</text>
-					<text class="product-unit">{{ item.product_unit }}</text>
+					<view class="price-container">
+						<text class="product-price">¥{{ item.product_seller_price }}</text>
+						<text class="product-unit">/{{ item.product_unit }}</text>
+					</view>
 					
 					<!-- 不可购买商品的提示信息 -->
 					<view v-if="!item.can_purchase && item.message" class="product-message">
@@ -489,17 +491,22 @@
 		margin-bottom: 10rpx;
 	}
 
+	.price-container {
+		display: flex;
+		align-items: baseline;
+		margin-bottom: 20rpx;
+	}
+
 	.product-price {
 		font-size: 32rpx;
 		color: #e93b3d;
 		font-weight: bold;
-		margin-bottom: 10rpx;
 	}
 
 	.product-unit {
 		font-size: 24rpx;
-		color: #999;
-		margin-bottom: 20rpx;
+		color: #333;
+		margin-left: 0;
 	}
 
 	/* 商品提示信息样式 */

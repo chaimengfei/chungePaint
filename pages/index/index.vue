@@ -43,6 +43,7 @@
 <script>
 import { getProductList } from '@/api/product.js'
 import { addToCart, getCartList } from '@/api/cart.js'
+import { checkoutOrder } from '@/api/order.js'
 
 export default {
   data() {
@@ -112,24 +113,39 @@ export default {
     },
     
     // 立即购买
-    buyNow(product) {
-      // 构造订单数据
-      const orderItems = [{
-        product_id: product.id,
-        product_name: product.name,
-        product_image: product.image,
-        product_price: product.seller_price,
-        quantity: 1,
-        unit: product.unit
-      }]
-      
-      // 计算总金额
-      const totalAmount = product.seller_price
-      
-      // 跳转到订单确认页
-      uni.navigateTo({
-        url: `/pages/order/confirm?items=${encodeURIComponent(JSON.stringify(orderItems))}&total=${totalAmount}`
-      })
+    async buyNow(product) {
+      try {
+        uni.showLoading({ title: '处理中...' })
+        
+        // 调用checkout接口
+        const res = await checkoutOrder({
+          cart_ids: null,
+          product_id: product.id,
+          quantity: 1,
+          address_id: null // 这里可以传入默认地址ID，或者让用户在结算页面选择
+        })
+        
+        uni.hideLoading()
+        
+        if (res.data.code === 0) {
+          // 跳转到结算页面
+          uni.navigateTo({
+            url: `/pages/order/checkout?product_id=${product.id}&quantity=1`
+          })
+        } else {
+          uni.showToast({
+            title: res.data.message || '立即购买失败',
+            icon: 'none'
+          })
+        }
+      } catch (err) {
+        uni.hideLoading()
+        console.error('立即购买失败:', err)
+        uni.showToast({
+          title: '立即购买失败',
+          icon: 'none'
+        })
+      }
     },
     
     // 更新购物车徽标

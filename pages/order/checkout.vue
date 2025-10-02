@@ -39,9 +39,7 @@
 
       <!-- 金额 -->
       <view class="section">
-        <view class="section-title">订单金额</view>
         <view class="price-row"><text>商品总价</text><text>¥{{ orderData.total_amount }}</text></view>
-        <view class="price-row"><text>运费</text><text>¥{{ orderData.shipping_fee || 0 }}</text></view>
         <view class="price-row total"><text>应付总额</text><text>¥{{ orderData.payment_amount }}</text></view>
       </view>
 
@@ -84,6 +82,8 @@ export default {
   data() {
     return {
       cartIds: [],
+      productId: null,
+      quantity: 1,
       orderData: null,
       selectedAddress: null,
       orderNote: '',
@@ -95,12 +95,18 @@ export default {
   },
   onLoad(options) {
     if (options.cart_ids) {
+      // 购物车结算
       try {
         this.cartIds = JSON.parse(options.cart_ids)
       } catch {
         this.handleError('参数解析失败')
         return
       }
+      this.fetchCheckoutData()
+    } else if (options.product_id && options.quantity) {
+      // 立即购买
+      this.productId = parseInt(options.product_id)
+      this.quantity = parseInt(options.quantity)
       this.fetchCheckoutData()
     } else {
       this.handleError('缺少必要参数')
@@ -120,7 +126,21 @@ export default {
       this.loading = true
       this.error = null
       try {
-        const res = await checkoutOrder({ cart_ids: this.cartIds })
+        let requestData
+        if (this.cartIds.length > 0) {
+          // 购物车结算
+          requestData = { cart_ids: this.cartIds }
+        } else {
+          // 立即购买
+          requestData = {
+            cart_ids: null,
+            product_id: this.productId,
+            quantity: this.quantity,
+            address_id: null
+          }
+        }
+        
+        const res = await checkoutOrder(requestData)
         if (res.data.code === 0) {
           this.orderData = res.data.data
 		   // ✅ 新增：把返回的 address_info 作为当前选中的地址

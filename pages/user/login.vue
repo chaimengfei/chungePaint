@@ -10,31 +10,71 @@
 	  methods: {
 		async login() {
 		  try {
-			// 获取 code
-			const res = await new Promise((resolve, reject) => {
+			uni.showLoading({ title: '登录中...' })
+			
+			// 1. 获取微信登录 code
+			const loginRes = await new Promise((resolve, reject) => {
 			  uni.login({
 				success: resolve,
 				fail: reject
 			  })
 			})
 
-			const code = res.code
+			const code = loginRes.code
 			if (!code) throw new Error("无法获取微信登录 code")
 
-			
-			const loginRes = await goLogin({code:code})
-			const { token, user_info } = loginRes.data.data
+			// 2. 获取用户信息（昵称和头像）
+			const userInfoRes = await new Promise((resolve, reject) => {
+			  uni.getUserProfile({
+				desc: '用于完善用户资料',
+				success: resolve,
+				fail: reject
+			  })
+			})
 
-			// 存储 token
+			const { nickName: nickname, avatarUrl: avatar } = userInfoRes.userInfo
+
+			// 3. 获取地理位置
+			const locationRes = await new Promise((resolve, reject) => {
+			  uni.getLocation({
+				type: 'gcj02',
+				success: resolve,
+				fail: (err) => {
+				  console.warn('获取地理位置失败:', err)
+				  // 如果获取地理位置失败，使用默认值
+				  resolve({
+					latitude: 39.9042,  // 北京默认纬度
+					longitude: 116.4074  // 北京默认经度
+				  })
+				}
+			  })
+			})
+
+			const { latitude, longitude } = locationRes
+
+			// 4. 调用登录接口
+			const loginData = {
+			  code: code,
+			  nickname: nickname,
+			  avatar: avatar,
+			  latitude: latitude,
+			  longitude: longitude
+			}
+
+			const loginApiRes = await goLogin(loginData)
+			const { token, user_info } = loginApiRes.data.data
+
+			// 5. 存储登录信息
 			uni.setStorageSync('token', token)
 			uni.setStorageSync('userInfo', user_info)
 
-			// 设置全局请求头中的 Authorization token，在 uni-app 中常用于登录后将 token 附加到所有请求上
+			// 6. 设置全局请求头
 			uni.$u.http.setConfig((config) => {
 			  config.header.Authorization = `Bearer ${token}`
 			  return config
 			})
 
+			uni.hideLoading()
 			uni.showToast({ title: '登录成功' })
 
 			// 返回上一页或跳转
@@ -42,7 +82,17 @@
 			  uni.navigateBack()
 			}, 500)
 		  } catch (err) {
-			uni.showToast({ title: '登录失败', icon: 'none' })
+			uni.hideLoading()
+			console.error('登录失败:', err)
+			
+			let errorMsg = '登录失败'
+			if (err.errMsg && err.errMsg.includes('getUserProfile:fail')) {
+			  errorMsg = '需要授权获取用户信息'
+			} else if (err.errMsg && err.errMsg.includes('getLocation:fail')) {
+			  errorMsg = '需要授权获取地理位置'
+			}
+			
+			uni.showToast({ title: errorMsg, icon: 'none' })
 		  }
 		}
 	  }
