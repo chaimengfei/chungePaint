@@ -125,3 +125,34 @@ export const payOrder = (data) => {
     })
   })
 }
+
+/**
+ * 支付数据接口
+ * @param {Object} data 
+ * @param {string} data.code - 微信登录code
+ * @param {string} data.order_no - 订单号
+ * @param {number} data.total - 支付总金额（分）
+ * @param {string} data.note - 备注信息
+ */
+export const payData = (data) => {
+  return new Promise((resolve, reject) => {
+    // 获取token
+    const token = uni.getStorageSync('token')
+    
+    uni.request({
+      url: `${BASE_URL}/api/pay/data`,
+      method: 'POST',
+      data,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      success: (res) => {
+        resolve(res)
+      },
+      fail: (err) => {
+        reject(err)
+      }
+    })
+  })
+}

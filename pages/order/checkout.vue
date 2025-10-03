@@ -75,7 +75,7 @@
 </template>
 
 <script>
-import { checkoutOrder } from '@/api/order.js'
+import { checkoutOrder, payData } from '@/api/order.js'
 import { getAddressList } from '@/api/address.js'
 
 export default {
@@ -208,35 +208,48 @@ export default {
       uni.showLoading({ title: '支付中...', mask: true })
 
       try {
-        // 直接使用结算接口返回的order_no进行支付
-        // await uni.requestPayment({
-        //   provider: 'wxpay',
-        //   timeStamp: order.timeStamp,
-        //   nonceStr: order.nonceStr,
-        //   package: order.package,
-        //   signType: 'MD5',
-        //   paySign: order.paySign,
-        //   success: () => {
-        //     uni.showToast({ title: '支付成功', icon: 'success' })
-        //     setTimeout(() => {
-        //       uni.redirectTo({ url: `/pages/order/detail?order_no=${order.order_no}` })
-        //     }, 1500)
-        //   },
-        //   fail: (err) => {
-        //     const msg = err.errMsg === 'requestPayment:fail cancel' ? '已取消支付' : '支付失败'
-        //     uni.showToast({ title: msg, icon: 'none' })
-        //   }
-        // })
-		
-		// 👉 这里你暂未对接微信支付参数（paySign等），先跳转到订单详情
-		uni.showToast({ title: '订单提交成功', icon: 'success' })
-		setTimeout(() => {
-		  uni.redirectTo({
-			url: `/pages/order/detail?order_no=${this.orderData.order_no}`
-		  })
-		}, 1500)
+        // 1. 获取微信登录code
+        const loginRes = await new Promise((resolve, reject) => {
+          uni.login({
+            success: resolve,
+            fail: reject
+          })
+        })
+
+        const code = loginRes.code
+        if (!code) {
+          throw new Error('获取微信登录code失败')
+        }
+
+        // 2. 调用支付接口
+        const payRequestData = {
+          code: code,
+          order_no: this.orderData.order_no,
+          total: Math.round(this.orderData.payment_amount * 100), // 转换为分
+          note: this.orderNote || ''
+        }
+
+        const payRes = await payData(payRequestData)
+        
+        if (payRes.data.code === 0) {
+          uni.showToast({ title: '支付成功', icon: 'success' })
+          setTimeout(() => {
+            uni.redirectTo({
+              url: `/pages/order/detail?order_no=${this.orderData.order_no}`
+            })
+          }, 1500)
+        } else {
+          uni.showToast({ 
+            title: payRes.data.message || '支付失败', 
+            icon: 'none' 
+          })
+        }
       } catch (err) {
-        uni.showToast({ title: err.message || '下单失败', icon: 'none' })
+        console.error('支付失败:', err)
+        uni.showToast({ 
+          title: err.message || '支付失败', 
+          icon: 'none' 
+        })
       } finally {
         this.submitting = false
         uni.hideLoading()
