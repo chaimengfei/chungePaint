@@ -44,6 +44,7 @@
 import { getProductList } from '@/api/product.js'
 import { addToCart, getCartList } from '@/api/cart.js'
 import { checkoutOrder } from '@/api/order.js'
+import { goLogin } from '@/api/user.js'
 
 export default {
   data() {
@@ -51,10 +52,15 @@ export default {
       categories: [],         // 分类列表
       products: {},           // 所有商品
       activeCategory: null,   // 当前选中的分类ID
-      currentProducts: []     // 当前显示的商品列表
+      currentProducts: [],    // 当前显示的商品列表
+      isLogin: false,         // 登录状态
+      userInfo: {}            // 用户信息
     }
   },
   onLoad() {
+    // 检查登录状态并自动登录
+    this.checkLoginStatus()
+    // 加载商品数据
     this.fetchData()
   },
   onShow() {
@@ -62,6 +68,147 @@ export default {
     this.updateCartBadge()
   },
   methods: {
+    // 检查登录状态
+    checkLoginStatus() {
+      const token = uni.getStorageSync('token')
+      const userInfo = uni.getStorageSync('userInfo')
+      
+      if (token && userInfo) {
+        // 已登录
+        this.isLogin = true
+        this.userInfo = userInfo
+        console.log('用户已登录:', userInfo)
+      } else {
+        // 未登录，自动登录
+        this.autoLogin()
+      }
+    },
+    
+    // 自动登录
+    async autoLogin() {
+      try {
+        console.log('开始自动登录流程...')
+        
+        // 1. 获取微信登录code
+        const loginRes = await new Promise((resolve, reject) => {
+          uni.login({
+            success: resolve,
+            fail: reject
+          })
+        })
+
+        const code = loginRes.code
+        if (!code) {
+          console.error('无法获取微信登录code')
+          return
+        }
+
+        // 2. 获取用户信息（昵称和头像）
+        const userInfoRes = await new Promise((resolve, reject) => {
+          uni.getUserProfile({
+            desc: '用于完善用户资料',
+            success: resolve,
+            fail: (err) => {
+              console.warn('用户拒绝授权获取用户信息:', err)
+              // 如果用户拒绝授权，使用默认信息
+              resolve({
+                userInfo: {
+                  nickName: '微信用户',
+                  avatarUrl: '/static/images/default-avatar.png'
+                }
+              })
+            }
+          })
+        })
+
+        const { nickName: nickname, avatarUrl: avatar } = userInfoRes.userInfo
+        
+        // 确保avatar是完整的URL格式
+        console.log('获取到的微信头像URL:', avatar)
+        
+        // 验证和处理头像URL
+        let finalAvatar = avatar
+        if (!avatar || !avatar.startsWith('http')) {
+          // 如果头像URL无效，使用默认头像
+          finalAvatar = '/static/images/default-avatar.png'
+          console.warn('微信头像URL无效，使用默认头像:', finalAvatar)
+        }
+
+        // 3. 检查是否首次登录（需要传递地理位置）
+        const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
+        let loginData = {
+          code: code,
+          nickname: nickname,
+          avatar: finalAvatar
+        }
+
+        // 只在首次登录时获取和传递地理位置
+        if (!hasStoredUserInfo) {
+          console.log('首次登录，获取地理位置信息...')
+          const locationRes = await new Promise((resolve, reject) => {
+            uni.getLocation({
+              type: 'gcj02',
+              success: resolve,
+              fail: (err) => {
+                console.warn('获取地理位置失败:', err)
+                // 如果获取地理位置失败，使用默认值
+                resolve({
+                  latitude: 39.9042,  // 北京默认纬度
+                  longitude: 116.4074  // 北京默认经度
+                })
+              }
+            })
+          })
+
+          const { latitude, longitude } = locationRes
+          loginData.latitude = latitude
+          loginData.longitude = longitude
+          console.log('首次登录，传递地理位置:', { latitude, longitude })
+        } else {
+          console.log('非首次登录，跳过地理位置获取')
+        }
+
+        console.log('调用登录接口，数据:', loginData)
+        const loginApiRes = await goLogin(loginData)
+        
+        if (loginApiRes.data.code === 0) {
+          const { token, user_info } = loginApiRes.data.data
+
+          // 5. 存储登录信息
+          uni.setStorageSync('token', token)
+          uni.setStorageSync('userInfo', user_info)
+          // 标记用户信息已存储（用于判断是否首次登录）
+          uni.setStorageSync('hasStoredUserInfo', true)
+
+          // 6. 设置全局请求头
+          uni.$u.http.setConfig((config) => {
+            config.header.Authorization = `Bearer ${token}`
+            return config
+          })
+
+          // 7. 更新页面状态
+          this.isLogin = true
+          this.userInfo = user_info
+          
+          console.log('自动登录成功:', user_info)
+          
+          // 8. 显示欢迎提示
+          const wasFirstLogin = !uni.getStorageSync('hasStoredUserInfo')
+          const welcomeMsg = wasFirstLogin ? `欢迎注册，${user_info.nickname || '用户'}` : `欢迎回来，${user_info.nickname || '用户'}`
+          uni.showToast({
+            title: welcomeMsg,
+            icon: 'success',
+            duration: 2000
+          })
+        } else {
+          console.error('登录接口返回错误:', loginApiRes.data.message)
+        }
+      } catch (err) {
+        console.error('自动登录失败:', err)
+        // 登录失败不影响商品展示，静默处理
+      }
+    },
+    
     async fetchData() {
       try {
         const res = await getProductList()
