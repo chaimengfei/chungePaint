@@ -2,7 +2,7 @@
 const ENV_CONFIG = {
   // 开发环境 - 本地开发
   dev: {
-    BASE_URL: 'http://192.168.1.3:8009',
+    BASE_URL: 'http://127.0.0.1:8009',
     name: '开发环境'
   },
   // 测试环境 - 微信云托管
@@ -18,7 +18,7 @@ const ENV_CONFIG = {
 }
 
 // 当前环境设置 (dev/test/prod)
-const CURRENT_ENV = 'test' // 修改这里来切换环境
+const CURRENT_ENV = 'dev' // 修改这里来切换环境
 
 // 获取当前环境配置
 const currentConfig = ENV_CONFIG[CURRENT_ENV]

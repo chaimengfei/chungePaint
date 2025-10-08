@@ -1,18 +1,38 @@
 <template>
   <view class="container">
     <!-- 品牌展示区域 -->
-    <view class="brand-header">
-      <view class="brand-info">
-        <text class="brand-name">贸彩漆业</text>
-        <text class="brand-desc">汽车漆、工业漆、雕塑&广告牌漆供应</text>
-        <text class="contact-info">联系人 李增春-13161621688</text>
-      </view>
-      <view class="action-buttons">
-        <view class="phone-btn" @click="makeCall">
-          <text class="phone-icon">📞</text>
+    <view class="brand-card">
+      <view class="brand-logo-section">
+        <view class="logo-container">
+          <view class="text-logo">
+            <text class="logo-text">贸彩</text>
+            <text class="logo-tm">®</text>
+          </view>
         </view>
-        <view class="share-btn" @click="shareToFriend">
-          <text class="share-icon">📤</text>
+        <view class="brand-text">
+          <text class="desc-text">汽车漆、工业漆、雕塑&广告牌漆、各种辅料供应</text>
+          <view class="contact-info">
+            <text class="phone-icon">📞</text>
+            <text class="phone-icon"> </text>
+            <text class="contact-text">李增春-13161621688</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 搜索框 -->
+    <view class="search-container">
+      <view class="search-box">
+        <text class="search-icon">🔍</text>
+        <input 
+          class="search-input" 
+          type="text" 
+          placeholder="搜索商品名称..."
+          v-model="searchKeyword"
+          @input="onSearchInput"
+        />
+        <view v-if="searchKeyword" class="clear-btn" @click="clearSearch">
+          <text class="clear-icon">✕</text>
         </view>
       </view>
     </view>
@@ -75,7 +95,11 @@ export default {
       currentProducts: [],    // 当前显示的商品列表
       isLogin: false,         // 登录状态
       userInfo: {},           // 用户信息
-      currentTime: '09:16'    // 当前时间
+      currentTime: '09:16',   // 当前时间
+      searchKeyword: '',      // 搜索关键词
+      isSearching: false,     // 是否正在搜索
+      originalCategories: null, // 原始分类数据（用于搜索后恢复）
+      originalProducts: null    // 原始商品数据（用于搜索后恢复）
     }
   },
   onLoad() {
@@ -253,6 +277,10 @@ export default {
         this.categories = res.categories
         this.products = res.products
         
+        // 保存原始数据（用于搜索后恢复）
+        this.originalCategories = res.categories
+        this.originalProducts = res.products
+        
         // 默认选中第一个分类
         if (this.categories.length > 0) {
           this.activeCategory = this.categories[0].id
@@ -394,6 +422,123 @@ export default {
       } catch (error) {
         console.error('更新购物车徽标失败:', error)
       }
+    },
+    
+    // 搜索输入处理
+    onSearchInput(e) {
+      this.searchKeyword = e.detail.value
+      this.performSearch()
+    },
+    
+    // 执行搜索
+    async performSearch() {
+      if (!this.searchKeyword.trim()) {
+        // 如果搜索关键词为空，显示当前分类的商品
+        this.showCurrentCategoryProducts()
+        this.isSearching = false
+        return
+      }
+      
+      this.isSearching = true
+      
+      try {
+        // 调用后端API进行搜索
+        const res = await getProductList(this.searchKeyword)
+        
+        console.log('搜索关键词:', this.searchKeyword)
+        console.log('搜索API返回数据:', res)
+        
+        // 检查API返回的数据结构
+        if (res && typeof res === 'object') {
+          // 保存原始的分类和商品数据（用于清空搜索时恢复）
+          if (!this.originalCategories) {
+            this.originalCategories = this.categories
+            this.originalProducts = this.products
+          }
+          
+          // 后端返回的数据结构: {categories: [], products: {}}
+          this.categories = res.categories || []
+          this.products = res.products || {}
+          
+          // 计算所有商品数量
+          const allProducts = []
+          Object.values(this.products).forEach(categoryProducts => {
+            if (Array.isArray(categoryProducts)) {
+              allProducts.push(...categoryProducts)
+            }
+          })
+          this.currentProducts = allProducts
+          
+          // 清空当前选中的分类，因为显示的是搜索结果
+          this.activeCategory = null
+          
+          // 根据搜索结果给出不同的提示
+          if (allProducts.length === 0) {
+            console.log('搜索完成，未找到匹配的商品')
+            // 不显示错误提示，只是显示空结果
+          } else {
+            console.log('搜索成功，找到商品数量:', allProducts.length)
+          }
+        } else {
+          console.log('搜索失败，返回数据格式错误:', res)
+          uni.showToast({
+            title: '搜索失败，请重试',
+            icon: 'none'
+          })
+        }
+      } catch (error) {
+        console.error('搜索失败:', error)
+        uni.showToast({
+          title: '搜索失败，请重试',
+          icon: 'none'
+        })
+      }
+    },
+    
+    // 清空搜索
+    async clearSearch() {
+      this.searchKeyword = ''
+      this.isSearching = false
+      
+      // 恢复原始数据
+      if (this.originalCategories && this.originalProducts) {
+        this.categories = this.originalCategories
+        this.products = this.originalProducts
+        
+        // 默认选中第一个分类
+        if (this.categories.length > 0) {
+          this.activeCategory = this.categories[0].id
+          this.currentProducts = this.products[this.activeCategory] || []
+        }
+      } else {
+        // 如果没有原始数据，重新加载
+        try {
+          const res = await getProductList()
+          this.categories = res.categories || []
+          this.products = res.products || {}
+          
+          // 默认选中第一个分类
+          if (this.categories.length > 0) {
+            this.activeCategory = this.categories[0].id
+            this.currentProducts = this.products[this.activeCategory] || []
+          }
+        } catch (error) {
+          console.error('重新加载数据失败:', error)
+          uni.showToast({
+            title: '重新加载失败',
+            icon: 'none'
+          })
+        }
+      }
+    },
+    
+    // 显示当前分类的商品
+    showCurrentCategoryProducts() {
+      if (this.activeCategory && this.products[this.activeCategory]) {
+        this.currentProducts = this.products[this.activeCategory]
+      } else {
+        this.currentProducts = []
+      }
     }
   }
 }
@@ -408,57 +553,160 @@ export default {
 }
 
 /* 品牌展示区域 */
-.brand-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.brand-card {
+  background-color: #e6f7ff;
+  margin: 20rpx;
+  border-radius: 16rpx;
   padding: 30rpx;
-  background: linear-gradient(135deg, #ff69b4 0%, #ffb6c1 100%);
-  color: white;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+  border: 2rpx solid #4169E1;
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+  background: linear-gradient(90deg, #4169E1 0%, #ffb6c1 100%);
+}
+
+.brand-logo-section {
+  display: flex;
+  align-items: center;
   margin-bottom: 20rpx;
 }
 
-.brand-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.brand-name {
-  font-size: 40rpx;
-  font-weight: bold;
-  margin-bottom: 10rpx;
-}
-
-.brand-desc {
-  font-size: 28rpx;
-  margin-bottom: 8rpx;
-  opacity: 0.9;
-}
-
-.contact-info {
-  font-size: 24rpx;
-  opacity: 0.8;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 20rpx;
-}
-
-.phone-btn, .share-btn {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
+.logo-container {
+  width: 120rpx;
+  height: 120rpx;
+  margin-right: 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1rpx solid rgba(255, 255, 255, 0.3);
 }
 
-.phone-icon, .share-icon {
+.brand-logo {
+  width: 100rpx;
+  height: 100rpx;
+}
+
+.text-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100rpx;
+  height: 100rpx;
+  background-color: #fff;
+  border-radius: 50%;
+  border: 3rpx solid #4169E1;
+  position: relative;
+}
+
+.logo-text {
   font-size: 32rpx;
+  font-weight: bold;
+  color: #4169E1;
+  line-height: 1;
+}
+
+.logo-tm {
+  font-size: 16rpx;
+  color: #4169E1;
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: center;
+}
+
+.desc-text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 10rpx;
+}
+
+.contact-info {
+  display: flex;
+  align-items: center;
+  margin-top: 10rpx;
+}
+
+.phone-icon {
+  font-size: 24rpx;
+  margin-right: 10rpx;
+}
+
+.contact-text {
+  font-size: 26rpx;
+  color: #666;
+  font-weight: bold;
+}
+
+/* 搜索框样式 */
+.search-container {
+  margin: 20rpx;
+  margin-top: 0;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background-color: #f0f2f5;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  border: 2rpx solid #e0e0e0;
+  transition: border-color 0.3s ease;
+}
+
+.search-box:focus-within {
+  border-color: #4169E1;
+}
+
+.search-icon {
+  font-size: 32rpx;
+  color: #999;
+  margin-right: 16rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.clear-btn {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 16rpx;
+}
+
+.clear-icon {
+  font-size: 24rpx;
+  color: #666;
+  font-weight: bold;
 }
 
 /* 商品区域 */
@@ -482,7 +730,7 @@ export default {
 
 .category-item.active {
   background-color: #fff;
-  color: #ff69b4;
+  color: #4169E1;
   font-weight: bold;
 }
 
@@ -517,7 +765,7 @@ export default {
 }
 
 .product-price {
-  color: #ff69b4;
+  color: #4169E1;
   font-size: 32rpx;
   font-weight: bold;
   margin-bottom: 10rpx;
@@ -547,13 +795,14 @@ export default {
 }
 
 .add-btn {
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: #4169E1;
+  color: #fff;
 }
 
 .buy-btn {
-  background-color: #ff69b4;
-  color: #fff;
+  background-color: #fff;
+  color: #4169E1;
+  border: 2rpx solid #4169E1;
 }
 
 .empty {

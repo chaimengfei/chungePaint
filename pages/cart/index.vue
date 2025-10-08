@@ -9,7 +9,6 @@
 			<view class="address-info">
 				<view class="address-detail">
 					<text class="location">
-						<text v-if="defaultAddress.is_default" class="default-text">默认</text>
 						{{ defaultAddress.province }}{{ defaultAddress.city }}{{ defaultAddress.district }} {{ defaultAddress.detail }}
 					</text>
 				</view>
@@ -369,7 +368,7 @@
 	}
 
 	.default-tag {
-		background-color: #ff69b4;
+		background-color: #4169E1;
 		color: white;
 	}
 
@@ -392,7 +391,7 @@
 	}
 
 	.default-text {
-		color: #ff69b4;
+		color: #4169E1;
 		font-weight: bold;
 		margin-right: 8rpx;
 	}
@@ -499,7 +498,7 @@
 
 	.product-price {
 		font-size: 32rpx;
-		color: #ff69b4;
+		color: #4169E1;
 		font-weight: bold;
 	}
 
@@ -593,12 +592,12 @@
 	.total text {
 		margin-right: 20rpx;
 		font-size: 28rpx;
-		color: #ff69b4;
+		color: #4169E1;
 		font-weight: bold;
 	}
 
 	.checkout-btn {
-		background-color: #ff69b4;
+		background-color: #4169E1;
 		color: white;
 		height: 70rpx;
 		line-height: 70rpx;
@@ -627,7 +626,7 @@
 	}
 
 	.btn {
-		background-color: #ff69b4;
+		background-color: #4169E1;
 		color: white;
 		width: 200rpx;
 		height: 70rpx;

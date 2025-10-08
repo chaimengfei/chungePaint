@@ -67,7 +67,7 @@
   },
   "tabBar": {
     "color": "#999999",
-    "selectedColor": "#ff69b4",
+    "selectedColor": "#000000",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "height": "50px",
