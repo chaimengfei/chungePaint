@@ -9,7 +9,7 @@
       >
         <view class="address-left">
           <view class="radio-container" @tap.stop="setDefaultAddress(item)">
-            <radio :checked="item.is_default" color="#e93b3d" />
+            <radio :checked="item.is_default" color="#ff69b4" />
             <text class="radio-label">默认</text>
           </view>
         </view>

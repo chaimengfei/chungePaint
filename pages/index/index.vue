@@ -1,20 +1,39 @@
 <template>
   <view class="container">
-    <!-- 左侧分类栏 -->
-    <scroll-view class="category-list" scroll-y>
-      <view 
-        v-for="item in categories" 
-        :key="item.id"
-        class="category-item"
-        :class="{ active: activeCategory === item.id }"
-        @click="changeCategory(item.id)"
-      >
-        {{ item.name }}
+    <!-- 品牌展示区域 -->
+    <view class="brand-header">
+      <view class="brand-info">
+        <text class="brand-name">贸彩漆业</text>
+        <text class="brand-desc">汽车漆、工业漆、雕塑&广告牌漆供应</text>
+        <text class="contact-info">联系人 李增春-13161621688</text>
       </view>
-    </scroll-view>
+      <view class="action-buttons">
+        <view class="phone-btn" @click="makeCall">
+          <text class="phone-icon">📞</text>
+        </view>
+        <view class="share-btn" @click="shareToFriend">
+          <text class="share-icon">📤</text>
+        </view>
+      </view>
+    </view>
     
-    <!-- 右侧商品列表 -->
-    <scroll-view class="product-list" scroll-y>
+    <!-- 商品区域 -->
+    <view class="product-container">
+      <!-- 左侧分类栏 -->
+      <scroll-view class="category-list" scroll-y>
+        <view 
+          v-for="item in categories" 
+          :key="item.id"
+          class="category-item"
+          :class="{ active: activeCategory === item.id }"
+          @click="changeCategory(item.id)"
+        >
+          {{ item.name }}
+        </view>
+      </scroll-view>
+      
+      <!-- 右侧商品列表 -->
+      <scroll-view class="product-list" scroll-y>
       <view v-if="currentProducts.length > 0">
         <view 
           v-for="product in currentProducts" 
@@ -36,7 +55,8 @@
       <view v-else class="empty">
         暂无商品
       </view>
-    </scroll-view>
+      </scroll-view>
+    </view>
   </view>
 </template>
 
@@ -54,7 +74,8 @@ export default {
       activeCategory: null,   // 当前选中的分类ID
       currentProducts: [],    // 当前显示的商品列表
       isLogin: false,         // 登录状态
-      userInfo: {}            // 用户信息
+      userInfo: {},           // 用户信息
+      currentTime: '09:16'    // 当前时间
     }
   },
   onLoad() {
@@ -66,6 +87,23 @@ export default {
   onShow() {
     // 每次显示首页时更新购物车徽标
     this.updateCartBadge()
+  },
+  onShareAppMessage() {
+    // 分享给微信好友
+    return {
+      title: '贸彩漆业 - 汽车漆、工业漆、雕塑&广告牌漆供应',
+      desc: '联系人 李增春-13161621688',
+      path: '/pages/index/index',
+      imageUrl: '/static/images/share-logo.png' // 可以设置分享图片
+    }
+  },
+  onShareTimeline() {
+    // 分享到朋友圈
+    return {
+      title: '贸彩漆业 - 汽车漆、工业漆、雕塑&广告牌漆供应',
+      query: '',
+      imageUrl: '/static/images/share-logo.png' // 可以设置分享图片
+    }
   },
   methods: {
     // 检查登录状态
@@ -295,6 +333,45 @@ export default {
       }
     },
     
+    // 拨打电话
+    makeCall() {
+      uni.makePhoneCall({
+        phoneNumber: '13161621688',
+        success: function () {
+          console.log('拨打电话成功')
+        },
+        fail: function (err) {
+          console.log('拨打电话失败:', err)
+        }
+      })
+    },
+    
+    // 跳转到个人中心
+    goToProfile() {
+      uni.switchTab({
+        url: '/pages/user/index'
+      })
+    },
+    
+    // 分享给朋友
+    shareToFriend() {
+      uni.share({
+        provider: 'weixin',
+        scene: 'WXSceneSession',
+        type: 5,
+        title: '贸彩漆业 - 专业涂料供应商',
+        summary: '汽车漆、工业漆、雕塑&广告牌漆供应',
+        href: '/pages/index/index',
+        imageUrl: '/static/images/share-logo.png',
+        success: function (res) {
+          console.log('分享成功')
+        },
+        fail: function (err) {
+          console.log('分享失败:', err)
+        }
+      })
+    },
+    
     // 更新购物车徽标
     async updateCartBadge() {
       try {
@@ -325,12 +402,76 @@ export default {
 <style scoped>
 .container {
   display: flex;
+  flex-direction: column;
   height: 100%;
+  background-color: #f5f5f5;
+}
+
+/* 品牌展示区域 */
+.brand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  background: linear-gradient(135deg, #ff69b4 0%, #ffb6c1 100%);
+  color: white;
+  margin-bottom: 20rpx;
+}
+
+.brand-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.brand-name {
+  font-size: 40rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.brand-desc {
+  font-size: 28rpx;
+  margin-bottom: 8rpx;
+  opacity: 0.9;
+}
+
+.contact-info {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 20rpx;
+}
+
+.phone-btn, .share-btn {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.phone-icon, .share-icon {
+  font-size: 32rpx;
+}
+
+/* 商品区域 */
+.product-container {
+  display: flex;
+  flex: 1;
+  height: calc(100% - 120rpx);
 }
 
 .category-list {
   width: 25%;
   background-color: #f5f5f5;
+  height: 100%;
 }
 
 .category-item {
@@ -341,13 +482,14 @@ export default {
 
 .category-item.active {
   background-color: #fff;
-  color: #e93b3d;
+  color: #ff69b4;
   font-weight: bold;
 }
 
 .product-list {
   width: 75%;
   padding: 10rpx;
+  height: 100%;
 }
 
 .product-item {
@@ -375,7 +517,7 @@ export default {
 }
 
 .product-price {
-  color: #e93b3d;
+  color: #ff69b4;
   font-size: 32rpx;
   font-weight: bold;
   margin-bottom: 10rpx;
@@ -390,13 +532,18 @@ export default {
 .action-buttons {
   display: flex;
   justify-content: space-between;
+  gap: 20rpx;
 }
 
 .add-btn, .buy-btn {
   height: 50rpx;
   line-height: 50rpx;
   font-size: 24rpx;
-  padding: 0 20rpx;
+  padding: 0 30rpx;
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  min-width: 120rpx;
 }
 
 .add-btn {
@@ -405,7 +552,7 @@ export default {
 }
 
 .buy-btn {
-  background-color: #e93b3d;
+  background-color: #ff69b4;
   color: #fff;
 }
 

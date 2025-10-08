@@ -54,7 +54,7 @@ export default {
 }
 
 .user-header {
-  background-color: #e93b3d;
+  background-color: #ff69b4;
   padding: 60rpx 40rpx;
   display: flex;
   align-items: center;

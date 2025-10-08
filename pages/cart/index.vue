@@ -369,7 +369,7 @@
 	}
 
 	.default-tag {
-		background-color: #e93b3d;
+		background-color: #ff69b4;
 		color: white;
 	}
 
@@ -392,7 +392,7 @@
 	}
 
 	.default-text {
-		color: #e93b3d;
+		color: #ff69b4;
 		font-weight: bold;
 		margin-right: 8rpx;
 	}
@@ -499,7 +499,7 @@
 
 	.product-price {
 		font-size: 32rpx;
-		color: #e93b3d;
+		color: #ff69b4;
 		font-weight: bold;
 	}
 
@@ -593,12 +593,12 @@
 	.total text {
 		margin-right: 20rpx;
 		font-size: 28rpx;
-		color: #e93b3d;
+		color: #ff69b4;
 		font-weight: bold;
 	}
 
 	.checkout-btn {
-		background-color: #e93b3d;
+		background-color: #ff69b4;
 		color: white;
 		height: 70rpx;
 		line-height: 70rpx;
@@ -627,7 +627,7 @@
 	}
 
 	.btn {
-		background-color: #e93b3d;
+		background-color: #ff69b4;
 		color: white;
 		width: 200rpx;
 		height: 70rpx;

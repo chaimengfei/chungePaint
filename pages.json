@@ -3,7 +3,7 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "选购"
+        "navigationBarTitleText": "贸彩漆业"
       }
     },
     {
@@ -67,7 +67,7 @@
   },
   "tabBar": {
     "color": "#999999",
-    "selectedColor": "#e93b3d",
+    "selectedColor": "#ff69b4",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "height": "50px",
