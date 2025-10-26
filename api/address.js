@@ -130,74 +130,22 @@ import { BASE_URL } from './common'
   整体而言，你的小程序基础功能完整，主要问题集中在用户交互流程的细节处理上，
   建议优先修复地址管理相关的问题，这直接影响用户体验。
   */
+import { get, post, del } from './request'
+
 export const getAddressList = () => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/address/list`,
-      method: 'GET',
-      success: (res) => {
-        resolve(res.data)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return get('/api/address/list').then(res => res.data)
 }
 
 export const deleteAddress = (id) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/addresses/delete/${id}`,
-      method: 'DELETE',
-	  success: (res) => {
-	    resolve(res)
-	  },
-	  fail: (err) => {
-	    reject(err)
-	  }
-    })
-  })
+  return del(`/api/addresses/delete/${id}`)
 }
-
 
 // 创建地址
 export const createAddress = (data) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/address/create`,
-      method: 'POST',
-	  data: { data }, 
-	  header: {
-	     'Content-Type': 'application/json'
-	  },
-      success: (res) => {
-        resolve(res)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return post('/api/address/create', { data })
 }
-
 
 // 更新地址
 export const updateAddress = (data) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/address/update`,
-      method: 'POST',
-      data: { data },
-      header: {
-         'Content-Type': 'application/json'
-      },
-      success: (res) => {
-        resolve(res)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return post('/api/address/update', { data })
 }

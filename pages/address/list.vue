@@ -93,7 +93,8 @@ export default {
           url: `${BASE_URL}/api/address/set_default/${item.address_id}`,
           method: 'POST',
           header: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${uni.getStorageSync('token')}`
           }
         });
         

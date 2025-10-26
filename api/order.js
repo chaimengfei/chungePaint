@@ -1,4 +1,4 @@
-import { BASE_URL } from './common'
+import { get, post } from './request'
 
 /**
  * 获取订单列表
@@ -8,79 +8,31 @@ import { BASE_URL } from './common'
  * @param {number} [params.page_size] - 每页数量
  */
 export const getOrderList = (params = {}) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/order/list`,
-      method: 'GET',
-      data: params,
-      success: (res) => {
-        resolve(res.data)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return get('/api/order/list', params).then(res => res.data)
 }
-
 
 /**
  * 获取订单详情
- * @param {number} id - 订单ID
+ * @param {string} orderNo - 订单号
  */
-// 获取订单详情
 export const getOrderDetail = (orderNo) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/order/detail?order_no=${orderNo}`,
-      method: 'GET',
-      success: (res) => {
-        resolve(res.data)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return get('/api/order/detail', { order_no: orderNo }).then(res => res.data)
 }
 
-// 结算订单
+/**
+ * 结算订单
+ * @param {Object} data 结算数据
+ */
 export const checkoutOrder = (data) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/order/checkout`,
-      method: 'POST',
-      data,
-      success: (res) => {
-        resolve(res)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return post('/api/order/checkout', data)
 }
 
 /**
  * 取消订单
- * @param {number} id - 订单ID
+ * @param {string} orderNo - 订单号
  */
 export const cancelOrder = (orderNo) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/order/cancel`,
-      method: 'POST',
-	  data: {
-	    order_no: orderNo
-	  },
-      success: (res) => {
-        resolve(res.data)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return post('/api/order/cancel', { order_no: orderNo }).then(res => res.data)
 }
 
 /**
@@ -89,19 +41,7 @@ export const cancelOrder = (orderNo) => {
  * @param {number} data.order_id - 订单ID
  */
 export const confirmReceipt = (data) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/order/confirm_receipt`,
-      method: 'POST',
-      data,
-      success: (res) => {
-        resolve(res.data)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return post('/api/order/confirm_receipt', data).then(res => res.data)
 }
 
 /**
@@ -111,19 +51,7 @@ export const confirmReceipt = (data) => {
  * @param {number} data.payment_type - 支付方式(1:微信,2:支付宝,3:余额)
  */
 export const payOrder = (data) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: `${BASE_URL}/api/order/pay`,
-      method: 'POST',
-      data,
-      success: (res) => {
-        resolve(res.data)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return post('/api/order/pay', data).then(res => res.data)
 }
 
 /**
@@ -135,24 +63,5 @@ export const payOrder = (data) => {
  * @param {string} data.note - 备注信息
  */
 export const payData = (data) => {
-  return new Promise((resolve, reject) => {
-    // 获取token
-    const token = uni.getStorageSync('token')
-    
-    uni.request({
-      url: `${BASE_URL}/api/pay/data`,
-      method: 'POST',
-      data,
-      header: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      success: (res) => {
-        resolve(res)
-      },
-      fail: (err) => {
-        reject(err)
-      }
-    })
-  })
+  return post('/api/pay/data', data)
 }

@@ -1,13 +1,11 @@
 <script>
-import { getCartList } from '@/api/cart.js'
-
 export default {
   onLaunch: function() {
     console.log('App Launch')
     // 检查登录状态
     this.checkGlobalLoginStatus()
-    // 初始化购物车徽标
-    this.initCartBadge()
+    // 移除应用启动时的购物车徽标初始化，避免401错误
+    // 购物车徽标只在用户点击购物车图标时更新
   },
   onShow: function() {
     console.log('App Show')
@@ -23,37 +21,10 @@ export default {
       
       if (token && userInfo) {
         console.log('应用启动时检测到用户已登录:', userInfo.nickname || '用户')
-        // 设置全局请求头
-        uni.$u.http.setConfig((config) => {
-          config.header.Authorization = `Bearer ${token}`
-          return config
-        })
+        // token已存储在本地，各个API会在调用时自动获取并添加到请求头
+        console.log('应用启动时token已存在:', token)
       } else {
         console.log('应用启动时检测到用户未登录，将在首页进行自动登录')
-      }
-    },
-    
-    // 初始化购物车徽标
-    async initCartBadge() {
-      try {
-        const res = await getCartList()
-        if (res.data && res.data.code === 0) {
-          const cartItems = res.data.data || []
-          const uniqueItemCount = cartItems.length
-          
-          if (uniqueItemCount > 0) {
-            uni.setTabBarBadge({
-              index: 1,
-              text: uniqueItemCount.toString()
-            })
-          } else {
-            uni.removeTabBarBadge({
-              index: 1
-            })
-          }
-        }
-      } catch (err) {
-        console.error('初始化购物车徽标失败:', err)
       }
     }
   }

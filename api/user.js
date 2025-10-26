@@ -1,10 +1,6 @@
-import { BASE_URL } from './common'
+import { post } from './request'
 
 // 调用后端登录接口
 export const goLogin = (data) => {
-	return uni.request({
-		url: `${BASE_URL}/api/login`,
-		method: 'POST',
-		data
-	})
+	return post('/api/login', data, false) // 登录接口不需要认证
 }

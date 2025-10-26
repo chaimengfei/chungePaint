@@ -82,7 +82,7 @@
 
 <script>
 import { getProductList } from '@/api/product.js'
-import { addToCart, getCartList } from '@/api/cart.js'
+import { addToCart as addToCartApi, getCartList } from '@/api/cart.js'
 import { checkoutOrder } from '@/api/order.js'
 import { goLogin } from '@/api/user.js'
 
@@ -103,14 +103,12 @@ export default {
     }
   },
   onLoad() {
-    // 检查登录状态并自动登录
-    this.checkLoginStatus()
-    // 加载商品数据
-    this.fetchData()
+    // 先进行登录，登录成功后再加载商品数据
+    this.initPage()
   },
   onShow() {
-    // 每次显示首页时更新购物车徽标
-    this.updateCartBadge()
+    // 首页显示时不再自动更新购物车徽标
+    // 购物车徽标只在用户点击购物车图标时更新
   },
   onShareAppMessage() {
     // 分享给微信好友
@@ -130,7 +128,41 @@ export default {
     }
   },
   methods: {
-    // 检查登录状态
+    // 初始化页面
+    async initPage() {
+      try {
+        // 先检查是否已登录
+        const token = uni.getStorageSync('token')
+        const userInfo = uni.getStorageSync('userInfo')
+        
+        if (token && userInfo) {
+          // 已登录，直接加载商品数据
+          this.isLogin = true
+          this.userInfo = userInfo
+          console.log('用户已登录，直接加载商品数据')
+          await this.fetchData()
+        } else {
+          // 未登录，先进行登录
+          console.log('用户未登录，开始登录流程')
+          const loginSuccess = await this.autoLogin()
+          // 无论登录是否成功，都尝试加载商品数据
+          if (loginSuccess && this.isLogin) {
+            console.log('登录成功，开始加载商品数据')
+            await this.fetchData()
+            console.log('登录成功，商品数据已加载')
+          } else {
+            console.log('登录失败或未完成，但仍尝试加载商品数据')
+            await this.fetchData()
+          }
+        }
+      } catch (error) {
+        console.error('页面初始化失败:', error)
+        // 即使登录失败，也尝试加载商品数据（因为商品列表不需要登录）
+        await this.fetchData()
+      }
+    },
+    
+    // 检查登录状态（保留原方法，但不再在onLoad中直接调用）
     checkLoginStatus() {
       const token = uni.getStorageSync('token')
       const userInfo = uni.getStorageSync('userInfo')
@@ -162,7 +194,7 @@ export default {
         const code = loginRes.code
         if (!code) {
           console.error('无法获取微信登录code')
-          return
+          return false
         }
 
         // 2. 获取用户信息（昵称和头像）
@@ -203,9 +235,11 @@ export default {
           nickname: nickname,
           avatar: finalAvatar
         }
+        let isFirstLogin = false
 
         // 只在首次登录时获取和传递地理位置
         if (!hasStoredUserInfo) {
+          isFirstLogin = true
           console.log('首次登录，获取地理位置信息...')
           const locationRes = await new Promise((resolve, reject) => {
             uni.getLocation({
@@ -233,20 +267,40 @@ export default {
         console.log('调用登录接口，数据:', loginData)
         const loginApiRes = await goLogin(loginData)
         
+        console.log('登录接口完整响应:', loginApiRes)
+        console.log('登录接口响应data:', loginApiRes.data)
+        console.log('登录接口响应code:', loginApiRes.data?.code)
+        
         if (loginApiRes.data.code === 0) {
-          const { token, user_info } = loginApiRes.data.data
+          const { token, user_id } = loginApiRes.data.data
+          
+          // 构造用户信息对象
+          const user_info = {
+            id: user_id,
+            nickname: loginData.nickname,
+            avatar: loginData.avatar
+          }
+
+          console.log('登录成功 - 获取到的token:', token)
+          console.log('登录成功 - 获取到的用户信息:', user_info)
 
           // 5. 存储登录信息
           uni.setStorageSync('token', token)
           uni.setStorageSync('userInfo', user_info)
-          // 标记用户信息已存储（用于判断是否首次登录）
-          uni.setStorageSync('hasStoredUserInfo', true)
+          
+          // 验证token是否正确存储
+          const storedToken = uni.getStorageSync('token')
+          console.log('登录成功 - 验证存储的token:', storedToken)
+          
+          // 只在首次登录时标记用户信息已存储
+          if (isFirstLogin) {
+            uni.setStorageSync('hasStoredUserInfo', true)
+            console.log('首次登录完成，已标记用户信息已存储')
+          }
 
-          // 6. 设置全局请求头
-          uni.$u.http.setConfig((config) => {
-            config.header.Authorization = `Bearer ${token}`
-            return config
-          })
+          // 6. 登录成功，token已存储到本地存储中
+          // 各个API会在调用时从本地存储获取token并添加到请求头
+          console.log('Token已存储到本地存储:', token)
 
           // 7. 更新页面状态
           this.isLogin = true
@@ -255,19 +309,25 @@ export default {
           console.log('自动登录成功:', user_info)
           
           // 8. 显示欢迎提示
-          const wasFirstLogin = !uni.getStorageSync('hasStoredUserInfo')
-          const welcomeMsg = wasFirstLogin ? `欢迎注册，${user_info.nickname || '用户'}` : `欢迎回来，${user_info.nickname || '用户'}`
+          const welcomeMsg = isFirstLogin ? `欢迎注册，${user_info.nickname || '用户'}` : `欢迎回来，${user_info.nickname || '用户'}`
           uni.showToast({
             title: welcomeMsg,
             icon: 'success',
             duration: 2000
           })
+          
+          // 登录成功，返回true表示登录成功
+          return true
         } else {
-          console.error('登录接口返回错误:', loginApiRes.data.message)
+          console.error('登录接口返回错误:', loginApiRes.data?.message || '未知错误')
+          console.error('登录接口响应状态码:', loginApiRes.statusCode)
+          console.error('登录接口响应数据:', loginApiRes.data)
+          return false
         }
       } catch (err) {
         console.error('自动登录失败:', err)
         // 登录失败不影响商品展示，静默处理
+        return false
       }
     },
     
@@ -302,7 +362,38 @@ export default {
     // 添加商品到购物车
     async addToCart(productId) {
       try {
-        const res = await addToCart({ product_id: productId })
+        console.log('首页 - 开始添加商品到购物车，商品ID:', productId)
+        console.log('首页 - 当前登录状态:', this.isLogin)
+        console.log('首页 - 当前用户信息:', this.userInfo)
+        
+        // 检查登录状态，如果未登录则先登录
+        if (!this.isLogin) {
+          console.log('首页 - 用户未登录，开始自动登录...')
+          const loginSuccess = await this.autoLogin()
+          if (!loginSuccess) {
+            uni.showToast({
+              title: '请先登录',
+              icon: 'none'
+            })
+            return
+          }
+        }
+        
+        // 再次检查token是否存在
+        const token = uni.getStorageSync('token')
+        if (!token) {
+          console.error('首页 - 登录后token仍为空')
+          uni.showToast({
+            title: '登录失败，请重试',
+            icon: 'none'
+          })
+          return
+        }
+        
+        console.log('首页 - 登录完成，开始添加商品到购物车')
+        const res = await addToCartApi({ product_id: productId })
+        console.log('首页 - 购物车添加API返回:', res)
+        
         if (res.data.code === 0) {
           uni.showToast({
             title: '已加入购物车',
@@ -312,12 +403,14 @@ export default {
           // 更新底部购物车徽标
           this.updateCartBadge()
         } else {
+          console.error('首页 - 购物车添加失败:', res.data.message)
           uni.showToast({
             title: res.data.message || '添加购物车失败',
             icon: 'none'
           })
         }
       } catch (err) {
+        console.error('首页 - 购物车添加异常:', err)
         uni.showToast({
           title: '添加购物车失败',
           icon: 'none'
@@ -328,8 +421,36 @@ export default {
     // 立即购买
     async buyNow(product) {
       try {
+        console.log('首页 - 开始立即购买，商品ID:', product.id)
+        console.log('首页 - 当前登录状态:', this.isLogin)
+        
+        // 检查登录状态，如果未登录则先登录
+        if (!this.isLogin) {
+          console.log('首页 - 用户未登录，开始自动登录...')
+          const loginSuccess = await this.autoLogin()
+          if (!loginSuccess) {
+            uni.showToast({
+              title: '请先登录',
+              icon: 'none'
+            })
+            return
+          }
+        }
+        
+        // 再次检查token是否存在
+        const token = uni.getStorageSync('token')
+        if (!token) {
+          console.error('首页 - 登录后token仍为空')
+          uni.showToast({
+            title: '登录失败，请重试',
+            icon: 'none'
+          })
+          return
+        }
+        
         uni.showLoading({ title: '处理中...' })
         
+        console.log('首页 - 登录完成，开始立即购买')
         // 调用checkout接口
         const res = await checkoutOrder({
           cart_ids: null,
@@ -402,11 +523,20 @@ export default {
     
     // 更新购物车徽标
     async updateCartBadge() {
+      // 只有在已登录状态下才更新购物车徽标
+      if (!this.isLogin) {
+        console.log('用户未登录，跳过购物车徽标更新')
+        return
+      }
+      
       try {
+        console.log('开始更新购物车徽标...')
         const res = await getCartList()
         if (res.data.code === 0) {
           const cartItems = res.data.data || []
           const uniqueItemCount = cartItems.length
+          
+          console.log('购物车商品数量:', uniqueItemCount)
           
           if (uniqueItemCount > 0) {
             uni.setTabBarBadge({
@@ -418,9 +548,15 @@ export default {
               index: 1
             })
           }
+        } else {
+          console.error('获取购物车列表失败:', res.data.message)
         }
       } catch (error) {
         console.error('更新购物车徽标失败:', error)
+        // 如果是401错误，说明token可能过期，可以尝试重新登录
+        if (error.statusCode === 401) {
+          console.log('购物车接口返回401，可能需要重新登录')
+        }
       }
     },
     

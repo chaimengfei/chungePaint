@@ -1,64 +1,17 @@
-import { BASE_URL } from './common'
+import { get, post, del } from './request'
 
 export const getCartList = () => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-		  url: `${BASE_URL}/api/cart/list`,
-		  method: 'GET',
-		  success: (res) => {
-		   resolve(res)
-		  },
-		  fail: (err) => {
-		   reject(err)
-		  }
-     })  
-  })
+  return get('/api/cart/list')
 }
 
 export const addToCart = (data) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-		url: `${BASE_URL}/api/cart/add`,
-		method: 'POST',
-		data,
-		success: (res) => {
-		 resolve(res)
-		},
-		fail: (err) => {
-		 reject(err)
-		}
-	})
-  })
-  
+  return post('/api/cart/add', data)
 }
 
 export const updateCartItem = (data) => {
-  return new Promise((resolve, reject) => {
-     uni.request({
-		  url: `${BASE_URL}/api/cart/update`,
-		  method: 'POST',
-		  data,
-		  success: (res) => {
-		   resolve(res)
-		  },
-		  fail: (err) => {
-		   reject(err)
-		  }
-     })
-  })
+  return post('/api/cart/update', data)
 }
 
 export const deleteCartItem = (id) => {
-  return new Promise((resolve, reject) => {
-    uni.request({
-		 url: `${BASE_URL}/api/cart/delete/${id}`,
-		 method: 'DELETE',
-		 success: (res) => {
-		  resolve(res)
-		 },
-		 fail: (err) => {
-		  reject(err)
-		 }
-     })
-   })
+  return del(`/api/cart/delete/${id}`)
 }

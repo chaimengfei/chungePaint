@@ -95,6 +95,10 @@ onLoad((options) => {
     isEdit.value = true;
     uni.request({
       url: `${BASE_URL}/api/address/detail/${options.id}`,
+      header: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${uni.getStorageSync('token')}`
+      },
       success: (res) => {
         if (res.data.code === 0) {
           const d = res.data.data;
@@ -163,7 +167,8 @@ const submit = () => {
       method: 'POST',
       data: requestData,
       header: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${uni.getStorageSync('token')}`
       },
       success: (res) => {
         if (res.data.code === 0) {
