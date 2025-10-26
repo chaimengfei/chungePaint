@@ -59,7 +59,7 @@ export const payOrder = (data) => {
  * @param {Object} data 
  * @param {string} data.code - 微信登录code
  * @param {string} data.order_no - 订单号
- * @param {number} data.total - 支付总金额（分）
+ * @param {number} data.total - 支付总金额（元）
  * @param {string} data.note - 备注信息
  */
 export const payData = (data) => {

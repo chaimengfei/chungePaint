@@ -225,9 +225,11 @@ export default {
         const payRequestData = {
           code: code,
           order_no: this.orderData.order_no,
-          total: Math.round(this.orderData.payment_amount * 100), // 转换为分
+          total: this.orderData.payment_amount, // 直接传 payment_amount，不转换
           note: this.orderNote || ''
         }
+        
+        console.log('支付请求数据:', payRequestData)
 
         const payRes = await payData(payRequestData)
         
