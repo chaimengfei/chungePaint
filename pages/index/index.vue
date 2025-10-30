@@ -183,7 +183,7 @@ export default {
       try {
         console.log('开始自动登录流程...')
         
-        // 1. 获取微信登录code
+        // 1. 获取微信登录code（非首次登录自动流程不再请求用户资料，避免非手势调用失败）
         const loginRes = await new Promise((resolve, reject) => {
           uni.login({
             success: resolve,
@@ -197,38 +197,14 @@ export default {
           return false
         }
 
-        // 2. 获取用户信息（昵称和头像）
-        const userInfoRes = await new Promise((resolve, reject) => {
-          uni.getUserProfile({
-            desc: '用于完善用户资料',
-            success: resolve,
-            fail: (err) => {
-              console.warn('用户拒绝授权获取用户信息:', err)
-              // 如果用户拒绝授权，使用默认信息
-              resolve({
-                userInfo: {
-                  nickName: '微信用户',
-                  avatarUrl: '/static/images/default-avatar.png'
-                }
-              })
-            }
-          })
-        })
-
-        const { nickName: nickname, avatarUrl: avatar } = userInfoRes.userInfo
+        // 使用默认昵称与头像（避免 getUserProfile 触发手势限制）
+        const nickname = '微信用户'
+        const avatar = '/static/images/default-avatar.png'
         
-        // 确保avatar是完整的URL格式
-        console.log('获取到的微信头像URL:', avatar)
-        
-        // 验证和处理头像URL
+        // 头像直接使用默认图
         let finalAvatar = avatar
-        if (!avatar || !avatar.startsWith('http')) {
-          // 如果头像URL无效，使用默认头像
-          finalAvatar = '/static/images/default-avatar.png'
-          console.warn('微信头像URL无效，使用默认头像:', finalAvatar)
-        }
 
-        // 3. 检查是否首次登录（需要传递地理位置）
+        // 3. 检查是否首次登录（首次登录需要手机号授权，需跳转到登录页获取 encryptedData/iv）
         const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
         let loginData = {
           code: code,
@@ -239,8 +215,16 @@ export default {
 
         // 只在首次登录时获取和传递地理位置
         if (!hasStoredUserInfo) {
-          isFirstLogin = true
-          console.log('首次登录，获取地理位置信息...')
+          // 首次登录必须通过手机号授权按钮获取 encryptedData/iv，不能在首页自动获取
+          console.log('检测到首次登录，跳转到手机号授权登录页')
+          uni.navigateTo({ url: '/pages/user/login' })
+          return false
+        }
+
+        // 非首次登录：可选地理位置（保留旧逻辑，避免后端字段变化）
+        if (hasStoredUserInfo) {
+          isFirstLogin = false
+          console.log('非首次登录，尝试获取地理位置信息（可选）...')
           const locationRes = await new Promise((resolve, reject) => {
             uni.getLocation({
               type: 'gcj02',
@@ -259,9 +243,7 @@ export default {
           const { latitude, longitude } = locationRes
           loginData.latitude = latitude
           loginData.longitude = longitude
-          console.log('首次登录，传递地理位置:', { latitude, longitude })
-        } else {
-          console.log('非首次登录，跳过地理位置获取')
+          console.log('非首次登录，传递地理位置:', { latitude, longitude })
         }
 
         console.log('调用登录接口，数据:', loginData)
