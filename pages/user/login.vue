@@ -1,24 +1,67 @@
 <template>
   <view class="login-container">
-    <button 
-      type="primary" 
-      open-type="getPhoneNumber"
-      @getphonenumber="loginHandler"
-    >
-      微信一键登录
-    </button>
+    <!-- 只有首次登录才显示授权步骤 -->
+    <view v-if="!isFirstLoginComplete" class="step-container">
+      <view v-if="!userProfile">
+        <text class="step-tip">第一步：获取用户信息</text>
+        <button 
+          type="primary" 
+          @tap="getUserProfile"
+        >
+          授权获取昵称和头像
+        </button>
+        <button 
+          type="default" 
+          class="skip-btn"
+          @tap="skipUserProfile"
+        >
+          跳过，使用默认信息
+        </button>
+      </view>
+      <view v-else>
+        <text class="step-tip">第二步：授权手机号完成登录</text>
+        <button 
+          type="primary" 
+          open-type="getPhoneNumber"
+          @getphonenumber="(e) => loginHandler(e, userProfile)"
+        >
+          微信一键登录
+        </button>
+      </view>
+    </view>
+    <!-- 非首次登录显示加载提示 -->
+    <view v-else class="loading-container">
+      <text class="loading-tip">正在登录...</text>
+    </view>
   </view>
 </template>
 
 <script>
 	import { goLogin } from '@/api/user.js'
 	export default {
+	  data() {
+		return {
+		  userProfile: null,
+		  isFirstLoginComplete: false
+		}
+	  },
+	  onLoad() {
+		// 页面加载时检查是否已登录过
+		const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
+		if (hasStoredUserInfo) {
+		  // 非首次登录，直接自动登录，无需授权步骤
+		  console.log('检测到非首次登录，自动登录中...')
+		  this.isFirstLoginComplete = true // 隐藏授权界面，显示加载提示
+		  this.autoLogin()
+		}
+	  },
 	  methods: {
-		async loginHandler(e) {
+		// 非首次登录的自动登录（无需授权）
+		async autoLogin() {
 		  try {
 			uni.showLoading({ title: '登录中...' })
-
-			// 1. 直接获取微信登录 code（昵称/头像使用默认值，避免 getUserProfile 的手势限制）
+			
+			// 只获取 code，无需任何授权
 			const loginRes = await new Promise((resolve, reject) => {
 			  uni.login({
 				success: resolve,
@@ -29,9 +72,93 @@
 			const code = loginRes.code
 			if (!code) throw new Error("无法获取微信登录 code")
 
-			// 使用默认昵称与头像
-			const nickname = '微信用户'
-			const avatar = '/static/images/default-avatar.png'
+			// 非首次登录只传 code
+			const loginData = { code: code }
+			console.log('非首次登录，只传递code')
+
+			const loginApiRes = await goLogin(loginData)
+			const { token, user_info } = loginApiRes.data.data
+
+			// 存储登录信息
+			uni.setStorageSync('token', token)
+			uni.setStorageSync('userInfo', user_info)
+
+			uni.hideLoading()
+			uni.showToast({ title: '登录成功', icon: 'success' })
+
+			// 返回上一页
+			setTimeout(() => {
+			  uni.navigateBack()
+			}, 500)
+		  } catch (err) {
+			uni.hideLoading()
+			console.error('自动登录失败:', err)
+			uni.showToast({ title: '登录失败，请重试', icon: 'none' })
+			// 如果自动登录失败，可能是token过期或网络问题，允许用户手动重新授权
+			this.isFirstLoginComplete = false // 显示授权界面，让用户手动登录
+		  }
+		},
+		// 获取用户信息
+		getUserProfile() {
+		  uni.getUserProfile({
+			desc: '用于完善用户资料',
+			success: (res) => {
+			  // 检查是否被降级（返回的是默认信息）
+			  if (res.userInfo && res.userInfo.is_demote === true) {
+				console.warn('微信返回的是降级后的默认信息，将使用默认头像和昵称')
+				uni.showToast({
+				  title: '获取失败，将使用默认信息',
+				  icon: 'none',
+				  duration: 2000
+				})
+				// 即使被降级也继续，但标记为使用默认值
+				this.userProfile = { userInfo: {} }
+			  } else {
+				this.userProfile = res
+				console.log('获取用户信息成功:', res.userInfo)
+			  }
+			},
+			fail: (err) => {
+			  console.warn('获取用户信息失败，将使用默认值:', err)
+			  // 即使失败也继续，使用默认值（允许用户跳过这一步）
+			  this.userProfile = { userInfo: {} }
+			}
+		  })
+		},
+		// 跳过用户信息获取，直接登录（使用默认值）
+		skipUserProfile() {
+		  this.userProfile = { userInfo: {} }
+		},
+		async loginHandler(e, userProfile = null) {
+		  try {
+			// 1. 处理用户信息（从参数传入，如果未传入则使用默认值）
+			let nickname = '微信用户'
+			let avatar = '/static/images/default-avatar.png'
+			
+			if (userProfile && userProfile.userInfo) {
+			  // 检查是否被降级（is_demote为true时，返回的是默认信息，不使用）
+			  const isDemote = userProfile.userInfo.is_demote === true
+			  if (!isDemote) {
+				nickname = userProfile.userInfo.nickName || nickname
+				avatar = userProfile.userInfo.avatarUrl || avatar
+				console.log('使用微信返回的真实用户信息')
+			  } else {
+				console.warn('微信返回的是降级后的默认信息，使用默认值')
+			  }
+			}
+
+			uni.showLoading({ title: '登录中...' })
+
+			// 2. 获取微信登录 code
+			const loginRes = await new Promise((resolve, reject) => {
+			  uni.login({
+				success: resolve,
+				fail: reject
+			  })
+			})
+
+			const code = loginRes.code
+			if (!code) throw new Error("无法获取微信登录 code")
 			
 			// 确保avatar是完整的URL格式
 			console.log('获取到的微信头像URL:', avatar)
@@ -145,5 +272,40 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
+  padding: 40rpx;
+}
+
+.step-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.step-tip {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 40rpx;
+  text-align: center;
+}
+
+.skip-btn {
+  margin-top: 20rpx;
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.loading-tip {
+  font-size: 28rpx;
+  color: #666;
+  margin-top: 20rpx;
 }
 </style>
