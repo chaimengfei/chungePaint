@@ -234,15 +234,50 @@ export default {
         const payRes = await payData(payRequestData)
         
         if (payRes.data.code === 0) {
+          // 后端返回支付参数成功，调起微信支付收银台
+          const payParams = payRes.data.data
+          
+          // 调用微信支付接口，调起收银台
+          await new Promise((resolve, reject) => {
+            uni.requestPayment({
+              provider: 'wxpay',
+              timeStamp: payParams.timeStamp,
+              nonceStr: payParams.nonceStr,
+              package: payParams.package,
+              signType: payParams.signType,
+              paySign: payParams.paySign,
+              success: (res) => {
+                console.log('支付成功:', res)
           uni.showToast({ title: '支付成功', icon: 'success' })
+                // 跳转到订单详情页
           setTimeout(() => {
             uni.redirectTo({
               url: `/pages/order/detail?order_no=${this.orderData.order_no}`
             })
           }, 1500)
+                resolve(res)
+              },
+              fail: (err) => {
+                console.error('支付失败:', err)
+                // 用户取消支付或其他错误
+                if (err.errMsg && err.errMsg.includes('cancel')) {
+                  uni.showToast({ 
+                    title: '用户取消支付', 
+                    icon: 'none' 
+                  })
+                } else {
+                  uni.showToast({ 
+                    title: '支付失败，请重试', 
+                    icon: 'none' 
+                  })
+                }
+                reject(err)
+              }
+            })
+          })
         } else {
           uni.showToast({ 
-            title: payRes.data.message || '支付失败', 
+            title: payRes.data.message || '获取支付信息失败', 
             icon: 'none' 
           })
         }

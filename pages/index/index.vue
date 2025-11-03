@@ -54,7 +54,7 @@
       
       <!-- 右侧商品列表 -->
       <scroll-view class="product-list" scroll-y>
-      <view v-if="currentProducts.length > 0">
+      <view v-if="currentProducts && currentProducts.length > 0">
         <view 
           v-for="product in currentProducts" 
           :key="product.id"
@@ -653,7 +653,7 @@ export default {
     // 显示当前分类的商品
     showCurrentCategoryProducts() {
       if (this.activeCategory && this.products[this.activeCategory]) {
-        this.currentProducts = this.products[this.activeCategory]
+        this.currentProducts = this.products[this.activeCategory] || []
       } else {
         this.currentProducts = []
       }
