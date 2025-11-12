@@ -142,48 +142,59 @@ export default {
           console.log('用户已登录，直接加载商品数据')
           await this.fetchData()
         } else {
-          // 未登录，先进行登录
-          console.log('用户未登录，开始登录流程')
-          const loginSuccess = await this.autoLogin()
-          // 无论登录是否成功，都尝试加载商品数据
-          if (loginSuccess && this.isLogin) {
-            console.log('登录成功，开始加载商品数据')
-            await this.fetchData()
-            console.log('登录成功，商品数据已加载')
-          } else {
-            console.log('登录失败或未完成，但仍尝试加载商品数据')
-            await this.fetchData()
-          }
+          // 首次登录，只获取位置信息，不调用登录接口
+          console.log('首次登录，只获取位置信息')
+          await this.getLocationOnly()
+          // 直接加载商品数据（商品列表不需要登录）
+          await this.fetchData()
         }
       } catch (error) {
         console.error('页面初始化失败:', error)
-        // 即使登录失败，也尝试加载商品数据（因为商品列表不需要登录）
+        // 即使获取位置失败，也尝试加载商品数据
         await this.fetchData()
       }
     },
     
-    // 检查登录状态（保留原方法，但不再在onLoad中直接调用）
-    checkLoginStatus() {
-      const token = uni.getStorageSync('token')
-      const userInfo = uni.getStorageSync('userInfo')
-      
-      if (token && userInfo) {
-        // 已登录
-        this.isLogin = true
-        this.userInfo = userInfo
-        console.log('用户已登录:', userInfo)
-      } else {
-        // 未登录，自动登录
-        this.autoLogin()
+    // 首次登录时只获取位置信息（不调用登录接口）
+    async getLocationOnly() {
+      try {
+        const locationRes = await new Promise((resolve, reject) => {
+          uni.getLocation({
+            type: 'gcj02',
+            success: resolve,
+            fail: (err) => {
+              console.warn('获取地理位置失败:', err)
+              // 如果获取地理位置失败，使用默认值
+              resolve({
+                latitude: 39.9042,  // 北京默认纬度
+                longitude: 116.4074  // 北京默认经度
+              })
+            }
+          })
+        })
+        
+        // 存储位置信息（用于后续登录时使用）
+        uni.setStorageSync('location', {
+          latitude: locationRes.latitude,
+          longitude: locationRes.longitude
+        })
+        console.log('首次登录，已获取位置信息:', locationRes)
+      } catch (err) {
+        console.warn('获取位置信息失败:', err)
+        // 使用默认位置
+        uni.setStorageSync('location', {
+          latitude: 39.9042,
+          longitude: 116.4074
+        })
       }
     },
     
-    // 自动登录
+    // 自动登录（非首次登录时使用）
     async autoLogin() {
       try {
         console.log('开始自动登录流程...')
         
-        // 1. 获取微信登录code（非首次登录自动流程不再请求用户资料，避免非手势调用失败）
+        // 1. 获取微信登录code
         const loginRes = await new Promise((resolve, reject) => {
           uni.login({
             success: resolve,
@@ -197,118 +208,72 @@ export default {
           return false
         }
 
-        // 使用默认昵称与头像（避免 getUserProfile 触发手势限制）
+        // 使用默认昵称与头像
         const nickname = '微信用户'
         const avatar = '/static/images/default-avatar.png'
         
-        // 头像直接使用默认图
-        let finalAvatar = avatar
+        // 获取地理位置（从存储中获取或重新获取）
+        let latitude = 39.9042
+        let longitude = 116.4074
+        const storedLocation = uni.getStorageSync('location')
+        if (storedLocation) {
+          latitude = storedLocation.latitude
+          longitude = storedLocation.longitude
+        } else {
+          try {
+            const locationRes = await new Promise((resolve, reject) => {
+              uni.getLocation({
+                type: 'gcj02',
+                success: resolve,
+                fail: reject
+              })
+            })
+            latitude = locationRes.latitude
+            longitude = locationRes.longitude
+          } catch (err) {
+            console.warn('获取地理位置失败，使用默认值:', err)
+          }
+        }
 
-        // 3. 检查是否首次登录（首次登录需要手机号授权，需跳转到登录页获取 encryptedData/iv）
-        const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
-        let loginData = {
+        const loginData = {
           code: code,
           nickname: nickname,
-          avatar: finalAvatar
-        }
-        let isFirstLogin = false
-
-        // 只在首次登录时获取和传递地理位置
-        if (!hasStoredUserInfo) {
-          // 首次登录必须通过手机号授权按钮获取 encryptedData/iv，不能在首页自动获取
-          console.log('检测到首次登录，跳转到手机号授权登录页')
-          uni.navigateTo({ url: '/pages/user/login' })
-          return false
-        }
-
-        // 非首次登录：可选地理位置（保留旧逻辑，避免后端字段变化）
-        if (hasStoredUserInfo) {
-          isFirstLogin = false
-          console.log('非首次登录，尝试获取地理位置信息（可选）...')
-          const locationRes = await new Promise((resolve, reject) => {
-            uni.getLocation({
-              type: 'gcj02',
-              success: resolve,
-              fail: (err) => {
-                console.warn('获取地理位置失败:', err)
-                // 如果获取地理位置失败，使用默认值
-                resolve({
-                  latitude: 39.9042,  // 北京默认纬度
-                  longitude: 116.4074  // 北京默认经度
-                })
-              }
-            })
-          })
-
-          const { latitude, longitude } = locationRes
-          loginData.latitude = latitude
-          loginData.longitude = longitude
-          console.log('非首次登录，传递地理位置:', { latitude, longitude })
+          avatar: avatar,
+          latitude: latitude,
+          longitude: longitude
         }
 
         console.log('调用登录接口，数据:', loginData)
         const loginApiRes = await goLogin(loginData)
         
-        console.log('登录接口完整响应:', loginApiRes)
-        console.log('登录接口响应data:', loginApiRes.data)
-        console.log('登录接口响应code:', loginApiRes.data?.code)
-        
         if (loginApiRes.data.code === 0) {
-          const { token, user_id } = loginApiRes.data.data
+          const { token, user_id, nickname: backendNickname, avatar: backendAvatar } = loginApiRes.data.data
           
-          // 构造用户信息对象
+          // 使用后端返回的用户信息（nickname 和 avatar）
           const user_info = {
             id: user_id,
-            nickname: loginData.nickname,
-            avatar: loginData.avatar
+            nickname: backendNickname || nickname,  // 优先使用后端返回的，如果没有则使用前端传递的
+            avatar: backendAvatar || avatar           // 优先使用后端返回的，如果没有则使用前端传递的
           }
 
-          console.log('登录成功 - 获取到的token:', token)
-          console.log('登录成功 - 获取到的用户信息:', user_info)
-
-          // 5. 存储登录信息
+          // 存储登录信息
           uni.setStorageSync('token', token)
           uni.setStorageSync('userInfo', user_info)
-          
-          // 验证token是否正确存储
-          const storedToken = uni.getStorageSync('token')
-          console.log('登录成功 - 验证存储的token:', storedToken)
-          
-          // 只在首次登录时标记用户信息已存储
-          if (isFirstLogin) {
-            uni.setStorageSync('hasStoredUserInfo', true)
-            console.log('首次登录完成，已标记用户信息已存储')
-          }
+          uni.setStorageSync('hasStoredUserInfo', true)
 
-          // 6. 登录成功，token已存储到本地存储中
-          // 各个API会在调用时从本地存储获取token并添加到请求头
-          console.log('Token已存储到本地存储:', token)
-
-          // 7. 更新页面状态
+          // 更新页面状态
           this.isLogin = true
           this.userInfo = user_info
           
           console.log('自动登录成功:', user_info)
           
-          // 8. 显示欢迎提示
-          const welcomeMsg = isFirstLogin ? `欢迎注册，${user_info.nickname || '用户'}` : `欢迎回来，${user_info.nickname || '用户'}`
-          uni.showToast({
-            title: welcomeMsg,
-            icon: 'success',
-            duration: 2000
-          })
-          
-          // 登录成功，返回true表示登录成功
           return true
         } else {
           console.error('登录接口返回错误:', loginApiRes.data?.message || '未知错误')
-          console.error('登录接口响应状态码:', loginApiRes.statusCode)
-          console.error('登录接口响应数据:', loginApiRes.data)
           return false
         }
       } catch (err) {
         console.error('自动登录失败:', err)
-        // 登录失败不影响商品展示，静默处理
         return false
       }
     },
@@ -345,34 +310,18 @@ export default {
     async addToCart(productId) {
       try {
         console.log('首页 - 开始添加商品到购物车，商品ID:', productId)
-        console.log('首页 - 当前登录状态:', this.isLogin)
-        console.log('首页 - 当前用户信息:', this.userInfo)
         
-        // 检查登录状态，如果未登录则先登录
-        if (!this.isLogin) {
-          console.log('首页 - 用户未登录，开始自动登录...')
-          const loginSuccess = await this.autoLogin()
-          if (!loginSuccess) {
-            uni.showToast({
-              title: '请先登录',
-              icon: 'none'
-            })
-            return
-          }
-        }
-        
-        // 再次检查token是否存在
+        // 检查登录状态，如果未登录则跳转到登录页
         const token = uni.getStorageSync('token')
         if (!token) {
-          console.error('首页 - 登录后token仍为空')
-          uni.showToast({
-            title: '登录失败，请重试',
-            icon: 'none'
+          console.log('首页 - 用户未登录，跳转到登录页')
+          uni.navigateTo({
+            url: '/pages/user/login'
           })
           return
         }
         
-        console.log('首页 - 登录完成，开始添加商品到购物车')
+        console.log('首页 - 开始添加商品到购物车')
         const res = await addToCartApi({ product_id: productId })
         console.log('首页 - 购物车添加API返回:', res)
         
@@ -384,6 +333,13 @@ export default {
           
           // 更新底部购物车徽标
           this.updateCartBadge()
+          
+          // 延迟跳转到购物车页面，让用户看到提示
+          setTimeout(() => {
+            uni.switchTab({
+              url: '/pages/cart/index'
+            })
+          }, 1000)
         } else {
           console.error('首页 - 购物车添加失败:', res.data.message)
           uni.showToast({
@@ -406,26 +362,12 @@ export default {
         console.log('首页 - 开始立即购买，商品ID:', product.id)
         console.log('首页 - 当前登录状态:', this.isLogin)
         
-        // 检查登录状态，如果未登录则先登录
-        if (!this.isLogin) {
-          console.log('首页 - 用户未登录，开始自动登录...')
-          const loginSuccess = await this.autoLogin()
-          if (!loginSuccess) {
-            uni.showToast({
-              title: '请先登录',
-              icon: 'none'
-            })
-            return
-          }
-        }
-        
-        // 再次检查token是否存在
+        // 检查登录状态，如果未登录则跳转到登录页
         const token = uni.getStorageSync('token')
         if (!token) {
-          console.error('首页 - 登录后token仍为空')
-          uni.showToast({
-            title: '登录失败，请重试',
-            icon: 'none'
+          console.log('首页 - 用户未登录，跳转到登录页')
+          uni.navigateTo({
+            url: '/pages/user/login'
           })
           return
         }

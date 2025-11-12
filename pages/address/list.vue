@@ -3,7 +3,7 @@
     <view class="address-list" v-if="addressList.length">
       <view
         v-for="(item, index) in addressList"
-        :key="item.id"
+        :key="item.address_id"
         class="address-item"
         @tap="chooseAddress(item)"
       >
@@ -22,7 +22,7 @@
         </view>
         <view class="actions">
           <button size="mini" @tap.stop="editAddress(item)">编辑</button>
-          <button size="mini" type="warn" @tap.stop="deleteAddress(item.id)">删除</button>
+          <button size="mini" type="warn" @tap.stop="deleteAddress(item.address_id)">删除</button>
         </view>
       </view>
     </view>
@@ -47,8 +47,20 @@ export default {
   },
   methods: {
     async getAddressList() {
-	  const res = await getAddressList()
-      this.addressList = res.data || [];
+      try {
+        const res = await getAddressList()
+        console.log('地址列表API返回:', res)
+        // API返回格式: { code: 0, data: [...] }
+        if (res.code === 0) {
+          this.addressList = res.data || []
+        } else {
+          console.error('获取地址列表失败:', res.message)
+          this.addressList = []
+        }
+      } catch (err) {
+        console.error('获取地址列表异常:', err)
+        this.addressList = []
+      }
     },
     goAdd() {
       uni.navigateTo({ url: '/pages/address/edit' });
@@ -155,6 +167,11 @@ export default {
   cursor: pointer;
 }
 
+.radio-container radio {
+  transform: scale(0.75);
+  transform-origin: center;
+}
+
 .radio-label {
   font-size: 24rpx;
   color: #666;
@@ -169,8 +186,10 @@ export default {
   font-size: 30rpx;
   margin-bottom: 10rpx;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+}
+.name-phone text:first-child {
+  margin-right: 20rpx;
 }
 .phone {
   font-size: 26rpx;
@@ -184,6 +203,15 @@ export default {
   margin-top: 10rpx;
   display: flex;
   justify-content: flex-end;
+}
+
+.actions button {
+  margin: 0;
+  margin-left: 20rpx;
+}
+
+.actions button:first-child {
+  margin-left: 0;
 }
 .add-btn {
   position: fixed;

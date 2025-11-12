@@ -1,17 +1,17 @@
 <template>
   <view class="content">
     <view class="user-header">
-      <image class="avatar" src="/static/images/default-avatar.png"></image>
-      <text class="username">未登录</text>
+      <image 
+        class="avatar" 
+        :src="isLogin && userInfo.avatar ? userInfo.avatar : '/static/images/default-avatar.png'"
+        mode="aspectFill"
+      ></image>
+      <text class="username">{{ isLogin && userInfo.nickname ? userInfo.nickname : '未登录' }}</text>
       <button v-if="!isLogin" class="login-btn" @click="goLogin">登录/注册</button>
     </view>
     
     <view class="menu-list">
-      <view class="menu-item">
-        <text class="label">我的收藏</text>
-        <uni-icons type="arrowright" size="16" color="#999"></uni-icons>
-      </view>
-      <view class="menu-item">
+      <view class="menu-item" @click="goToAddress">
         <text class="label">收货地址</text>
         <uni-icons type="arrowright" size="16" color="#999"></uni-icons>
       </view>
@@ -32,15 +32,81 @@ export default {
     }
   },
   onShow() {
+    // tab切换时显示确认提示
     const token = uni.getStorageSync('token')
-    const user = uni.getStorageSync('userInfo')
-    this.isLogin = !!token
-    this.userInfo = user || {}
+    if (!token) {
+      this.checkLoginStatusWithPrompt()
+    } else {
+      this.checkLoginStatus()
+    }
   },
+  
+  onLoad() {
+    this.checkLoginStatus()
+  },
+  
   methods: {
+    // 检查登录状态并更新用户信息
+    checkLoginStatus() {
+      const token = uni.getStorageSync('token')
+      const user = uni.getStorageSync('userInfo')
+      
+      if (!token) {
+        // 未登录，只更新状态，不自动跳转
+        this.isLogin = false
+        this.userInfo = {}
+        // 不自动跳转，让用户点击"登录/注册"按钮或通过tab切换触发
+        return
+      }
+      
+      // 已登录，更新用户信息
+      this.isLogin = true
+      this.userInfo = user || {}
+      console.log('我的页面 - 用户信息已更新:', this.userInfo)
+    },
+    
+    // 检查登录状态（用于tab切换时）
+    checkLoginStatusWithPrompt() {
+      const token = uni.getStorageSync('token')
+      const user = uni.getStorageSync('userInfo')
+      
+      if (!token) {
+        // 显示确认提示
+        uni.showModal({
+          title: '提示',
+          content: '您还未登录，是否注册登录？',
+          success: (res) => {
+            if (res.confirm) {
+              // 用户确认，跳转到登录页
+              uni.navigateTo({
+                url: '/pages/user/login'
+              })
+            } else {
+              // 用户取消，返回首页
+              uni.switchTab({
+                url: '/pages/index/index'
+              })
+            }
+          }
+        })
+        return false
+      }
+      
+      // 已登录，更新用户信息
+      this.isLogin = true
+      this.userInfo = user || {}
+      return true
+    },
+    
     goLogin() {
       uni.navigateTo({
         url: '/pages/user/login'
+      })
+    },
+    
+    goToAddress() {
+      uni.navigateTo({
+        url: '/pages/address/list'
       })
     }
   }

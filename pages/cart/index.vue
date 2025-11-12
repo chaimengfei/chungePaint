@@ -103,6 +103,29 @@
 			}
 		},
 		onShow() {
+			// 检查是否首次登录（没有token）
+			const token = uni.getStorageSync('token')
+			if (!token) {
+				// 显示确认提示
+				uni.showModal({
+					title: '提示',
+					content: '您还未登录，是否注册登录？',
+					success: (res) => {
+						if (res.confirm) {
+							// 用户确认，跳转到登录页
+							uni.navigateTo({
+								url: '/pages/user/login'
+							})
+						} else {
+							// 用户取消，返回首页
+							uni.switchTab({
+								url: '/pages/index/index'
+							})
+						}
+					}
+				})
+				return
+			}
 			this.loadCartData()
 			this.loadDefaultAddress()
 		},
