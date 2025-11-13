@@ -31,6 +31,13 @@
 		"navigationBarTitleText": "确认订单" // 页面标题
 	  }
 	},
+	{
+	  "path": "pages/order/success",
+	  "style": {
+		"navigationBarTitleText": "支付成功",
+		"navigationStyle": "custom"
+	  }
+	},
     {
       "path": "pages/user/index",
       "style": {

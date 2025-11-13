@@ -82,10 +82,10 @@ export default {
                 url: '/pages/user/login'
               })
             } else {
-              // 用户取消，返回首页
-              uni.switchTab({
-                url: '/pages/index/index'
-              })
+              // 用户取消，停留在当前页面（我的页面，显示未登录状态）
+              // 不进行任何跳转，只更新登录状态
+              this.isLogin = false
+              this.userInfo = {}
             }
           }
         })
@@ -105,6 +105,18 @@ export default {
     },
     
     goToAddress() {
+      // 检查登录状态
+      const token = uni.getStorageSync('token')
+      if (!token) {
+        // 未登录，提示需要登录
+        uni.showToast({
+          title: '需登录才能查看',
+          icon: 'none',
+          duration: 2000
+        })
+        return
+      }
+      // 已登录，跳转到地址列表
       uni.navigateTo({
         url: '/pages/address/list'
       })

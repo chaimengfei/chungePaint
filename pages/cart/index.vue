@@ -117,10 +117,9 @@
 								url: '/pages/user/login'
 							})
 						} else {
-							// 用户取消，返回首页
-							uni.switchTab({
-								url: '/pages/index/index'
-							})
+							// 用户取消，停留在当前页面（购物车页面，只是购物车里啥都没有）
+							// 不进行任何跳转，只清空购物车数据
+							this.cartItems = []
 						}
 					}
 				})

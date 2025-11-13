@@ -101,7 +101,7 @@ export default {
       tabs: [
         { name: '全部', status: 0 },
         { name: '待付款', status: 1 },
-        { name: '待发货', status: 2 },
+        { name: '已支付', status: 2 },
         { name: '待收货', status: 3 },
         { name: '已完成', status: 5 }
       ],
@@ -128,10 +128,9 @@ export default {
               url: '/pages/user/login'
             })
           } else {
-            // 用户取消，返回首页
-            uni.switchTab({
-              url: '/pages/index/index'
-            })
+            // 用户取消，停留在当前页面（订单页面，只是没有订单数据）
+            // 不进行任何跳转，只清空订单数据
+            this.orders = []
           }
         }
       })
@@ -154,10 +153,9 @@ export default {
               url: '/pages/user/login'
             })
           } else {
-            // 用户取消，返回首页
-            uni.switchTab({
-              url: '/pages/index/index'
-            })
+            // 用户取消，停留在当前页面（订单页面，只是没有订单数据）
+            // 不进行任何跳转，只清空订单数据
+            this.orders = []
           }
         }
       })
@@ -223,7 +221,7 @@ export default {
     getStatusText(status) {
       const statusMap = {
         1: '待付款',
-        2: '待发货',
+        2: '已支付',
         3: '待收货',
         4: '已取消',
         5: '已完成'

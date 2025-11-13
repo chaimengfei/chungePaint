@@ -75,7 +75,8 @@
 </template>
 
 <script>
-import { checkoutOrder, payData } from '@/api/order.js'
+import { checkoutOrder, payData, getOrderDetail } from '@/api/order.js'
+import { ENV_INFO } from '@/api/common.js'
 import { getAddressList } from '@/api/address.js'
 
 export default {
@@ -90,7 +91,9 @@ export default {
       loading: true,
       error: null,
       submitting: false,
-	  incomingAddressId: null
+	  incomingAddressId: null,
+      paymentCheckTimer: null, // 支付状态检查定时器
+      paymentSuccessHandled: false // 标记支付成功是否已处理
     }
   },
   onLoad(options) {
@@ -119,6 +122,13 @@ export default {
       uni.removeStorageSync('selected_address')
     }else {
       this.loadAddress(); // 没有缓存才调用接口获取
+    }
+  },
+  onUnload() {
+    // 页面卸载时清除支付状态检查定时器
+    if (this.paymentCheckTimer) {
+      clearInterval(this.paymentCheckTimer)
+      this.paymentCheckTimer = null
     }
   },
   methods: {
@@ -197,6 +207,91 @@ export default {
         icon: 'none'
       })
     },
+    // 启动支付状态轮询检查（仅开发环境启用，作为备用方案）
+    startPaymentStatusCheck(orderNo, resolve, reject) {
+      // 只在开发环境启用轮询，生产环境不启用（真机环境 success 回调正常触发）
+      const isDevEnv = ENV_INFO.env === 'dev'
+      if (!isDevEnv) {
+        console.log('生产环境，不启用支付状态轮询')
+        return
+      }
+      
+      let checkCount = 0
+      const maxChecks = 15 // 最多检查15次（约30秒，因为每2秒检查一次）
+      
+      // 延迟启动轮询，给 success 回调一些时间（真机环境通常1-2秒内就会触发）
+      setTimeout(() => {
+        // 如果 success 回调已经触发，不需要轮询了
+        if (this.paymentSuccessHandled) {
+          console.log('支付成功回调已触发，跳过轮询')
+          return
+        }
+        
+        console.log('开发环境：启动支付状态轮询检查')
+        this.paymentCheckTimer = setInterval(async () => {
+          // 再次检查，防止在轮询过程中 success 回调触发
+          if (this.paymentSuccessHandled) {
+            clearInterval(this.paymentCheckTimer)
+            this.paymentCheckTimer = null
+            return
+          }
+          
+          checkCount++
+          
+          if (checkCount > maxChecks) {
+            // 超时，停止轮询（真机环境不应该走到这里）
+            console.log('轮询超时，停止检查')
+            clearInterval(this.paymentCheckTimer)
+            this.paymentCheckTimer = null
+            return
+          }
+          
+          try {
+            // 查询订单详情，检查支付状态
+            const res = await getOrderDetail(orderNo)
+            if (res.code === 0 && res.data) {
+              const orderStatus = res.data.order_status
+              // 订单状态不是"待付款"(1)，说明已支付或已取消
+              if (orderStatus !== 1) {
+                // 标记支付成功已处理，防止重复处理
+                this.paymentSuccessHandled = true
+                // 清除轮询定时器
+                clearInterval(this.paymentCheckTimer)
+                this.paymentCheckTimer = null
+                
+                // 如果订单已支付（状态为2已支付待发货、3待收货、5已完成）
+                if (orderStatus === 2 || orderStatus === 3 || orderStatus === 5) {
+                  console.log('轮询检测到支付成功，订单状态:', orderStatus)
+                  // 先关闭loading
+                  this.submitting = false
+                  uni.hideLoading()
+                  // 延迟跳转，给用户时间关闭二维码弹窗（开发者工具环境）
+                  setTimeout(() => {
+                    uni.redirectTo({
+                      url: `/pages/order/success?order_no=${orderNo}&amount=${this.orderData.payment_amount}`
+                    })
+                  }, 500) // 延迟500ms，让用户有时间关闭二维码弹窗
+                  resolve({ success: true, fromPolling: true })
+                } else if (orderStatus === 4) {
+                  // 订单已取消
+                  console.log('订单已取消')
+                  this.submitting = false
+                  uni.hideLoading()
+                  uni.showToast({
+                    title: '订单已取消',
+                    icon: 'none'
+                  })
+                  reject(new Error('订单已取消'))
+                }
+              }
+            }
+          } catch (err) {
+            console.error('轮询检查支付状态失败:', err)
+            // 轮询失败不影响，继续检查
+          }
+        }, 2000) // 每2秒检查一次（降低频率，减少服务器压力）
+      }, 3000) // 延迟3秒启动，给 success 回调足够的时间
+    },
     async submitOrder() {
       if (!this.selectedAddress) {
         return uni.showToast({ title: '请选择收货地址', icon: 'none' })
@@ -205,6 +300,7 @@ export default {
 		return uni.showToast({ title: '订单信息异常', icon: 'none' })
 	  }
       this.submitting = true
+      this.paymentSuccessHandled = false // 重置支付成功标记
       uni.showLoading({ title: '支付中...', mask: true })
 
       try {
@@ -247,18 +343,40 @@ export default {
               signType: payParams.signType,
               paySign: payParams.paySign,
               success: (res) => {
-                console.log('支付成功:', res)
-          uni.showToast({ title: '支付成功', icon: 'success' })
-                // 跳转到订单详情页
-          setTimeout(() => {
-            uni.redirectTo({
-              url: `/pages/order/detail?order_no=${this.orderData.order_no}`
-            })
-          }, 1500)
+                console.log('支付成功回调:', res)
+                // 标记支付成功已处理
+                this.paymentSuccessHandled = true
+                // 清除轮询定时器
+                if (this.paymentCheckTimer) {
+                  clearInterval(this.paymentCheckTimer)
+                  this.paymentCheckTimer = null
+                }
+                // 先关闭loading
+                this.submitting = false
+                uni.hideLoading()
+                // 延迟跳转，给用户时间关闭二维码弹窗（开发者工具环境）
+                setTimeout(() => {
+                  uni.redirectTo({
+                    url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
+                  })
+                }, 500) // 延迟500ms，让用户有时间关闭二维码弹窗
                 resolve(res)
               },
               fail: (err) => {
                 console.error('支付失败:', err)
+                
+                // 如果支付已经成功处理（开发者工具关闭二维码弹窗后可能触发 cancel），直接忽略
+                if (this.paymentSuccessHandled) {
+                  console.log('支付已成功处理，忽略后续 fail 回调')
+                  return
+                }
+                
+                // 清除轮询定时器
+                if (this.paymentCheckTimer) {
+                  clearInterval(this.paymentCheckTimer)
+                  this.paymentCheckTimer = null
+                }
+                
                 // 用户取消支付或其他错误
                 if (err.errMsg && err.errMsg.includes('cancel')) {
                   uni.showToast({ 
@@ -274,6 +392,10 @@ export default {
                 reject(err)
               }
             })
+            
+            // 启动支付状态轮询（用于开发者工具扫码支付场景）
+            // 如果 uni.requestPayment 的 success 回调没有触发，通过轮询检查订单状态
+            this.startPaymentStatusCheck(this.orderData.order_no, resolve, reject)
           })
         } else {
           uni.showToast({ 
