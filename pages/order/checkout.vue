@@ -78,6 +78,7 @@
 import { checkoutOrder, payData, getOrderDetail } from '@/api/order.js'
 import { ENV_INFO } from '@/api/common.js'
 import { getAddressList } from '@/api/address.js'
+import { getUserBalance } from '@/api/user.js'
 
 export default {
   data() {
@@ -304,99 +305,139 @@ export default {
       uni.showLoading({ title: '支付中...', mask: true })
 
       try {
-        // 1. 获取微信登录code
-        const loginRes = await new Promise((resolve, reject) => {
-          uni.login({
-            success: resolve,
-            fail: reject
-          })
-        })
-
-        const code = loginRes.code
-        if (!code) {
-          throw new Error('获取微信登录code失败')
+        // 1. 获取用户余额
+        let userBalance = 0
+        let useBalance = false
+        try {
+          const balanceRes = await getUserBalance()
+          if (balanceRes.statusCode === 200 && balanceRes.data.code === 0) {
+            userBalance = parseFloat(balanceRes.data.data.balance || 0)
+            const orderAmount = parseFloat(this.orderData.payment_amount || 0)
+            // 如果余额足够支付订单，使用余额支付
+            if (userBalance >= orderAmount) {
+              useBalance = true
+              console.log('用户余额充足，使用余额支付，余额:', userBalance, '订单金额:', orderAmount)
+            } else {
+              console.log('用户余额不足，使用微信支付，余额:', userBalance, '订单金额:', orderAmount)
+            }
+          }
+        } catch (err) {
+          console.warn('获取用户余额失败，使用微信支付:', err)
+          // 获取余额失败不影响支付流程，继续使用微信支付
         }
 
-        // 2. 调用支付接口
+        // 2. 构建支付请求数据
         const payRequestData = {
-          code: code,
           order_no: this.orderData.order_no,
           total: this.orderData.payment_amount, // 直接传 payment_amount，不转换
           note: this.orderNote || ''
         }
         
-        console.log('支付请求数据:', payRequestData)
+        if (useBalance) {
+          // 余额支付：添加 payment_type: 2，不需要 code
+          payRequestData.payment_type = 2
+          console.log('使用余额支付，支付请求数据:', payRequestData)
+        } else {
+          // 微信支付：需要获取 code，并添加 payment_type: 1
+          payRequestData.payment_type = 1
+          
+          // 获取微信登录code
+          const loginRes = await new Promise((resolve, reject) => {
+            uni.login({
+              success: resolve,
+              fail: reject
+            })
+          })
+
+          const code = loginRes.code
+          if (!code) {
+            throw new Error('获取微信登录code失败')
+          }
+          
+          payRequestData.code = code
+          console.log('使用微信支付，支付请求数据:', payRequestData)
+        }
 
         const payRes = await payData(payRequestData)
         
         if (payRes.data.code === 0) {
-          // 后端返回支付参数成功，调起微信支付收银台
-          const payParams = payRes.data.data
-          
-          // 调用微信支付接口，调起收银台
-          await new Promise((resolve, reject) => {
-            uni.requestPayment({
-              provider: 'wxpay',
-              timeStamp: payParams.timeStamp,
-              nonceStr: payParams.nonceStr,
-              package: payParams.package,
-              signType: payParams.signType,
-              paySign: payParams.paySign,
-              success: (res) => {
-                console.log('支付成功回调:', res)
-                // 标记支付成功已处理
-                this.paymentSuccessHandled = true
-                // 清除轮询定时器
-                if (this.paymentCheckTimer) {
-                  clearInterval(this.paymentCheckTimer)
-                  this.paymentCheckTimer = null
-                }
-                // 先关闭loading
-                this.submitting = false
-                uni.hideLoading()
-                // 延迟跳转，给用户时间关闭二维码弹窗（开发者工具环境）
-                setTimeout(() => {
-                  uni.redirectTo({
-                    url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
-                  })
-                }, 500) // 延迟500ms，让用户有时间关闭二维码弹窗
-                resolve(res)
-              },
-              fail: (err) => {
-                console.error('支付失败:', err)
-                
-                // 如果支付已经成功处理（开发者工具关闭二维码弹窗后可能触发 cancel），直接忽略
-                if (this.paymentSuccessHandled) {
-                  console.log('支付已成功处理，忽略后续 fail 回调')
-                  return
-                }
-                
-                // 清除轮询定时器
-                if (this.paymentCheckTimer) {
-                  clearInterval(this.paymentCheckTimer)
-                  this.paymentCheckTimer = null
-                }
-                
-                // 用户取消支付或其他错误
-                if (err.errMsg && err.errMsg.includes('cancel')) {
-                  uni.showToast({ 
-                    title: '用户取消支付', 
-                    icon: 'none' 
-                  })
-                } else {
-                  uni.showToast({ 
-                    title: '支付失败，请重试', 
-                    icon: 'none' 
-                  })
-                }
-                reject(err)
-              }
+          if (useBalance) {
+            // 余额支付：直接跳转到支付成功页面，不需要调起微信支付收银台
+            console.log('余额支付成功')
+            this.submitting = false
+            uni.hideLoading()
+            uni.redirectTo({
+              url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
             })
+          } else {
+            // 微信支付：后端返回支付参数成功，调起微信支付收银台
+            const payParams = payRes.data.data
             
-            // 启动支付状态轮询（用于开发者工具扫码支付场景）
-            // 如果 uni.requestPayment 的 success 回调没有触发，通过轮询检查订单状态
-            this.startPaymentStatusCheck(this.orderData.order_no, resolve, reject)
-          })
+            // 调用微信支付接口，调起收银台
+            await new Promise((resolve, reject) => {
+              uni.requestPayment({
+                provider: 'wxpay',
+                timeStamp: payParams.timeStamp,
+                nonceStr: payParams.nonceStr,
+                package: payParams.package,
+                signType: payParams.signType,
+                paySign: payParams.paySign,
+                success: (res) => {
+                  console.log('支付成功回调:', res)
+                  // 标记支付成功已处理
+                  this.paymentSuccessHandled = true
+                  // 清除轮询定时器
+                  if (this.paymentCheckTimer) {
+                    clearInterval(this.paymentCheckTimer)
+                    this.paymentCheckTimer = null
+                  }
+                  // 先关闭loading
+                  this.submitting = false
+                  uni.hideLoading()
+                  // 延迟跳转，给用户时间关闭二维码弹窗（开发者工具环境）
+                  setTimeout(() => {
+                    uni.redirectTo({
+                      url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
+                    })
+                  }, 500) // 延迟500ms，让用户有时间关闭二维码弹窗
+                  resolve(res)
+                },
+                fail: (err) => {
+                  console.error('支付失败:', err)
+                  
+                  // 如果支付已经成功处理（开发者工具关闭二维码弹窗后可能触发 cancel），直接忽略
+                  if (this.paymentSuccessHandled) {
+                    console.log('支付已成功处理，忽略后续 fail 回调')
+                    return
+                  }
+                  
+                  // 清除轮询定时器
+                  if (this.paymentCheckTimer) {
+                    clearInterval(this.paymentCheckTimer)
+                    this.paymentCheckTimer = null
+                  }
+                  
+                  // 用户取消支付或其他错误
+                  if (err.errMsg && err.errMsg.includes('cancel')) {
+                    uni.showToast({ 
+                      title: '用户取消支付', 
+                      icon: 'none' 
+                    })
+                  } else {
+                    uni.showToast({ 
+                      title: '支付失败，请重试', 
+                      icon: 'none' 
+                    })
+                  }
+                  reject(err)
+                }
+              })
+              
+              // 启动支付状态轮询（用于开发者工具扫码支付场景）
+              // 如果 uni.requestPayment 的 success 回调没有触发，通过轮询检查订单状态
+              this.startPaymentStatusCheck(this.orderData.order_no, resolve, reject)
+            })
+          }
         } else {
           uni.showToast({ 
             title: payRes.data.message || '获取支付信息失败', 

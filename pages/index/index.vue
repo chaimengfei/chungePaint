@@ -16,6 +16,10 @@
             <text class="phone-icon"> </text>
             <text class="contact-text">李增春-13161621688</text>
           </view>
+          <view v-if="isLogin && userBalance > 0" class="balance-info">
+            <text class="balance-label">会员</text>
+            <text class="balance-amount">余额{{ userBalance.toFixed(2) }}元</text>
+          </view>
         </view>
       </view>
     </view>
@@ -84,7 +88,7 @@
 import { getProductList } from '@/api/product.js'
 import { addToCart as addToCartApi, getCartList } from '@/api/cart.js'
 import { checkoutOrder } from '@/api/order.js'
-import { goLogin } from '@/api/user.js'
+import { goLogin, getUserBalance } from '@/api/user.js'
 
 export default {
   data() {
@@ -95,6 +99,7 @@ export default {
       currentProducts: [],    // 当前显示的商品列表
       isLogin: false,         // 登录状态
       userInfo: {},           // 用户信息
+      userBalance: 0,         // 用户余额
       currentTime: '09:16',   // 当前时间
       searchKeyword: '',      // 搜索关键词
       isSearching: false,     // 是否正在搜索
@@ -109,6 +114,11 @@ export default {
   onShow() {
     // 首页显示时不再自动更新购物车徽标
     // 购物车徽标只在用户点击购物车图标时更新
+    // 如果已登录，刷新余额信息
+    const token = uni.getStorageSync('token')
+    if (token && this.isLogin) {
+      this.loadUserBalance()
+    }
   },
   onShareAppMessage() {
     // 分享给微信好友
@@ -140,6 +150,8 @@ export default {
           this.isLogin = true
           this.userInfo = userInfo
           console.log('用户已登录，直接加载商品数据')
+          // 加载用户余额
+          await this.loadUserBalance()
           await this.fetchData()
         } else {
           // 首次登录，只获取位置信息，不调用登录接口
@@ -264,6 +276,9 @@ export default {
           // 更新页面状态
           this.isLogin = true
           this.userInfo = user_info
+          
+          // 登录成功后加载余额
+          await this.loadUserBalance()
           
           console.log('自动登录成功:', user_info)
           
@@ -599,6 +614,20 @@ export default {
       } else {
         this.currentProducts = []
       }
+    },
+    
+    // 加载用户余额
+    async loadUserBalance() {
+      try {
+        const res = await getUserBalance()
+        if (res.statusCode === 200 && res.data.code === 0) {
+          this.userBalance = parseFloat(res.data.data.balance || 0)
+          console.log('用户余额:', this.userBalance)
+        }
+      } catch (err) {
+        console.warn('获取用户余额失败:', err)
+        this.userBalance = 0
+      }
     }
   }
 }
@@ -709,6 +738,29 @@ export default {
 .contact-text {
   font-size: 26rpx;
   color: #666;
+  font-weight: bold;
+}
+
+.balance-info {
+  display: flex;
+  align-items: center;
+  margin-top: 10rpx;
+  padding: 8rpx 16rpx;
+  background-color: #fff;
+  border-radius: 8rpx;
+  border: 1rpx solid #4169E1;
+}
+
+.balance-label {
+  font-size: 24rpx;
+  color: #4169E1;
+  font-weight: bold;
+  margin-right: 8rpx;
+}
+
+.balance-amount {
+  font-size: 24rpx;
+  color: #e93b3d;
   font-weight: bold;
 }
 

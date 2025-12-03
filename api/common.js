@@ -3,7 +3,7 @@ const ENV_CONFIG = {
   // 开发环境 - 本地开发
   dev: {
     // BASE_URL: 'http://127.0.0.1:8009',
-	BASE_URL: 'https://chunge-paint.loca.lt', // 'https://api.maocai.shop',
+	BASE_URL: 'https://paint.maocai.shop', // 'https://chunge-paint.loca.lt',
     name: '开发环境'
   },
   // 测试环境 - 微信云托管
