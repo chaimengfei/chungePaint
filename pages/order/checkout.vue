@@ -98,11 +98,18 @@ export default {
     }
   },
   onLoad(options) {
+    console.log('结算页面 onLoad - 接收到的参数:', options)
     if (options.cart_ids) {
       // 购物车结算
       try {
         this.cartIds = JSON.parse(options.cart_ids)
-      } catch {
+        console.log('购物车结算 - 解析后的 cartIds:', this.cartIds)
+        if (!Array.isArray(this.cartIds) || this.cartIds.length === 0) {
+          this.handleError('购物车ID无效')
+          return
+        }
+      } catch (err) {
+        console.error('参数解析失败:', err)
         this.handleError('参数解析失败')
         return
       }
@@ -111,8 +118,10 @@ export default {
       // 立即购买
       this.productId = parseInt(options.product_id)
       this.quantity = parseInt(options.quantity)
+      console.log('立即购买 - productId:', this.productId, 'quantity:', this.quantity)
       this.fetchCheckoutData()
     } else {
+      console.error('缺少必要参数 - options:', options)
       this.handleError('缺少必要参数')
     }
   },
@@ -141,6 +150,7 @@ export default {
         if (this.cartIds.length > 0) {
           // 购物车结算
           requestData = { cart_ids: this.cartIds }
+          console.log('购物车结算 - 请求数据:', JSON.stringify(requestData))
         } else {
           // 立即购买
           requestData = {
@@ -149,9 +159,11 @@ export default {
             quantity: this.quantity,
             address_id: null
           }
+          console.log('立即购买 - 请求数据:', JSON.stringify(requestData))
         }
         
         const res = await checkoutOrder(requestData)
+        console.log('结算接口返回数据:', JSON.stringify(res.data))
         if (res.data.code === 0) {
           this.orderData = res.data.data
 		   // ✅ 新增：把返回的 address_info 作为当前选中的地址

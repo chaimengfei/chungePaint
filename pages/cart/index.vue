@@ -51,7 +51,14 @@
 					
 					<view class="quantity-control">
 						<button class="btn-minus" @click="changeQuantity(item, -1)" :disabled="!item.can_purchase">-</button>
-						<text class="quantity">{{ item.quantity }}</text>
+						<input 
+							class="quantity-input" 
+							type="number" 
+							:value="item.quantity" 
+							@blur="onQuantityInputBlur(item, $event)"
+							@input="onQuantityInput(item, $event)"
+							:disabled="!item.can_purchase"
+						/>
 						<button class="btn-plus" @click="changeQuantity(item, 1)" :disabled="!item.can_purchase">+</button>
 					</view>
 					<button class="delete-btn" @click="deleteItem(item)">删除</button>
@@ -66,7 +73,14 @@
 				</view>
 				<view class="total">
 					<text>合计: ¥{{ totalPrice }}</text>
-					<button class="checkout-btn" @click="goToCheckout">结算({{ selectedCount }})</button>
+					<button 
+						class="checkout-btn" 
+						:class="{ 'disabled': selectedCount === 0 }"
+						:disabled="selectedCount === 0"
+						@click="goToCheckout"
+					>
+						结算({{ selectedCount }})
+					</button>
 				</view>
 			</view>
 		</view>
@@ -245,9 +259,44 @@
 					})
 					return
 				}
+				
+				// 先保存当前选中的购物车ID，避免重新加载后丢失选中状态
+				const selectedIds = this.selectedCartIds
+				console.log('跳转结算页面 - 保存的选中购物车ID:', selectedIds)
+				
+				if (selectedIds.length === 0) {
+					uni.showToast({
+						title: '请至少选择一件商品',
+						icon: 'none'
+					})
+					return
+				}
+				
+				// 跳转前，先重新加载购物车数据，确保数量是最新的
+				await this.loadCartData()
+				
+				// 恢复选中状态（因为重新加载后可能丢失）
+				this.cartItems.forEach(item => {
+					if (selectedIds.includes(item.id) && item.can_purchase) {
+						item.selected = true
+					}
+				})
+				
+				// 打印选中的购物车项信息，用于调试
+				const selectedItems = this.cartItems.filter(item => item.selected && item.can_purchase)
+				console.log('跳转结算页面 - 选中的购物车项:', selectedItems.map(item => ({
+					cart_id: item.id,
+					product_name: item.product_name,
+					quantity: item.quantity
+				})))
+				
+				// 使用保存的ID，确保传递正确的购物车ID
+				const finalSelectedIds = this.selectedCartIds
+				console.log('跳转结算页面 - 最终传递的购物车ID:', finalSelectedIds)
+				
 				// 跳转到结算页面，传递结算数据
 				uni.navigateTo({
-					url: `/pages/order/checkout?cart_ids=${JSON.stringify(this.selectedCartIds)}`
+					url: `/pages/order/checkout?cart_ids=${JSON.stringify(finalSelectedIds)}`
 				})
 			},
 
@@ -275,7 +324,7 @@
 				})
 			},
 
-			// 修改商品数量
+			// 修改商品数量（通过按钮）
 			async changeQuantity(item, change) {
 				// 如果商品不可购买，禁止修改数量
 				if (!item.can_purchase) {
@@ -289,26 +338,70 @@
 				const newQuantity = item.quantity + change
 				if (newQuantity < 1) return
 
+				await this.updateQuantity(item, newQuantity)
+			},
+
+			// 输入框输入事件（实时更新显示，但不立即提交）
+			onQuantityInput(item, event) {
+				const value = event.detail.value
+				// 只允许输入数字，实时更新显示（仅用于UI显示，不保存原始值）
+				// 注意：这里更新 item.quantity 只是为了显示，实际保存会在 blur 时进行
+				if (value === '' || /^\d+$/.test(value)) {
+					item.quantity = value === '' ? 1 : parseInt(value) || 1
+				}
+			},
+
+			// 输入框失去焦点事件（提交到后端）
+			async onQuantityInputBlur(item, event) {
+				// 如果商品不可购买，禁止修改数量
+				if (!item.can_purchase) {
+					// 重新加载购物车数据以恢复正确的数量
+					this.loadCartData()
+					return
+				}
+
+				let newQuantity = parseInt(event.detail.value) || 1
+				// 确保数量至少为1
+				if (newQuantity < 1) {
+					newQuantity = 1
+					item.quantity = 1
+				}
+
+				// 获取原始数量（从后端重新加载，确保获取最新值）
+				// 由于 onQuantityInput 已经更新了 item.quantity，我们需要重新加载数据来获取原始值
+				// 或者直接保存，让后端验证
+				await this.updateQuantity(item, newQuantity)
+			},
+
+			// 更新商品数量到后端
+			async updateQuantity(item, newQuantity) {
+				console.log('更新购物车数量 - cart_id:', item.id, '新数量:', newQuantity, '当前数量:', item.quantity)
 				try {
 					const res = await updateCartItem({
 						cart_id: item.id,
 						quantity: newQuantity
 					})
+					console.log('更新购物车数量响应:', res.data)
 					if (res.data.code === 0) {
 						item.quantity = newQuantity
 						this.updateCartBadge()
+						console.log('购物车数量更新成功，当前数量:', item.quantity)
 					} else if (res.data.code === -1) {
-						// 显示业务错误信息
+						// 显示业务错误信息，并恢复原值
 						uni.showToast({
 							title: res.data.message || '修改数量失败',
 							icon: 'none'
 						})
+						// 重新加载购物车数据以恢复正确的数量
+						this.loadCartData()
 					} else {
 						// 其他错误情况
 						uni.showToast({
 							title: res.data.message || '修改数量失败',
 							icon: 'none'
 						})
+						// 重新加载购物车数据以恢复正确的数量
+						this.loadCartData()
 					}
 				} catch (err) {
 					// 处理HTTP错误，尝试解析响应体中的业务错误信息
@@ -323,6 +416,8 @@
 							icon: 'none'
 						})
 					}
+					// 重新加载购物车数据以恢复正确的数量
+					this.loadCartData()
 				}
 			},
 
@@ -568,9 +663,20 @@
 		opacity: 0.6;
 	}
 
-	.quantity {
+	.quantity-input {
 		margin: 0 20rpx;
+		width: 80rpx;
+		height: 50rpx;
+		text-align: center;
 		font-size: 28rpx;
+		border: 1rpx solid #e0e0e0;
+		border-radius: 4rpx;
+		background-color: #fff;
+	}
+
+	.quantity-input:disabled {
+		background-color: #f5f5f5;
+		color: #999;
 	}
 
 	.delete-btn {
@@ -626,6 +732,15 @@
 		padding: 0 30rpx;
 		border-radius: 35rpx;
 		font-size: 28rpx;
+		transition: all 0.3s;
+	}
+
+	.checkout-btn.disabled,
+	.checkout-btn:disabled {
+		background-color: #cccccc;
+		color: #999999;
+		opacity: 0.6;
+		cursor: not-allowed;
 	}
 
 	.empty-cart {
