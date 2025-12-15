@@ -230,7 +230,7 @@ export default {
       }
       
       let checkCount = 0
-      const maxChecks = 15 // 最多检查15次（约30秒，因为每2秒检查一次）
+      const maxChecks = 20 // 最多检查20次（约40秒，因为每2秒检查一次）
       
       // 延迟启动轮询，给 success 回调一些时间（真机环境通常1-2秒内就会触发）
       setTimeout(() => {

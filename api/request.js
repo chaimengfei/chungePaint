@@ -66,6 +66,13 @@ export const request = (options) => {
       ...requestOptions,
       success: (res) => {
         console.log(`API响应 - ${method} ${url}`, res)
+        // 统一处理 401 错误（token 无效或过期）
+        if (res.statusCode === 401 || (res.data && res.data.code === -1 && res.data.message && res.data.message.includes('token'))) {
+          // 清除无效的 token 和用户信息
+          uni.removeStorageSync('token')
+          uni.removeStorageSync('userInfo')
+          console.warn(`API请求 - ${method} ${url} - token 无效或已过期，已清除登录状态`)
+        }
         resolve(res)
       },
       fail: (err) => {

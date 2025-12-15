@@ -116,8 +116,17 @@ export default {
     // 购物车徽标只在用户点击购物车图标时更新
     // 如果已登录，刷新余额信息
     const token = uni.getStorageSync('token')
-    if (token && this.isLogin) {
+    const userInfo = uni.getStorageSync('userInfo')
+    // 只有当 token 和 userInfo 都存在，且页面状态显示已登录时，才加载余额
+    if (token && userInfo && this.isLogin) {
       this.loadUserBalance()
+    } else if (!token || !userInfo) {
+      // 如果本地没有 token 或 userInfo，但页面状态显示已登录，则更新状态
+      if (this.isLogin) {
+        this.isLogin = false
+        this.userInfo = {}
+        this.userBalance = 0
+      }
     }
   },
   onShareAppMessage() {
@@ -618,15 +627,89 @@ export default {
     
     // 加载用户余额
     async loadUserBalance() {
+      // 先检查是否有 token，如果没有则直接返回
+      const token = uni.getStorageSync('token')
+      if (!token) {
+        console.log('未登录，跳过加载用户余额')
+        this.userBalance = 0
+        return
+      }
+      
       try {
         const res = await getUserBalance()
         if (res.statusCode === 200 && res.data.code === 0) {
           this.userBalance = parseFloat(res.data.data.balance || 0)
           console.log('用户余额:', this.userBalance)
+        } else if (res.statusCode === 401 || (res.data && res.data.code === -1 && res.data.message && res.data.message.includes('token'))) {
+          // token 无效或已过期，清除登录状态并提示用户
+          this.handleTokenExpired()
         }
       } catch (err) {
         console.warn('获取用户余额失败:', err)
+        // 如果是 401 错误，清除登录状态并提示用户
+        if (err.statusCode === 401 || (err.data && err.data.message && err.data.message.includes('token'))) {
+          this.handleTokenExpired()
+        }
         this.userBalance = 0
+      }
+    },
+    
+    // 处理 token 过期
+    handleTokenExpired() {
+      console.warn('token 无效或已过期，清除登录状态')
+      uni.removeStorageSync('token')
+      uni.removeStorageSync('userInfo')
+      this.isLogin = false
+      this.userInfo = {}
+      this.userBalance = 0
+      
+      // 检查是否之前登录过（有 hasStoredUserInfo 标记）
+      const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
+      
+      if (hasStoredUserInfo) {
+        // 之前登录过，尝试自动重新登录
+        uni.showModal({
+          title: '登录已过期',
+          content: '您的登录已过期，是否重新登录？',
+          confirmText: '重新登录',
+          cancelText: '稍后',
+          success: (res) => {
+            if (res.confirm) {
+              // 用户确认，跳转到登录页面（会自动重新登录）
+              uni.navigateTo({
+                url: '/pages/user/login'
+              })
+            } else {
+              // 用户取消，显示提示
+              uni.showToast({
+                title: '部分功能需要登录后使用',
+                icon: 'none',
+                duration: 2000
+              })
+            }
+          }
+        })
+      } else {
+        // 首次使用，提示需要登录
+        uni.showModal({
+          title: '需要登录',
+          content: '查看余额等功能需要登录，是否前往登录？',
+          confirmText: '去登录',
+          cancelText: '稍后',
+          success: (res) => {
+            if (res.confirm) {
+              uni.navigateTo({
+                url: '/pages/user/login'
+              })
+            } else {
+              uni.showToast({
+                title: '部分功能需要登录后使用',
+                icon: 'none',
+                duration: 2000
+              })
+            }
+          }
+        })
       }
     }
   }

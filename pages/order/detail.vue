@@ -58,10 +58,6 @@
           <text>商品总额</text>
           <text>¥{{ order.total_amount }}</text>
         </view>
-        <view class="amount-row">
-          <text>运费</text>
-          <text>¥{{ order.shipping_fee || 0 }}</text>
-        </view>
         <view class="amount-row total-row">
           <text>实付金额</text>
           <text>¥{{ order.payment_amount }}</text>
