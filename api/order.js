@@ -55,13 +55,13 @@ export const payOrder = (data) => {
 }
 
 /**
- * 支付数据接口
- * @param {Object} data 
- * @param {string} data.code - 微信登录code
+ * 组合支付接口（后端自动判断余额/微信）
+ * @param {Object} data
+ * @param {string} [data.code] - 微信登录code（余额不足时使用）
  * @param {string} data.order_no - 订单号
- * @param {number} data.total - 支付总金额（元）
- * @param {string} data.note - 备注信息
+ * @param {number} [data.total] - 支付总金额，可选校验
+ * @param {string} [data.note] - 备注
  */
-export const payData = (data) => {
-  return post('/api/pay/data', data)
+export const payCombined = (data) => {
+  return post('/api/pay/combined', data)
 }

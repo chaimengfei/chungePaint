@@ -8,7 +8,8 @@
         </view>
       </view>
       <text class="success-title">支付成功</text>
-      <text class="success-amount" v-if="paymentAmount">¥{{ paymentAmount }}</text>
+      <text class="success-order-no" v-if="orderNo">订单号：{{ orderNo }}</text>
+      <text class="success-amount" v-if="displayAmount">{{ displayAmount }}</text>
     </view>
 
     <!-- 订单信息卡片 -->
@@ -44,6 +45,17 @@ export default {
       orderNo: '',
       paymentAmount: '',
       orderInfo: null
+    }
+  },
+  computed: {
+    displayAmount() {
+      if (this.orderInfo && this.orderInfo.pay_summary) {
+        return this.orderInfo.pay_summary
+      }
+      if (this.paymentAmount) {
+        return `¥${this.paymentAmount}`
+      }
+      return ''
     }
   },
   onLoad(options) {
@@ -84,6 +96,9 @@ export default {
     }
   }
 }
+</script>
+
+<script setup>
 </script>
 
 <style scoped>
@@ -137,6 +152,12 @@ export default {
   font-size: 36rpx;
   color: #666;
   margin-top: 10rpx;
+}
+
+.success-order-no {
+  margin-top: 8rpx;
+  font-size: 28rpx;
+  color: #888;
 }
 
 /* 订单信息卡片 */
