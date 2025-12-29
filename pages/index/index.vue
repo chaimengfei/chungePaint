@@ -90,6 +90,7 @@ import { addToCart as addToCartApi, getCartList } from '@/api/cart.js'
 import { checkoutOrder } from '@/api/order.js'
 import { goLogin } from '@/api/user.js'
 import { onBalanceChange, initBalance, refreshBalance, clearBalance } from '@/api/balance.js'
+import { getNearestShop } from '@/api/common.js'
 
 export default {
   data() {
@@ -168,7 +169,7 @@ export default {
         const userInfo = uni.getStorageSync('userInfo')
         
         if (token && userInfo) {
-          // 已登录，直接加载商品数据
+          // 已登录，直接加载商品数据（后端根据Authorization自动返回对应店铺的商品）
           this.isLogin = true
           this.userInfo = userInfo
           console.log('用户已登录，直接加载商品数据')
@@ -176,11 +177,27 @@ export default {
           await initBalance()
           await this.fetchData()
         } else {
-          // 首次登录，只获取位置信息，不调用登录接口
-          console.log('首次登录，只获取位置信息')
+          // 未登录，需要获取位置信息并计算店铺
+          console.log('未登录，获取位置信息并计算店铺')
           await this.getLocationOnly()
-          // 直接加载商品数据（商品列表不需要登录）
-          await this.fetchData()
+          
+          // 根据位置计算店铺ID
+          const location = uni.getStorageSync('location')
+          let shopId = null
+          if (location && location.latitude && location.longitude) {
+            shopId = getNearestShop(location.latitude, location.longitude)
+            // 存储当前店铺ID（可选，用于后续使用）
+            uni.setStorageSync('currentShopId', shopId)
+            console.log('计算得到店铺ID:', shopId)
+          } else {
+            // 如果位置获取失败，使用默认店铺（第一个店铺）
+            shopId = 1 // 默认使用第一个店铺
+            uni.setStorageSync('currentShopId', shopId)
+            console.warn('位置信息无效，使用默认店铺ID:', shopId)
+          }
+          
+          // 加载商品数据，传递店铺ID
+          await this.fetchData(shopId)
         }
       } catch (error) {
         console.error('页面初始化失败:', error)
@@ -315,9 +332,11 @@ export default {
       }
     },
     
-    async fetchData() {
+    async fetchData(shopId = null) {
       try {
-        const res = await getProductList()
+        // 如果传了shopId，说明是未登录用户
+        // 如果没传shopId，说明是已登录用户（后端根据Authorization判断）
+        const res = await getProductList('', shopId)
         this.categories = res.categories
         this.products = res.products
         
@@ -539,8 +558,26 @@ export default {
       this.isSearching = true
       
       try {
+        // 确定店铺ID（未登录用户需要传shop_id）
+        const token = uni.getStorageSync('token')
+        let shopId = null
+        if (!token) {
+          // 未登录用户：从缓存获取店铺ID，如果没有则重新计算
+          shopId = uni.getStorageSync('currentShopId')
+          if (!shopId) {
+            const location = uni.getStorageSync('location')
+            if (location && location.latitude && location.longitude) {
+              shopId = getNearestShop(location.latitude, location.longitude)
+            } else {
+              shopId = 1 // 默认使用第一个店铺
+            }
+            uni.setStorageSync('currentShopId', shopId)
+          }
+        }
+        // 已登录用户：不需要传shopId，后端根据Authorization自动判断
+        
         // 调用后端API进行搜索
-        const res = await getProductList(this.searchKeyword)
+        const res = await getProductList(this.searchKeyword, shopId)
         
         console.log('搜索关键词:', this.searchKeyword)
         console.log('搜索API返回数据:', res)
@@ -610,7 +647,24 @@ export default {
       } else {
         // 如果没有原始数据，重新加载
         try {
-          const res = await getProductList()
+          // 确定店铺ID（未登录用户需要传shop_id）
+          const token = uni.getStorageSync('token')
+          let shopId = null
+          if (!token) {
+            shopId = uni.getStorageSync('currentShopId')
+            if (!shopId) {
+              const location = uni.getStorageSync('location')
+              if (location && location.latitude && location.longitude) {
+                shopId = getNearestShop(location.latitude, location.longitude)
+              } else {
+                shopId = 1 // 默认使用第一个店铺
+              }
+              uni.setStorageSync('currentShopId', shopId)
+            }
+          }
+          // 已登录用户：不需要传shopId，后端根据Authorization自动判断
+          
+          const res = await getProductList('', shopId)
           this.categories = res.categories || []
           this.products = res.products || {}
           

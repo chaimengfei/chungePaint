@@ -42,3 +42,73 @@ export const ENV_SWITCH_GUIDE = `
 3. 当前环境: ${CURRENT_ENV} (${currentConfig.name})
 4. 当前BASE_URL: ${currentConfig.BASE_URL}
 `
+
+// 店铺信息（硬编码）
+export const SHOPS = [
+  {
+    id: 1,
+    name: '燕郊店',
+    latitude: 39.9042,
+    longitude: 116.4074
+  },
+  {
+    id: 2,
+    name: '涞水店',
+    latitude: 39.3908,
+    longitude: 115.7119
+  }
+]
+
+/**
+ * 计算两点之间的距离（单位：公里）
+ * 使用 Haversine 公式
+ * @param {number} lat1 点1纬度
+ * @param {number} lon1 点1经度
+ * @param {number} lat2 点2纬度
+ * @param {number} lon2 点2经度
+ * @returns {number} 距离（公里）
+ */
+export function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371 // 地球半径（公里）
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+/**
+ * 根据经纬度确定最近的店铺
+ * @param {number} latitude 用户纬度
+ * @param {number} longitude 用户经度
+ * @returns {number} 店铺ID
+ */
+export function getNearestShop(latitude, longitude) {
+  if (!latitude || !longitude) {
+    // 如果位置信息无效，返回第一个店铺（默认店铺）
+    console.warn('位置信息无效，使用默认店铺')
+    return SHOPS[0].id
+  }
+  
+  let minDistance = Infinity
+  let nearestShopId = SHOPS[0].id // 默认返回第一个店铺
+  
+  for (const shop of SHOPS) {
+    const distance = calculateDistance(
+      latitude, 
+      longitude, 
+      shop.latitude, 
+      shop.longitude
+    )
+    if (distance < minDistance) {
+      minDistance = distance
+      nearestShopId = shop.id
+    }
+  }
+  
+  console.log(`用户位置: (${latitude}, ${longitude}), 最近店铺ID: ${nearestShopId}, 距离: ${minDistance.toFixed(2)}km`)
+  return nearestShopId
+}
