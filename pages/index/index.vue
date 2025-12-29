@@ -88,7 +88,8 @@
 import { getProductList } from '@/api/product.js'
 import { addToCart as addToCartApi, getCartList } from '@/api/cart.js'
 import { checkoutOrder } from '@/api/order.js'
-import { goLogin, getUserBalance } from '@/api/user.js'
+import { goLogin } from '@/api/user.js'
+import { onBalanceChange, initBalance, refreshBalance, clearBalance } from '@/api/balance.js'
 
 export default {
   data() {
@@ -99,7 +100,7 @@ export default {
       currentProducts: [],    // 当前显示的商品列表
       isLogin: false,         // 登录状态
       userInfo: {},           // 用户信息
-      userBalance: 0,         // 用户余额
+      userBalance: 0,         // 用户余额（从全局状态同步）
       currentTime: '09:16',   // 当前时间
       searchKeyword: '',      // 搜索关键词
       isSearching: false,     // 是否正在搜索
@@ -108,24 +109,36 @@ export default {
     }
   },
   onLoad() {
+    // 设置余额监听器
+    this.unsubscribeBalance = onBalanceChange((balance) => {
+      this.userBalance = balance
+    })
+    
     // 先进行登录，登录成功后再加载商品数据
     this.initPage()
+  },
+  onUnload() {
+    // 清理余额监听器
+    if (this.unsubscribeBalance) {
+      this.unsubscribeBalance()
+    }
   },
   onShow() {
     // 首页显示时不再自动更新购物车徽标
     // 购物车徽标只在用户点击购物车图标时更新
-    // 如果已登录，刷新余额信息
+    // 如果已登录，刷新余额信息（使用全局状态管理，自动去重）
     const token = uni.getStorageSync('token')
     const userInfo = uni.getStorageSync('userInfo')
-    // 只有当 token 和 userInfo 都存在，且页面状态显示已登录时，才加载余额
+    // 只有当 token 和 userInfo 都存在，且页面状态显示已登录时，才刷新余额
     if (token && userInfo && this.isLogin) {
-      this.loadUserBalance()
+      // 使用全局余额管理，自动处理请求去重
+      refreshBalance()
     } else if (!token || !userInfo) {
       // 如果本地没有 token 或 userInfo，但页面状态显示已登录，则更新状态
       if (this.isLogin) {
         this.isLogin = false
         this.userInfo = {}
-        this.userBalance = 0
+        clearBalance() // 清除全局余额
       }
     }
   },
@@ -159,8 +172,8 @@ export default {
           this.isLogin = true
           this.userInfo = userInfo
           console.log('用户已登录，直接加载商品数据')
-          // 加载用户余额
-          await this.loadUserBalance()
+          // 初始化余额（使用全局状态管理，自动处理请求去重）
+          await initBalance()
           await this.fetchData()
         } else {
           // 首次登录，只获取位置信息，不调用登录接口
@@ -286,8 +299,8 @@ export default {
           this.isLogin = true
           this.userInfo = user_info
           
-          // 登录成功后加载余额
-          await this.loadUserBalance()
+          // 登录成功后刷新余额（使用全局状态管理，自动处理请求去重）
+          await refreshBalance()
           
           console.log('自动登录成功:', user_info)
           
@@ -625,35 +638,6 @@ export default {
       }
     },
     
-    // 加载用户余额
-    async loadUserBalance() {
-      // 先检查是否有 token，如果没有则直接返回
-      const token = uni.getStorageSync('token')
-      if (!token) {
-        console.log('未登录，跳过加载用户余额')
-        this.userBalance = 0
-        return
-      }
-      
-      try {
-        const res = await getUserBalance()
-        if (res.statusCode === 200 && res.data.code === 0) {
-          this.userBalance = parseFloat(res.data.data.balance || 0)
-          console.log('用户余额:', this.userBalance)
-        } else if (res.statusCode === 401 || (res.data && res.data.code === -1 && res.data.message && res.data.message.includes('token'))) {
-          // token 无效或已过期，清除登录状态并提示用户
-          this.handleTokenExpired()
-        }
-      } catch (err) {
-        console.warn('获取用户余额失败:', err)
-        // 如果是 401 错误，清除登录状态并提示用户
-        if (err.statusCode === 401 || (err.data && err.data.message && err.data.message.includes('token'))) {
-          this.handleTokenExpired()
-        }
-        this.userBalance = 0
-      }
-    },
-    
     // 处理 token 过期
     handleTokenExpired() {
       console.warn('token 无效或已过期，清除登录状态')
@@ -661,7 +645,7 @@ export default {
       uni.removeStorageSync('userInfo')
       this.isLogin = false
       this.userInfo = {}
-      this.userBalance = 0
+      clearBalance() // 清除全局余额
       
       // 检查是否之前登录过（有 hasStoredUserInfo 标记）
       const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')

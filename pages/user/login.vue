@@ -40,6 +40,7 @@
 
 <script>
 	import { goLogin } from '@/api/user.js'
+	import { refreshBalance } from '@/api/balance.js'
 	export default {
 	  data() {
 		return {
@@ -182,6 +183,9 @@
 			uni.setStorageSync('userInfo', user_info)
 			uni.setStorageSync('hasStoredUserInfo', true)
 
+			// 登录成功后刷新余额（使用全局状态管理，自动处理请求去重）
+			await refreshBalance()
+
 			uni.hideLoading()
 			uni.showToast({ title: '注册成功', icon: 'success' })
 
@@ -244,6 +248,9 @@
 			// 存储登录信息
 			uni.setStorageSync('token', token)
 			uni.setStorageSync('userInfo', user_info)
+
+			// 登录成功后刷新余额（使用全局状态管理，自动处理请求去重）
+			await refreshBalance()
 
 			uni.hideLoading()
 			uni.showToast({ title: '登录成功', icon: 'success' })

@@ -78,6 +78,7 @@
 import { checkoutOrder, payCombined, getOrderDetail } from '@/api/order.js'
 import { ENV_INFO } from '@/api/common.js'
 import { getAddressList } from '@/api/address.js'
+import { refreshBalance } from '@/api/balance.js'
 
 export default {
   data() {
@@ -277,6 +278,12 @@ export default {
                   // 先关闭loading
                   this.submitting = false
                   uni.hideLoading()
+                  
+                  // 支付成功后刷新余额（强制刷新，确保获取最新余额）
+                  refreshBalance(true).catch(err => {
+                    console.warn('刷新余额失败:', err)
+                  })
+                  
                   // 延迟跳转，给用户时间关闭二维码弹窗（开发者工具环境）
                   setTimeout(() => {
                     uni.redirectTo({
@@ -359,6 +366,12 @@ export default {
             this.paymentSuccessHandled = true
             this.submitting = false
             uni.hideLoading()
+            
+            // 余额支付成功后刷新余额（强制刷新，确保获取最新余额）
+            refreshBalance(true).catch(err => {
+              console.warn('刷新余额失败:', err)
+            })
+            
             uni.redirectTo({
               url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
             })
@@ -392,6 +405,12 @@ export default {
                   }
                   this.submitting = false
                   uni.hideLoading()
+                  
+                  // 支付成功后刷新余额（强制刷新，确保获取最新余额）
+                  refreshBalance(true).catch(err => {
+                    console.warn('刷新余额失败:', err)
+                  })
+                  
                   setTimeout(() => {
                     uni.redirectTo({
                       url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
