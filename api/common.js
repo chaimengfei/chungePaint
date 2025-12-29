@@ -112,3 +112,34 @@ export function getNearestShop(latitude, longitude) {
   console.log(`用户位置: (${latitude}, ${longitude}), 最近店铺ID: ${nearestShopId}, 距离: ${minDistance.toFixed(2)}km`)
   return nearestShopId
 }
+
+/**
+ * 店铺ID缓存有效期（7天）
+ */
+const SHOP_ID_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000 // 7天（毫秒）
+
+/**
+ * 检查店铺ID缓存是否过期
+ * @returns {boolean} true表示过期或不存在，false表示有效
+ */
+export function isShopIdExpired() {
+  const shopIdCache = uni.getStorageSync('shopIdCache')
+  if (!shopIdCache || !shopIdCache.timestamp) {
+    // 没有店铺ID缓存或没有时间戳，需要重新获取
+    return true
+  }
+  
+  const now = Date.now()
+  const elapsed = now - shopIdCache.timestamp
+  
+  if (elapsed > SHOP_ID_EXPIRE_TIME) {
+    // 店铺ID缓存已过期
+    console.log(`店铺ID缓存已过期，已过去 ${Math.floor(elapsed / (24 * 60 * 60 * 1000))} 天`)
+    return true
+  }
+  
+  // 店铺ID缓存仍然有效
+  const remainingDays = Math.floor((SHOP_ID_EXPIRE_TIME - elapsed) / (24 * 60 * 60 * 1000))
+  console.log(`店铺ID缓存有效，剩余 ${remainingDays} 天`)
+  return false
+}

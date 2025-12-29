@@ -41,6 +41,7 @@
 <script>
 	import { goLogin } from '@/api/user.js'
 	import { refreshBalance } from '@/api/balance.js'
+	import { getNearestShop } from '@/api/common.js'
 	export default {
 	  data() {
 		return {
@@ -126,13 +127,13 @@
 			const code = loginRes.code
 			if (!code) throw new Error("无法获取微信登录 code")
 
-			// 使用之前存储的位置信息，如果没有则使用默认值
-			let latitude = 39.9042
-			let longitude = 116.4074
-			const storedLocation = uni.getStorageSync('location')
-			if (storedLocation) {
-			  latitude = storedLocation.latitude
-			  longitude = storedLocation.longitude
+			// 获取店铺ID（从缓存中获取，如果没有则使用默认值）
+			const shopIdCache = uni.getStorageSync('shopIdCache')
+			let shopId = shopIdCache ? shopIdCache.shopId : null
+			if (!shopId) {
+			  // 如果没有店铺ID，使用默认店铺
+			  shopId = 1 // 默认使用第一个店铺
+			  console.warn('登录时未找到店铺ID缓存，使用默认店铺')
 			}
 
 			// 处理用户信息
@@ -150,15 +151,14 @@
 			  finalAvatar = '/static/images/default-avatar.png'
 			}
 
-			// 构建登录数据
+			// 构建登录数据（使用shop_id替代latitude和longitude）
 			const loginData = {
 			  code: code,
 			  encryptedData: this.phoneAuth.encryptedData,
 			  iv: this.phoneAuth.iv,
 			  nickname: nickname,
 			  avatar: finalAvatar,
-			  latitude: latitude,
-			  longitude: longitude
+			  shop_id: shopId
 			}
 			
 			if (this.phoneAuth.phoneCode) {
@@ -182,6 +182,10 @@
 			uni.setStorageSync('token', token)
 			uni.setStorageSync('userInfo', user_info)
 			uni.setStorageSync('hasStoredUserInfo', true)
+			
+			// 登录成功后，清除shopIdCache（因为后端已经有了用户的店铺信息）
+			// 以后登录只需要传code，不需要传shop_id
+			uni.removeStorageSync('shopIdCache')
 
 			// 登录成功后刷新余额（使用全局状态管理，自动处理请求去重）
 			await refreshBalance()
@@ -218,22 +222,11 @@
 			const code = loginRes.code
 			if (!code) throw new Error("无法获取微信登录 code")
 
-			// 获取地理位置（从存储中获取或使用默认值）
-			let latitude = 39.9042
-			let longitude = 116.4074
-			const storedLocation = uni.getStorageSync('location')
-			if (storedLocation) {
-			  latitude = storedLocation.latitude
-			  longitude = storedLocation.longitude
-			}
-
-			// 非首次登录传递code和位置信息
+			// 非首次登录只传递code（后端已经知道用户的店铺信息）
 			const loginData = { 
-			  code: code,
-			  latitude: latitude,
-			  longitude: longitude
+			  code: code
 			}
-			console.log('非首次登录，传递code和位置信息')
+			console.log('非首次登录，只传递code')
 
 			const loginApiRes = await goLogin(loginData)
 			const { token, user_id, nickname: backendNickname, avatar: backendAvatar } = loginApiRes.data.data
@@ -248,6 +241,10 @@
 			// 存储登录信息
 			uni.setStorageSync('token', token)
 			uni.setStorageSync('userInfo', user_info)
+			
+			// 登录成功后，清除shopIdCache（因为后端已经有了用户的店铺信息）
+			// 以后登录只需要传code，不需要传shop_id
+			uni.removeStorageSync('shopIdCache')
 
 			// 登录成功后刷新余额（使用全局状态管理，自动处理请求去重）
 			await refreshBalance()

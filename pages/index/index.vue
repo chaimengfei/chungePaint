@@ -90,7 +90,7 @@ import { addToCart as addToCartApi, getCartList } from '@/api/cart.js'
 import { checkoutOrder } from '@/api/order.js'
 import { goLogin } from '@/api/user.js'
 import { onBalanceChange, initBalance, refreshBalance, clearBalance } from '@/api/balance.js'
-import { getNearestShop } from '@/api/common.js'
+import { getNearestShop, isShopIdExpired } from '@/api/common.js'
 
 export default {
   data() {
@@ -178,22 +178,34 @@ export default {
           await this.fetchData()
         } else {
           // 未登录，需要获取位置信息并计算店铺
-          console.log('未登录，获取位置信息并计算店铺')
-          await this.getLocationOnly()
+          console.log('未登录，检查店铺ID缓存')
           
-          // 根据位置计算店铺ID
-          const location = uni.getStorageSync('location')
           let shopId = null
-          if (location && location.latitude && location.longitude) {
-            shopId = getNearestShop(location.latitude, location.longitude)
-            // 存储当前店铺ID（可选，用于后续使用）
-            uni.setStorageSync('currentShopId', shopId)
-            console.log('计算得到店铺ID:', shopId)
+          
+          // 检查店铺ID缓存是否过期
+          if (isShopIdExpired()) {
+            // 店铺ID缓存过期或不存在，需要重新获取位置并计算
+            console.log('店铺ID缓存已过期或不存在，重新获取位置并计算')
+            await this.getLocationOnly()
+            // 从缓存中获取计算好的店铺ID
+            const shopIdCache = uni.getStorageSync('shopIdCache')
+            shopId = shopIdCache ? shopIdCache.shopId : null
           } else {
-            // 如果位置获取失败，使用默认店铺（第一个店铺）
+            // 店铺ID缓存仍然有效，直接使用
+            const shopIdCache = uni.getStorageSync('shopIdCache')
+            shopId = shopIdCache ? shopIdCache.shopId : null
+            console.log('使用缓存的店铺ID:', shopId)
+          }
+          
+          // 如果还是没有shop_id，使用默认店铺
+          if (!shopId) {
             shopId = 1 // 默认使用第一个店铺
-            uni.setStorageSync('currentShopId', shopId)
-            console.warn('位置信息无效，使用默认店铺ID:', shopId)
+            // 存储默认店铺ID（带时间戳）
+            uni.setStorageSync('shopIdCache', {
+              shopId: shopId,
+              timestamp: Date.now()
+            })
+            console.warn('店铺ID无效，使用默认店铺ID:', shopId)
           }
           
           // 加载商品数据，传递店铺ID
@@ -206,7 +218,7 @@ export default {
       }
     },
     
-    // 首次登录时只获取位置信息（不调用登录接口）
+    // 获取位置信息并计算店铺ID（不调用登录接口）
     async getLocationOnly() {
       try {
         const locationRes = await new Promise((resolve, reject) => {
@@ -215,27 +227,39 @@ export default {
             success: resolve,
             fail: (err) => {
               console.warn('获取地理位置失败:', err)
-              // 如果获取地理位置失败，使用默认值
-              resolve({
-                latitude: 39.9042,  // 北京默认纬度
-                longitude: 116.4074  // 北京默认经度
-              })
+              // 获取位置失败，返回null，后续使用默认店铺ID
+              resolve(null)
             }
           })
         })
         
-        // 存储位置信息（用于后续登录时使用）
-        uni.setStorageSync('location', {
-          latitude: locationRes.latitude,
-          longitude: locationRes.longitude
+        let shopId = null
+        
+        if (locationRes && locationRes.latitude && locationRes.longitude) {
+          // 成功获取位置，根据位置计算店铺ID
+          shopId = getNearestShop(locationRes.latitude, locationRes.longitude)
+          console.log('已获取位置信息并计算店铺ID:', {
+            location: locationRes,
+            shopId: shopId,
+            timestamp: new Date().toLocaleString()
+          })
+        } else {
+          // 获取位置失败，使用默认店铺ID
+          shopId = 1 // 默认使用第一个店铺
+          console.warn('获取位置信息失败，使用默认店铺ID:', shopId)
+        }
+        
+        // 存储店铺ID和时间戳
+        uni.setStorageSync('shopIdCache', {
+          shopId: shopId,
+          timestamp: Date.now()
         })
-        console.log('首次登录，已获取位置信息:', locationRes)
       } catch (err) {
-        console.warn('获取位置信息失败:', err)
-        // 使用默认位置
-        uni.setStorageSync('location', {
-          latitude: 39.9042,
-          longitude: 116.4074
+        console.warn('获取位置信息异常:', err)
+        // 异常情况，使用默认店铺ID
+        uni.setStorageSync('shopIdCache', {
+          shopId: 1, // 默认使用第一个店铺
+          timestamp: Date.now()
         })
       }
     },
@@ -263,35 +287,20 @@ export default {
         const nickname = '微信用户'
         const avatar = '/static/images/default-avatar.png'
         
-        // 获取地理位置（从存储中获取或重新获取）
-        let latitude = 39.9042
-        let longitude = 116.4074
-        const storedLocation = uni.getStorageSync('location')
-        if (storedLocation) {
-          latitude = storedLocation.latitude
-          longitude = storedLocation.longitude
-        } else {
-          try {
-            const locationRes = await new Promise((resolve, reject) => {
-              uni.getLocation({
-                type: 'gcj02',
-                success: resolve,
-                fail: reject
-              })
-            })
-            latitude = locationRes.latitude
-            longitude = locationRes.longitude
-          } catch (err) {
-            console.warn('获取地理位置失败，使用默认值:', err)
-          }
+        // 获取店铺ID（从缓存中获取，如果没有则使用默认值）
+        const shopIdCache = uni.getStorageSync('shopIdCache')
+        let shopId = shopIdCache ? shopIdCache.shopId : null
+        if (!shopId) {
+          // 如果没有店铺ID，使用默认店铺
+          shopId = 1 // 默认使用第一个店铺
+          console.warn('登录时未找到店铺ID缓存，使用默认店铺')
         }
 
         const loginData = {
           code: code,
           nickname: nickname,
           avatar: avatar,
-          latitude: latitude,
-          longitude: longitude
+          shop_id: shopId
         }
 
         console.log('调用登录接口，数据:', loginData)
@@ -311,6 +320,10 @@ export default {
           uni.setStorageSync('token', token)
           uni.setStorageSync('userInfo', user_info)
           uni.setStorageSync('hasStoredUserInfo', true)
+          
+          // 登录成功后，清除shopIdCache（因为后端已经有了用户的店铺信息）
+          // 以后登录只需要传code，不需要传shop_id
+          uni.removeStorageSync('shopIdCache')
 
           // 更新页面状态
           this.isLogin = true
@@ -562,16 +575,14 @@ export default {
         const token = uni.getStorageSync('token')
         let shopId = null
         if (!token) {
-          // 未登录用户：从缓存获取店铺ID，如果没有则重新计算
-          shopId = uni.getStorageSync('currentShopId')
+          // 未登录用户：从缓存获取店铺ID
+          const shopIdCache = uni.getStorageSync('shopIdCache')
+          shopId = shopIdCache ? shopIdCache.shopId : null
           if (!shopId) {
-            const location = uni.getStorageSync('location')
-            if (location && location.latitude && location.longitude) {
-              shopId = getNearestShop(location.latitude, location.longitude)
-            } else {
-              shopId = 1 // 默认使用第一个店铺
-            }
-            uni.setStorageSync('currentShopId', shopId)
+            // 如果缓存中没有shop_id，使用默认店铺
+            // （正常情况下，initPage中已经获取了位置和shop_id）
+            shopId = 1 // 默认使用第一个店铺
+            console.warn('搜索时未找到店铺ID，使用默认店铺')
           }
         }
         // 已登录用户：不需要传shopId，后端根据Authorization自动判断
@@ -651,15 +662,14 @@ export default {
           const token = uni.getStorageSync('token')
           let shopId = null
           if (!token) {
-            shopId = uni.getStorageSync('currentShopId')
+            // 未登录用户：从缓存获取店铺ID
+            const shopIdCache = uni.getStorageSync('shopIdCache')
+            shopId = shopIdCache ? shopIdCache.shopId : null
             if (!shopId) {
-              const location = uni.getStorageSync('location')
-              if (location && location.latitude && location.longitude) {
-                shopId = getNearestShop(location.latitude, location.longitude)
-              } else {
-                shopId = 1 // 默认使用第一个店铺
-              }
-              uni.setStorageSync('currentShopId', shopId)
+              // 如果缓存中没有shop_id，使用默认店铺
+              // （正常情况下，initPage中已经获取了位置和shop_id）
+              shopId = 1 // 默认使用第一个店铺
+              console.warn('清空搜索时未找到店铺ID，使用默认店铺')
             }
           }
           // 已登录用户：不需要传shopId，后端根据Authorization自动判断
