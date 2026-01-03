@@ -45,6 +45,15 @@
     <view class="product-container">
       <!-- 左侧分类栏 -->
       <scroll-view class="category-list" scroll-y>
+        <!-- 热销分类（固定显示在最前面） -->
+        <view 
+          class="category-item"
+          :class="{ active: activeCategory === 100 }"
+          @click="changeCategory(100)"
+        >
+          热销
+        </view>
+        <!-- 其他分类 -->
         <view 
           v-for="item in categories" 
           :key="item.id"
@@ -57,7 +66,12 @@
       </scroll-view>
       
       <!-- 右侧商品列表 -->
-      <scroll-view class="product-list" scroll-y>
+      <scroll-view 
+        class="product-list" 
+        scroll-y
+        @scrolltolower="loadMore"
+        :lower-threshold="100"
+      >
       <view v-if="currentProducts && currentProducts.length > 0">
         <view 
           v-for="product in currentProducts" 
@@ -74,6 +88,13 @@
               <button class="buy-btn" @click="buyNow(product)">立即购买</button>
             </view>
           </view>
+        </view>
+        <!-- 加载更多提示 -->
+        <view v-if="isLoading" class="loading-more">
+          <text>加载中...</text>
+        </view>
+        <view v-else-if="!hasMore && currentProducts.length > 0" class="no-more">
+          <text>没有更多商品了</text>
         </view>
       </view>
       <view v-else class="empty">
@@ -96,7 +117,7 @@ export default {
   data() {
     return {
       categories: [],         // 分类列表
-      products: {},           // 所有商品
+      products: [],          // 当前页商品列表（新接口返回的是数组）
       activeCategory: null,   // 当前选中的分类ID
       currentProducts: [],    // 当前显示的商品列表
       isLogin: false,         // 登录状态
@@ -106,7 +127,13 @@ export default {
       searchKeyword: '',      // 搜索关键词
       isSearching: false,     // 是否正在搜索
       originalCategories: null, // 原始分类数据（用于搜索后恢复）
-      originalProducts: null    // 原始商品数据（用于搜索后恢复）
+      originalProducts: null,   // 原始商品数据（用于搜索后恢复）
+      // 分页相关
+      currentPage: 1,         // 当前页码
+      pageSize: 20,           // 每页数量
+      hasMore: false,         // 是否还有更多商品
+      total: 0,               // 总商品数
+      isLoading: false        // 是否正在加载
     }
   },
   onLoad() {
@@ -208,8 +235,8 @@ export default {
             console.warn('店铺ID无效，使用默认店铺ID:', shopId)
           }
           
-          // 加载商品数据，传递店铺ID
-          await this.fetchData(shopId)
+          // 加载商品数据，传递店铺ID（首次加载使用热销分类，category_id=100）
+          await this.fetchData(shopId, 100, 1)
         }
       } catch (error) {
         console.error('页面初始化失败:', error)
@@ -345,34 +372,80 @@ export default {
       }
     },
     
-    async fetchData(shopId = null) {
+    async fetchData(shopId = null, categoryId = null, page = 1) {
       try {
+        this.isLoading = true
+        
         // 如果传了shopId，说明是未登录用户
         // 如果没传shopId，说明是已登录用户（后端根据Authorization判断）
-        const res = await getProductList('', shopId)
-        this.categories = res.categories
-        this.products = res.products
+        // 新接口支持分页和分类筛选
+        // 确定分类ID：优先使用传入的categoryId，否则使用当前选中的分类，默认使用热销分类(100)
+        const finalCategoryId = categoryId !== null ? categoryId : (this.activeCategory || 100)
         
-        // 保存原始数据（用于搜索后恢复）
-        this.originalCategories = res.categories
-        this.originalProducts = res.products
+        const res = await getProductList({
+          searchName: '',
+          shopId: shopId,
+          categoryId: finalCategoryId,
+          page: page,
+          pageSize: this.pageSize
+        })
         
-        // 默认选中第一个分类
-        if (this.categories.length > 0) {
-          this.activeCategory = this.categories[0].id
-          this.currentProducts = this.products[this.activeCategory] || []
+        // 新接口返回结构: {categories: [], products: [], has_more, total, page, page_size, current_category}
+        this.categories = res.categories || []
+        this.hasMore = res.has_more || false
+        this.total = res.total || 0
+        this.currentPage = res.page || page
+        
+        // 如果是第一页，直接替换；如果是加载更多，追加到现有列表
+        if (page === 1) {
+          this.products = res.products || []
+        } else {
+          // 加载更多，追加商品
+          this.products = [...this.products, ...(res.products || [])]
         }
+        
+        // 保存原始数据（用于搜索后恢复，只在首次加载且是热销分类时保存）
+        if (page === 1 && finalCategoryId === 100) {
+          this.originalCategories = res.categories || []
+          this.originalProducts = res.products || []
+        }
+        
+        // 更新当前显示的商品列表
+        this.currentProducts = this.products
+        
+        // 首次加载时，默认选中热销分类
+        if (page === 1 && !this.activeCategory) {
+          this.activeCategory = 100 // 默认显示热销分类
+        }
+        
       } catch (err) {
+        console.error('加载商品数据失败:', err)
         uni.showToast({
           title: '数据加载失败',
           icon: 'none'
         })
+      } finally {
+        this.isLoading = false
       }
     },
     
-    changeCategory(categoryId) {
+    async changeCategory(categoryId) {
       this.activeCategory = categoryId
-      this.currentProducts = this.products[categoryId] || []
+      // 切换分类时，重新加载第一页数据
+      this.currentPage = 1
+      this.products = []
+      this.currentProducts = []
+      
+      // 获取当前店铺ID（未登录用户需要）
+      const token = uni.getStorageSync('token')
+      let shopId = null
+      if (!token) {
+        const shopIdCache = uni.getStorageSync('shopIdCache')
+        shopId = shopIdCache ? shopIdCache.shopId : null
+      }
+      
+      // 重新加载该分类的商品
+      await this.fetchData(shopId, categoryId, 1)
     },
     
     // 添加商品到购物车
@@ -587,8 +660,14 @@ export default {
         }
         // 已登录用户：不需要传shopId，后端根据Authorization自动判断
         
-        // 调用后端API进行搜索
-        const res = await getProductList(this.searchKeyword, shopId)
+        // 调用后端API进行搜索（新接口支持搜索）
+        const res = await getProductList({
+          searchName: this.searchKeyword,
+          shopId: shopId,
+          categoryId: null, // 搜索时不限制分类
+          page: 1,
+          pageSize: this.pageSize
+        })
         
         console.log('搜索关键词:', this.searchKeyword)
         console.log('搜索API返回数据:', res)
@@ -601,28 +680,23 @@ export default {
             this.originalProducts = this.products
           }
           
-          // 后端返回的数据结构: {categories: [], products: {}}
+          // 新接口返回结构: {categories: [], products: [], has_more, total, page, page_size}
           this.categories = res.categories || []
-          this.products = res.products || {}
-          
-          // 计算所有商品数量
-          const allProducts = []
-          Object.values(this.products).forEach(categoryProducts => {
-            if (Array.isArray(categoryProducts)) {
-              allProducts.push(...categoryProducts)
-            }
-          })
-          this.currentProducts = allProducts
+          this.products = res.products || [] // 新接口返回的是数组
+          this.currentProducts = res.products || []
+          this.hasMore = res.has_more || false
+          this.total = res.total || 0
+          this.currentPage = res.page || 1
           
           // 清空当前选中的分类，因为显示的是搜索结果
           this.activeCategory = null
           
           // 根据搜索结果给出不同的提示
-          if (allProducts.length === 0) {
+          if (this.currentProducts.length === 0) {
             console.log('搜索完成，未找到匹配的商品')
             // 不显示错误提示，只是显示空结果
           } else {
-            console.log('搜索成功，找到商品数量:', allProducts.length)
+            console.log('搜索成功，找到商品数量:', this.currentProducts.length, '总计:', this.total)
           }
         } else {
           console.log('搜索失败，返回数据格式错误:', res)
@@ -645,15 +719,16 @@ export default {
       this.searchKeyword = ''
       this.isSearching = false
       
-      // 恢复原始数据
+      // 恢复原始数据（新接口返回的是数组）
       if (this.originalCategories && this.originalProducts) {
         this.categories = this.originalCategories
-        this.products = this.originalProducts
+        this.products = Array.isArray(this.originalProducts) ? this.originalProducts : []
+        this.currentProducts = this.products
         
-        // 默认选中第一个分类
+        // 恢复原始的分类选择（热销分类或第一个分类）
         if (this.categories.length > 0) {
-          this.activeCategory = this.categories[0].id
-          this.currentProducts = this.products[this.activeCategory] || []
+          // 如果之前选择的是热销分类，恢复为热销分类
+          this.activeCategory = 100 // 默认显示热销分类
         }
       } else {
         // 如果没有原始数据，重新加载
@@ -674,15 +749,10 @@ export default {
           }
           // 已登录用户：不需要传shopId，后端根据Authorization自动判断
           
-          const res = await getProductList('', shopId)
-          this.categories = res.categories || []
-          this.products = res.products || {}
-          
-          // 默认选中第一个分类
-          if (this.categories.length > 0) {
-            this.activeCategory = this.categories[0].id
-            this.currentProducts = this.products[this.activeCategory] || []
-          }
+          // 重新加载数据（使用热销分类，category_id=100）
+          this.currentPage = 1
+          this.activeCategory = 100 // 默认显示热销分类
+          await this.fetchData(shopId, 100, 1)
         } catch (error) {
           console.error('重新加载数据失败:', error)
           uni.showToast({
@@ -693,13 +763,45 @@ export default {
       }
     },
     
-    // 显示当前分类的商品
-    showCurrentCategoryProducts() {
-      if (this.activeCategory && this.products[this.activeCategory]) {
-        this.currentProducts = this.products[this.activeCategory] || []
+    // 显示当前分类的商品（新接口返回的是数组，需要重新加载）
+    async showCurrentCategoryProducts() {
+      // 新接口返回的是数组，切换分类时需要重新请求
+      if (this.activeCategory) {
+        const token = uni.getStorageSync('token')
+        let shopId = null
+        if (!token) {
+          const shopIdCache = uni.getStorageSync('shopIdCache')
+          shopId = shopIdCache ? shopIdCache.shopId : null
+        }
+        // 重新加载该分类的商品
+        this.currentPage = 1
+        this.products = []
+        await this.fetchData(shopId, this.activeCategory, 1)
       } else {
         this.currentProducts = []
       }
+    },
+    
+    // 加载更多商品（滚动到底部时触发）
+    async loadMore() {
+      // 如果正在加载或没有更多商品，不执行
+      if (this.isLoading || !this.hasMore || this.isSearching) {
+        return
+      }
+      
+      // 加载下一页
+      const nextPage = this.currentPage + 1
+      const token = uni.getStorageSync('token')
+      let shopId = null
+      if (!token) {
+        const shopIdCache = uni.getStorageSync('shopIdCache')
+        shopId = shopIdCache ? shopIdCache.shopId : null
+      }
+      
+      // 获取当前分类ID（热销分类为100）
+      const categoryId = this.activeCategory === 100 ? 100 : this.activeCategory
+      
+      await this.fetchData(shopId, categoryId, nextPage)
     },
     
     // 处理 token 过期
@@ -1052,5 +1154,19 @@ export default {
   text-align: center;
   padding: 100rpx 0;
   color: #999;
+}
+
+.loading-more {
+  text-align: center;
+  padding: 40rpx 0;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.no-more {
+  text-align: center;
+  padding: 40rpx 0;
+  color: #999;
+  font-size: 24rpx;
 }
 </style>
