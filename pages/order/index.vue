@@ -32,18 +32,20 @@
           </view>
           
           <view class="order-body">
-            <view v-for="item in order.order_items" :key="item.id" class="order-product">
-              <image class="product-image" :src="item.product_image" mode="aspectFill" />
+            <view v-for="item in order.items" :key="item.id" class="order-product">
+              <image class="product-image" :src="item.product_image || '/static/images/empty-cart.png'" mode="aspectFill" />
               <view class="product-info">
                 <text class="product-name">{{ item.product_name }}</text>
-                <text class="product-price">¥{{ item.product_price }}</text>
-                <text class="product-quantity">x{{ item.quantity }}</text>
+                <view class="price-quantity">
+                  <text class="product-price">¥{{ item.unit_price }}</text>
+                  <text class="product-quantity">×{{ item.quantity }}</text>
+                </view>
               </view>
             </view>
           </view>
           
           <view class="order-footer">
-            <text class="total-amount">共{{ order.order_items.length }}件商品 合计: ¥{{ order.total_amount }}</text>
+            <text class="total-amount">共{{ order.items ? order.items.length : 0 }}件商品 合计: ¥{{ order.total_amount }}</text>
             
             <view class="action-buttons">
               <button 
@@ -61,14 +63,7 @@
                 取消订单
               </button>
               <button 
-                v-if="order.order_status === 3" 
-                class="action-btn confirm-btn"
-                @click.stop="confirmReceipt(order.id)"
-              >
-                确认收货
-              </button>
-              <button 
-                v-if="order.order_status === 4 || order.order_status === 5" 
+                v-if="order.order_status === 2" 
                 class="action-btn view-btn"
                 @click.stop="viewOrderDetail(order.order_no)"
               >
@@ -78,8 +73,11 @@
           </view>
         </view>
         
-        <view class="load-more" @click="loadMore" v-if="hasMore">
-          {{ loading ? '加载中...' : '点击加载更多' }}
+        <view class="load-more" v-if="hasMore">
+          {{ loading ? '加载中...' : '上拉加载更多' }}
+        </view>
+        <view class="load-more" v-else-if="orders.length > 0">
+          没有更多订单了
         </view>
       </view>
       
@@ -101,9 +99,7 @@ export default {
       tabs: [
         { name: '全部', status: 0 },
         { name: '待付款', status: 1 },
-        { name: '已支付', status: 2 },
-        { name: '待收货', status: 3 },
-        { name: '已完成', status: 5 }
+        { name: '已付款', status: 2 }
       ],
       activeTab: 0,
       orders: [],
@@ -164,6 +160,12 @@ export default {
     // 从订单确认页返回时刷新数据
     this.refreshOrders()
   },
+  onReachBottom() {
+    // 滚动到底部时自动加载更多
+    if (!this.loading && this.hasMore) {
+      this.loadOrders()
+    }
+  },
   methods: {
     // 切换订单状态选项卡
     changeTab(status) {
@@ -180,19 +182,30 @@ export default {
       
       this.loading = true
       try {
-        const res = await getOrderList({
-          status: this.activeTab === 0 ? undefined : this.activeTab,
+        const params = {
           page: this.page,
           page_size: this.pageSize
-        })
+        }
+        
+        // status: 0=全部, 1=待付款, 2=已付款
+        if (this.activeTab !== 0) {
+          params.status = this.activeTab
+        }
+        
+        const res = await getOrderList(params)
         
         if (res.code === 0) {
           const newOrders = res.data.list || []
-          this.orders = [...this.orders, ...newOrders]
+          if (this.page === 1) {
+            this.orders = newOrders
+          } else {
+            this.orders = [...this.orders, ...newOrders]
+          }
           this.hasMore = newOrders.length >= this.pageSize
           this.page++
         }
       } catch (err) {
+        console.error('获取订单失败:', err)
         uni.showToast({
           title: '获取订单失败',
           icon: 'none'
@@ -221,7 +234,7 @@ export default {
     getStatusText(status) {
       const statusMap = {
         1: '待付款',
-        2: '已支付',
+        2: '已付款',
         3: '待收货',
         4: '已取消',
         5: '已完成'
@@ -239,7 +252,7 @@ export default {
     // 查看订单详情
     viewOrderDetail(orderNo) {
       uni.navigateTo({
-        url: `/pages/order/detail?order_no=orderNo`
+        url: `/pages/order/detail?order_no=${orderNo}`
       })
     },
     
@@ -423,15 +436,22 @@ export default {
   overflow: hidden;
 }
 
+.price-quantity {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10rpx;
+}
+
 .product-price {
   font-size: 28rpx;
   color: #e93b3d;
+  font-weight: bold;
 }
 
 .product-quantity {
   font-size: 24rpx;
   color: #999;
-  text-align: right;
 }
 
 .order-footer {
