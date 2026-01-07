@@ -20,15 +20,19 @@
       <!-- 商品列表 -->
       <view class="product-list">
         <view class="section-title">商品信息</view>
-        <view v-for="item in order.order_items" :key="item.id" class="product-item">
-          <image class="product-image" :src="item.product_image" mode="aspectFill"/>
+        <view v-for="item in order.items" :key="item.id" class="product-item">
+          <image class="product-image" :src="item.product_image || '/static/images/empty-cart.png'" mode="aspectFill"/>
           <view class="product-info">
             <text class="product-name">{{ item.product_name }}</text>
+            <text v-if="item.specification" class="product-spec">{{ item.specification }}</text>
             <view class="price-line">
-              <text class="product-price">¥{{ item.product_price }}</text>
-              <text class="product-quantity">x{{ item.quantity }}</text>
+              <text class="product-price">¥{{ item.unit_price }}</text>
+              <text class="product-quantity">×{{ item.quantity }}</text>
             </view>
-            <text class="product-unit">{{ item.unit }}</text>
+            <view class="total-price">
+              <text class="total-price-text">小计: ¥{{ item.total_price }}</text>
+            </view>
+            <text v-if="item.unit" class="product-unit">{{ item.unit }}</text>
           </view>
         </view>
       </view>
@@ -79,7 +83,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { getOrderDetail, cancelOrder } from '@/api/order.js'
 
 const order = ref({
-  order_items: [],
+  items: [],
   receiver_name: '',
   receiver_phone: '',
   receiver_address: '',
@@ -318,9 +322,21 @@ const payOrder = () => {
 .product-quantity {
   color: #999;
 }
+.product-spec {
+  font-size: 24rpx;
+  color: #999;
+  margin: 8rpx 0;
+}
 .product-unit {
   color: #999;
   font-size: 24rpx;
+}
+.total-price {
+  margin-top: 8rpx;
+}
+.total-price-text {
+  font-size: 24rpx;
+  color: #999;
 }
 
 /* 订单信息 */
