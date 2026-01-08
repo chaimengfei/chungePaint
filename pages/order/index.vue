@@ -10,7 +10,10 @@
         v-for="tab in tabs" 
         :key="tab.status" 
         class="tab" 
-        :class="{ active: activeTab === tab.status }"
+        :class="{ 
+          active: activeTab === tab.status,
+          'tab-all': tab.status === 0
+        }"
         @click="changeTab(tab.status)"
       >
         {{ tab.name }}
@@ -555,6 +558,11 @@ export default {
   background-color: #e93b3d;
 }
 
+.tab-all {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
 .order-list {
   flex: 1;
   overflow: hidden;
@@ -723,7 +731,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(200, 30, 35, 0.4);
   border-radius: 30rpx;
   pointer-events: none;
 }
