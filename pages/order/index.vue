@@ -29,7 +29,7 @@
           <view class="order-header">
             <text class="order-no">订单号: {{ order.order_no }}</text>
             <view class="header-right">
-              <text class="order-status">{{ getStatusText(order.order_status) }}</text>
+              <text class="order-status">{{ getStatusText(order) }}</text>
               <!-- 已付款订单在头部显示"查看详情"链接 -->
               <text 
                 v-if="order.order_status === 2" 
@@ -63,15 +63,23 @@
             <text class="total-amount">共{{ order.items ? order.items.length : 0 }}件商品 合计: ¥{{ order.total_amount }}</text>
             
             <view class="action-buttons">
+              <!-- 待付款订单：根据outbound_type显示不同按钮 -->
               <button 
-                v-if="order.order_status === 1" 
+                v-if="order.order_status === 1 && order.outbound_type === 2" 
+                class="action-btn pay-btn pay-btn-disabled"
+                disabled
+              >
+                未付款(线下单)
+              </button>
+              <button 
+                v-if="order.order_status === 1 && order.outbound_type === 1" 
                 class="action-btn pay-btn"
                 @click.stop="payOrder(order.id)"
               >
                 去支付
               </button>
               <button 
-                v-if="order.order_status === 1" 
+                v-if="order.order_status === 1 && order.outbound_type === 1" 
                 class="action-btn cancel-btn"
                 @click.stop="cancelOrder(order.order_no)"
               >
@@ -107,7 +115,7 @@
 </template>
 
 <script>
-import { getOrderList, cancelOrder, confirmReceipt } from '@/api/order.js'
+import { getOrderList, cancelOrder as cancelOrderApi, confirmReceipt } from '@/api/order.js'
 import { addToCart } from '@/api/cart.js'
 
 export default {
@@ -123,7 +131,8 @@ export default {
       page: 1,
       pageSize: 10,
       loading: false,
-      hasMore: true
+      hasMore: true,
+      checkTimer: null // 定时检查订单的定时器
     }
   },
   onLoad() {
@@ -150,6 +159,8 @@ export default {
       return
     }
     this.loadOrders()
+    // 启动定时检查
+    this.startOrderCheckTimer()
   },
   onShow() {
     // 检查是否首次登录（没有token）
@@ -176,6 +187,12 @@ export default {
     }
     // 从订单确认页返回时刷新数据
     this.refreshOrders()
+    // 重新启动定时检查
+    this.startOrderCheckTimer()
+  },
+  onUnload() {
+    // 页面卸载时清除定时器
+    this.stopOrderCheckTimer()
   },
   onReachBottom() {
     // 滚动到底部时自动加载更多
@@ -248,15 +265,31 @@ export default {
     },
     
     // 获取订单状态文本
-    getStatusText(status) {
+    getStatusText(order) {
+      // 如果传入的是订单对象，根据outbound_type判断
+      if (typeof order === 'object' && order !== null) {
+        const status = order.order_status
+        const outboundType = order.outbound_type
+        
+        // outbound_type=2（admin后台操作）且order_status=1（待付款）：显示"未付款(线下单)"
+        if (outboundType === 2 && status === 1) {
+          return '未付款(线下单)'
+        }
+        
+        // 其他情况按原逻辑
+        const statusMap = {
+          1: '待付款',
+          2: '已付款'
+        }
+        return statusMap[status] || '未知状态'
+      }
+      
+      // 兼容旧代码：如果传入的是数字，按原逻辑处理
       const statusMap = {
         1: '待付款',
-        2: '已付款',
-        3: '待收货',
-        4: '已取消',
-        5: '已完成'
+        2: '已付款'
       }
-      return statusMap[status] || '未知状态'
+      return statusMap[order] || '未知状态'
     },
     
     // 获取要显示的商品列表（最多显示2个）
@@ -289,31 +322,48 @@ export default {
       })
     },
     
-    // 取消订单
+    // 取消订单（用户手动取消，带确认对话框）
     async cancelOrder(orderNo) {
       uni.showModal({
         title: '提示',
         content: '确定要取消该订单吗？',
         success: async (res) => {
           if (res.confirm) {
-            try {
-              const res = await cancelOrder(orderNo)
-              if (res.code === 0) {
-                uni.showToast({
-                  title: '订单已取消',
-                  icon: 'success'
-                })
-                this.refreshOrders()
-              }
-            } catch (err) {
-              uni.showToast({
-                title: '取消订单失败',
-                icon: 'none'
-              })
-            }
+            await this.cancelOrderSilently(orderNo, true)
           }
         }
       })
+    },
+    
+    // 静默取消订单（不显示确认对话框，用于自动取消）
+    async cancelOrderSilently(orderNo, showToast = false) {
+      try {
+        const res = await cancelOrderApi(orderNo)
+        if (res.code === 0) {
+          if (showToast) {
+            uni.showToast({
+              title: '订单已取消',
+              icon: 'success'
+            })
+          }
+          this.refreshOrders()
+        } else {
+          if (showToast) {
+            uni.showToast({
+              title: res.message || '取消订单失败',
+              icon: 'none'
+            })
+          }
+        }
+      } catch (err) {
+        console.error('取消订单失败:', err)
+        if (showToast) {
+          uni.showToast({
+            title: '取消订单失败',
+            icon: 'none'
+          })
+        }
+      }
     },
     
     // 确认收货
@@ -341,6 +391,55 @@ export default {
           }
         }
       })
+    },
+    
+    // 启动订单检查定时器（检查超过15分钟未支付的小程序订单）
+    startOrderCheckTimer() {
+      // 清除之前的定时器
+      this.stopOrderCheckTimer()
+      
+      // 每30秒检查一次
+      this.checkTimer = setInterval(() => {
+        this.checkAndCancelExpiredOrders()
+      }, 30000) // 30秒检查一次
+      
+      // 立即执行一次检查
+      this.checkAndCancelExpiredOrders()
+    },
+    
+    // 停止订单检查定时器
+    stopOrderCheckTimer() {
+      if (this.checkTimer) {
+        clearInterval(this.checkTimer)
+        this.checkTimer = null
+      }
+    },
+    
+    // 检查并取消超过15分钟未支付的订单
+    async checkAndCancelExpiredOrders() {
+      const now = Date.now()
+      const expireTime = 15 * 60 * 1000 // 15分钟（毫秒）
+      
+      // 遍历所有待付款的小程序订单
+      for (const order of this.orders) {
+        // 只处理：小程序购买（outbound_type=1）且待付款（order_status=1）的订单
+        if (order.order_status === 1 && order.outbound_type === 1 && order.created_at) {
+          try {
+            // 计算订单创建时间
+            const createTime = new Date(order.created_at).getTime()
+            const timeDiff = now - createTime
+            
+            // 如果超过15分钟，自动取消订单
+            if (timeDiff > expireTime) {
+              console.log(`订单 ${order.order_no} 超过15分钟未支付，自动取消`)
+              // 使用静默取消方法，不显示确认对话框
+              await this.cancelOrderSilently(order.order_no, false)
+            }
+          } catch (err) {
+            console.error(`检查订单 ${order.order_no} 时间失败:`, err)
+          }
+        }
+      }
     },
     
     // 再次购买：将订单中的所有商品加入购物车
@@ -606,6 +705,27 @@ export default {
 .pay-btn {
   background-color: #e93b3d;
   color: #fff;
+  position: relative;
+}
+
+/* 禁用状态的红色按钮，添加红色遮罩层 */
+.pay-btn-disabled {
+  background-color: #e93b3d;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.pay-btn-disabled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 30rpx;
+  pointer-events: none;
 }
 
 .cancel-btn {

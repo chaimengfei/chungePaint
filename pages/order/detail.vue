@@ -124,10 +124,7 @@ onLoad((options) => {
 const statusText = computed(() => {
   const statusMap = {
     1: '待付款',
-    2: '已支付',
-    3: '待收货',
-    4: '已取消',
-    5: '已完成'
+    2: '已付款'
   }
   return statusMap[order.value.order_status] || '未知状态'
 })
