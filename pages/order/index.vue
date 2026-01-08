@@ -28,11 +28,22 @@
         >
           <view class="order-header">
             <text class="order-no">订单号: {{ order.order_no }}</text>
-            <text class="order-status">{{ getStatusText(order.order_status) }}</text>
+            <view class="header-right">
+              <text class="order-status">{{ getStatusText(order.order_status) }}</text>
+              <!-- 已付款订单在头部显示"查看详情"链接 -->
+              <text 
+                v-if="order.order_status === 2" 
+                class="view-detail-link"
+                @click.stop="viewOrderDetail(order.order_no)"
+              >
+                查看详情 >
+              </text>
+            </view>
           </view>
           
           <view class="order-body">
-            <view v-for="item in order.items" :key="item.id" class="order-product">
+            <!-- 只显示前2个商品 -->
+            <view v-for="item in getDisplayItems(order.items)" :key="item.id" class="order-product">
               <image class="product-image" :src="item.product_image || '/static/images/empty-cart.png'" mode="aspectFill" />
               <view class="product-info">
                 <text class="product-name">{{ item.product_name }}</text>
@@ -41,6 +52,10 @@
                   <text class="product-quantity">×{{ item.quantity }}</text>
                 </view>
               </view>
+            </view>
+            <!-- 如果商品数量超过2个，显示"还有X件商品"提示 -->
+            <view v-if="order.items && order.items.length > 2" class="more-products-tip">
+              <text class="more-text">还有 {{ order.items.length - 2 }} 件商品，点击查看详情</text>
             </view>
           </view>
           
@@ -62,12 +77,13 @@
               >
                 取消订单
               </button>
+              <!-- 已付款订单显示"再次购买"按钮 -->
               <button 
                 v-if="order.order_status === 2" 
-                class="action-btn view-btn"
-                @click.stop="viewOrderDetail(order.order_no)"
+                class="action-btn buy-again-btn"
+                @click.stop="buyAgain(order)"
               >
-                查看详情
+                再次购买
               </button>
             </view>
           </view>
@@ -92,6 +108,7 @@
 
 <script>
 import { getOrderList, cancelOrder, confirmReceipt } from '@/api/order.js'
+import { addToCart } from '@/api/cart.js'
 
 export default {
   data() {
@@ -242,6 +259,15 @@ export default {
       return statusMap[status] || '未知状态'
     },
     
+    // 获取要显示的商品列表（最多显示2个）
+    getDisplayItems(items) {
+      if (!items || items.length === 0) {
+        return []
+      }
+      // 只返回前2个商品
+      return items.slice(0, 2)
+    },
+    
     // 跳转到首页
     goToIndex() {
       uni.switchTab({
@@ -315,6 +341,67 @@ export default {
           }
         }
       })
+    },
+    
+    // 再次购买：将订单中的所有商品加入购物车
+    async buyAgain(order) {
+      if (!order.items || order.items.length === 0) {
+        uni.showToast({
+          title: '订单中没有商品',
+          icon: 'none'
+        })
+        return
+      }
+      
+      uni.showLoading({
+        title: '正在加入购物车...'
+      })
+      
+      try {
+        // 遍历订单中的所有商品，逐个加入购物车
+        const promises = order.items.map(item => {
+          return addToCart({
+            product_id: item.product_id,
+            quantity: item.quantity
+          })
+        })
+        
+        // 等待所有商品都加入购物车
+        const results = await Promise.all(promises)
+        
+        // 检查是否有失败的（API返回格式是 res.data.code）
+        const failedItems = results.filter(res => !res.data || res.data.code !== 0)
+        
+        if (failedItems.length > 0) {
+          uni.hideLoading()
+          uni.showToast({
+            title: '部分商品加入购物车失败',
+            icon: 'none',
+            duration: 2000
+          })
+          return
+        }
+        
+        uni.hideLoading()
+        uni.showToast({
+          title: '已加入购物车',
+          icon: 'success'
+        })
+        
+        // 延迟跳转到购物车页面
+        setTimeout(() => {
+          uni.switchTab({
+            url: '/pages/cart/index'
+          })
+        }, 1000)
+      } catch (err) {
+        console.error('再次购买失败:', err)
+        uni.hideLoading()
+        uni.showToast({
+          title: '加入购物车失败',
+          icon: 'none'
+        })
+      }
     }
   }
 }
@@ -385,6 +472,7 @@ export default {
 .order-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding-bottom: 15rpx;
   border-bottom: 1rpx solid #f5f5f5;
 }
@@ -394,9 +482,21 @@ export default {
   color: #666;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
 .order-status {
   font-size: 26rpx;
   color: #e93b3d;
+}
+
+.view-detail-link {
+  font-size: 24rpx;
+  color: #999;
+  cursor: pointer;
 }
 
 .order-body {
@@ -411,6 +511,30 @@ export default {
 
 .order-product:last-child {
   margin-bottom: 0;
+}
+
+.more-products-tip {
+  padding: 15rpx 0;
+  text-align: center;
+  border-top: 1rpx dashed #e5e5e5;
+  margin-top: 15rpx;
+  background-color: #fafafa;
+  border-radius: 8rpx;
+}
+
+.more-text {
+  font-size: 24rpx;
+  color: #666;
+  position: relative;
+  padding-right: 30rpx;
+}
+
+.more-text::after {
+  content: '>';
+  position: absolute;
+  right: 0;
+  color: #999;
+  font-size: 20rpx;
 }
 
 .product-image {
@@ -500,6 +624,11 @@ export default {
   background-color: #fff;
   color: #666;
   border: 1rpx solid #ddd;
+}
+
+.buy-again-btn {
+  background-color: #e93b3d;
+  color: #fff;
 }
 
 .empty-order {
