@@ -16,10 +16,6 @@
             <text class="phone-icon"> </text>
             <text class="contact-text">李增春-13161621688</text>
           </view>
-          <view v-if="isLogin && userBalance > 0" class="balance-info">
-            <text class="balance-label">会员</text>
-            <text class="balance-amount">余额{{ userBalance.toFixed(2) }}元</text>
-          </view>
         </view>
       </view>
     </view>
@@ -110,7 +106,6 @@ import { getProductList } from '@/api/product.js'
 import { addToCart as addToCartApi, getCartList } from '@/api/cart.js'
 import { checkoutOrder } from '@/api/order.js'
 import { goLogin } from '@/api/user.js'
-import { onBalanceChange, initBalance, refreshBalance, clearBalance } from '@/api/balance.js'
 import { getNearestShop, isShopIdExpired } from '@/api/common.js'
 
 export default {
@@ -122,7 +117,6 @@ export default {
       currentProducts: [],    // 当前显示的商品列表
       isLogin: false,         // 登录状态
       userInfo: {},           // 用户信息
-      userBalance: 0,         // 用户余额（从全局状态同步）
       currentTime: '09:16',   // 当前时间
       searchKeyword: '',      // 搜索关键词
       isSearching: false,     // 是否正在搜索
@@ -137,36 +131,19 @@ export default {
     }
   },
   onLoad() {
-    // 设置余额监听器
-    this.unsubscribeBalance = onBalanceChange((balance) => {
-      this.userBalance = balance
-    })
-    
     // 先进行登录，登录成功后再加载商品数据
     this.initPage()
-  },
-  onUnload() {
-    // 清理余额监听器
-    if (this.unsubscribeBalance) {
-      this.unsubscribeBalance()
-    }
   },
   onShow() {
     // 首页显示时不再自动更新购物车徽标
     // 购物车徽标只在用户点击购物车图标时更新
-    // 如果已登录，刷新余额信息（使用全局状态管理，自动去重）
     const token = uni.getStorageSync('token')
     const userInfo = uni.getStorageSync('userInfo')
-    // 只有当 token 和 userInfo 都存在，且页面状态显示已登录时，才刷新余额
-    if (token && userInfo && this.isLogin) {
-      // 使用全局余额管理，自动处理请求去重
-      refreshBalance()
-    } else if (!token || !userInfo) {
+    if (!token || !userInfo) {
       // 如果本地没有 token 或 userInfo，但页面状态显示已登录，则更新状态
       if (this.isLogin) {
         this.isLogin = false
         this.userInfo = {}
-        clearBalance() // 清除全局余额
       }
     }
   },
@@ -200,8 +177,6 @@ export default {
           this.isLogin = true
           this.userInfo = userInfo
           console.log('用户已登录，直接加载商品数据')
-          // 初始化余额（使用全局状态管理，自动处理请求去重）
-          await initBalance()
           await this.fetchData()
         } else {
           // 未登录，需要获取位置信息并计算店铺
@@ -356,9 +331,6 @@ export default {
           this.isLogin = true
           this.userInfo = user_info
           
-          // 登录成功后刷新余额（使用全局状态管理，自动处理请求去重）
-          await refreshBalance()
-          
           console.log('自动登录成功:', user_info)
           
           return true
@@ -373,6 +345,9 @@ export default {
     },
     
     async fetchData(shopId = null, categoryId = null, page = 1) {
+      const startTime = Date.now()
+      console.log(`[商品列表] 开始加载 - 页码: ${page}, 分类ID: ${categoryId}, 店铺ID: ${shopId || '已登录用户'}`)
+      
       try {
         this.isLoading = true
         
@@ -382,6 +357,7 @@ export default {
         // 确定分类ID：优先使用传入的categoryId，否则使用当前选中的分类，默认使用热销分类(100)
         const finalCategoryId = categoryId !== null ? categoryId : (this.activeCategory || 100)
         
+        const requestStartTime = Date.now()
         const res = await getProductList({
           searchName: '',
           shopId: shopId,
@@ -389,6 +365,13 @@ export default {
           page: page,
           pageSize: this.pageSize
         })
+        const requestEndTime = Date.now()
+        const requestDuration = requestEndTime - requestStartTime
+        
+        console.log(`[商品列表] API请求耗时: ${requestDuration}ms`)
+        console.log(`[商品列表] API返回数据量: 分类${res.categories?.length || 0}个, 商品${res.products?.length || 0}条`)
+        
+        const processStartTime = Date.now()
         
         // 新接口返回结构: {categories: [], products: [], has_more, total, page, page_size, current_category}
         this.categories = res.categories || []
@@ -418,8 +401,16 @@ export default {
           this.activeCategory = 100 // 默认显示热销分类
         }
         
+        const processEndTime = Date.now()
+        const processDuration = processEndTime - processStartTime
+        const totalDuration = Date.now() - startTime
+        
+        console.log(`[商品列表] 数据处理耗时: ${processDuration}ms`)
+        console.log(`[商品列表] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
+        
       } catch (err) {
-        console.error('加载商品数据失败:', err)
+        const totalDuration = Date.now() - startTime
+        console.error(`[商品列表] 加载商品数据失败 (总耗时: ${totalDuration}ms):`, err)
         uni.showToast({
           title: '数据加载失败',
           icon: 'none'
@@ -641,6 +632,9 @@ export default {
         return
       }
       
+      const startTime = Date.now()
+      console.log(`[商品搜索] 开始搜索 - 关键词: "${this.searchKeyword}"`)
+      
       this.isSearching = true
       
       try {
@@ -660,6 +654,7 @@ export default {
         }
         // 已登录用户：不需要传shopId，后端根据Authorization自动判断
         
+        const requestStartTime = Date.now()
         // 调用后端API进行搜索（新接口支持搜索）
         const res = await getProductList({
           searchName: this.searchKeyword,
@@ -668,9 +663,15 @@ export default {
           page: 1,
           pageSize: this.pageSize
         })
+        const requestEndTime = Date.now()
+        const requestDuration = requestEndTime - requestStartTime
         
+        console.log(`[商品搜索] API请求耗时: ${requestDuration}ms`)
+        console.log(`[商品搜索] API返回数据量: 分类${res.categories?.length || 0}个, 商品${res.products?.length || 0}条`)
         console.log('搜索关键词:', this.searchKeyword)
         console.log('搜索API返回数据:', res)
+        
+        const processStartTime = Date.now()
         
         // 检查API返回的数据结构
         if (res && typeof res === 'object') {
@@ -698,7 +699,21 @@ export default {
           } else {
             console.log('搜索成功，找到商品数量:', this.currentProducts.length, '总计:', this.total)
           }
+          
+          const processEndTime = Date.now()
+          const processDuration = processEndTime - processStartTime
+          const totalDuration = Date.now() - startTime
+          
+          console.log(`[商品搜索] 数据处理耗时: ${processDuration}ms`)
+          console.log(`[商品搜索] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
         } else {
+          const processEndTime = Date.now()
+          const processDuration = processEndTime - processStartTime
+          const totalDuration = Date.now() - startTime
+          
+          console.log(`[商品搜索] 数据处理耗时: ${processDuration}ms`)
+          console.log(`[商品搜索] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
+          
           console.log('搜索失败，返回数据格式错误:', res)
           uni.showToast({
             title: '搜索失败，请重试',
@@ -706,11 +721,14 @@ export default {
           })
         }
       } catch (error) {
-        console.error('搜索失败:', error)
+        const totalDuration = Date.now() - startTime
+        console.error(`[商品搜索] 搜索失败 (总耗时: ${totalDuration}ms):`, error)
         uni.showToast({
           title: '搜索失败，请重试',
           icon: 'none'
         })
+      } finally {
+        this.isSearching = false
       }
     },
     
@@ -811,7 +829,6 @@ export default {
       uni.removeStorageSync('userInfo')
       this.isLogin = false
       this.userInfo = {}
-      clearBalance() // 清除全局余额
       
       // 检查是否之前登录过（有 hasStoredUserInfo 标记）
       const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
@@ -974,28 +991,6 @@ export default {
   font-weight: bold;
 }
 
-.balance-info {
-  display: flex;
-  align-items: center;
-  margin-top: 10rpx;
-  padding: 8rpx 16rpx;
-  background-color: #fff;
-  border-radius: 8rpx;
-  border: 1rpx solid #4169E1;
-}
-
-.balance-label {
-  font-size: 24rpx;
-  color: #4169E1;
-  font-weight: bold;
-  margin-right: 8rpx;
-}
-
-.balance-amount {
-  font-size: 24rpx;
-  color: #e93b3d;
-  font-weight: bold;
-}
 
 /* 搜索框样式 */
 .search-container {

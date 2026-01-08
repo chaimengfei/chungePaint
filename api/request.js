@@ -62,10 +62,13 @@ export const request = (options) => {
     
     console.log(`API请求 - ${method} ${fullUrl}`, requestOptions)
     
+    const requestStartTime = Date.now()
     uni.request({
       ...requestOptions,
       success: (res) => {
-        console.log(`API响应 - ${method} ${url}`, res)
+        const requestDuration = Date.now() - requestStartTime
+        console.log(`API响应 - ${method} ${url} - 耗时: ${requestDuration}ms`, res)
+        
         // 统一处理 401 错误（token 无效或过期）
         if (res.statusCode === 401 || (res.data && res.data.code === -1 && res.data.message && res.data.message.includes('token'))) {
           // 清除无效的 token 和用户信息
@@ -76,7 +79,8 @@ export const request = (options) => {
         resolve(res)
       },
       fail: (err) => {
-        console.error(`API错误 - ${method} ${url}`, err)
+        const requestDuration = Date.now() - requestStartTime
+        console.error(`API错误 - ${method} ${url} - 耗时: ${requestDuration}ms`, err)
         reject(err)
       }
     })

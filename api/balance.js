@@ -176,19 +176,11 @@ export async function refreshBalance(force = false) {
 }
 
 /**
- * 初始化余额（从缓存或接口获取）
+ * 初始化余额（每次从后端实时获取）
  * @returns {Promise<number>} 返回余额值
  */
 export async function initBalance() {
-  // 如果已有余额且最近更新过（5分钟内），直接返回
-  const now = Date.now()
-  const fiveMinutes = 5 * 60 * 1000
-  if (balanceState.balance > 0 && (now - balanceState.lastUpdateTime) < fiveMinutes) {
-    console.log('使用缓存的余额:', balanceState.balance)
-    return balanceState.balance
-  }
-
-  // 否则刷新余额
+  // 每次从后端实时获取，不使用缓存
   return await refreshBalance()
 }
 

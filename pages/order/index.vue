@@ -218,6 +218,9 @@ export default {
       if (this.loading || !this.hasMore) return
       
       this.loading = true
+      const startTime = Date.now()
+      console.log(`[订单列表] 开始加载 - 页码: ${this.page}, 状态: ${this.activeTab}`)
+      
       try {
         const params = {
           page: this.page,
@@ -229,9 +232,16 @@ export default {
           params.status = this.activeTab
         }
         
+        const requestStartTime = Date.now()
         const res = await getOrderList(params)
+        const requestEndTime = Date.now()
+        const requestDuration = requestEndTime - requestStartTime
+        
+        console.log(`[订单列表] API请求耗时: ${requestDuration}ms`)
+        console.log(`[订单列表] API返回数据量: ${res.data?.list?.length || 0} 条`)
         
         if (res.code === 0) {
+          const processStartTime = Date.now()
           const newOrders = res.data.list || []
           if (this.page === 1) {
             this.orders = newOrders
@@ -240,9 +250,16 @@ export default {
           }
           this.hasMore = newOrders.length >= this.pageSize
           this.page++
+          const processEndTime = Date.now()
+          const processDuration = processEndTime - processStartTime
+          
+          const totalDuration = Date.now() - startTime
+          console.log(`[订单列表] 数据处理耗时: ${processDuration}ms`)
+          console.log(`[订单列表] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
         }
       } catch (err) {
-        console.error('获取订单失败:', err)
+        const totalDuration = Date.now() - startTime
+        console.error(`[订单列表] 获取订单失败 (总耗时: ${totalDuration}ms):`, err)
         uni.showToast({
           title: '获取订单失败',
           icon: 'none'
