@@ -44,17 +44,41 @@ export const getProductList = (options = {}) => {
     // 未登录用户使用uni.request（不传Authorization，但传shop_id）
     if (isLoggedIn) {
       // 已登录：使用统一的get函数，自动添加Authorization
+      console.log('[商品列表] 已登录用户，token存在，调用API（不传shop_id）')
       get('/api/product/list', params, true)
         .then(res => {
+          // 检查后端返回的 token_status 字段（仅此接口需要判断）
+          if (res.data && res.data.token_status) {
+            const tokenStatus = res.data.token_status
+            const data = res.data
+            
+            if (tokenStatus === 'invalid') {
+              // Token 无效，提示用户重新登录
+              console.log(data.message || '登录已过期，请重新登录')
+              // 清除登录状态
+              uni.removeStorageSync('token')
+              uni.removeStorageSync('userInfo')
+              reject(new Error(data.message || '登录已过期，请重新登录'))
+              return
+            } else if (tokenStatus === 'valid') {
+              // Token 有效，用户已登录
+              console.log('[商品列表] 用户已登录')
+            } else if (tokenStatus === 'none') {
+              // 未传 token，未登录用户
+              console.log('[商品列表] 未登录用户')
+            }
+          }
+          
           if (res.statusCode === 200 && res.data && typeof res.data === 'object') {
             // 新接口返回结构: {categories: [], products: [], has_more, total, page, page_size, current_category}
             resolve(res.data)
           } else {
+            console.error('[商品列表] API返回数据格式错误:', res)
             reject(new Error('API返回数据格式错误'))
           }
         })
         .catch(err => {
-          console.error('API请求失败:', err)
+          console.error('[商品列表] API请求失败:', err)
           reject(err)
         })
     } else {
@@ -82,6 +106,23 @@ export const getProductList = (options = {}) => {
         url: url,
         method: 'GET',
         success: (res) => {
+          // 检查后端返回的 token_status 字段（仅此接口需要判断）
+          if (res.data && res.data.token_status) {
+            const tokenStatus = res.data.token_status
+            const data = res.data
+            
+            if (tokenStatus === 'invalid') {
+              // Token 无效（虽然前端认为未登录，但后端返回了invalid状态）
+              console.log(data.message || '登录已过期，请重新登录')
+            } else if (tokenStatus === 'valid') {
+              // Token 有效，用户已登录
+              console.log('[商品列表] 用户已登录')
+            } else if (tokenStatus === 'none') {
+              // 未传 token，未登录用户
+              console.log('[商品列表] 未登录用户')
+            }
+          }
+          
           // 新接口返回结构: {categories: [], products: [], has_more, total, page, page_size, current_category}
           if (res.data && typeof res.data === 'object') {
             resolve(res.data)
@@ -90,7 +131,7 @@ export const getProductList = (options = {}) => {
           }
         },
         fail: (err) => {
-          console.error('API请求失败:', err)
+          console.error('[商品列表] API请求失败:', err)
           reject(err)
         }
       })
