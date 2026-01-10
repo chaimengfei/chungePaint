@@ -2,6 +2,51 @@ import { BASE_URL } from './common'
 import { get } from './request'
 
 /**
+ * 解析商品列表API响应数据
+ * 后端统一返回格式: {code: 0, data: {categories: [], products: [], token_status: 'valid'|'invalid'|'none', ...}}
+ * @param {Object} res API响应对象
+ * @param {boolean} isLoggedIn 前端是否认为已登录
+ * @returns {Object} 解析后的数据对象
+ */
+function parseProductListResponse(res, isLoggedIn) {
+  // 检查响应状态
+  if (res.statusCode !== 200 || !res.data || typeof res.data !== 'object') {
+    throw new Error('API返回数据格式错误')
+  }
+  
+  // 后端统一返回格式: {code: 0, data: {...}}
+  if (res.data.code !== 0) {
+    throw new Error(res.data.message || 'API返回错误')
+  }
+  
+  if (!res.data.data) {
+    throw new Error('API返回数据为空')
+  }
+  
+  const responseData = res.data.data
+  
+  // 检查后端返回的 token_status 字段（仅此接口需要判断）
+  if (responseData.token_status) {
+    const tokenStatus = responseData.token_status
+    
+    if (tokenStatus === 'invalid') {
+      // Token 无效，清除登录状态
+      console.log(responseData.message || '登录已过期，请重新登录')
+      uni.removeStorageSync('token')
+      uni.removeStorageSync('userInfo')
+      throw new Error(responseData.message || '登录已过期，请重新登录')
+    } else if (tokenStatus === 'valid') {
+      console.log('[商品列表] 用户已登录')
+    } else if (tokenStatus === 'none') {
+      console.log('[商品列表] 未登录用户')
+    }
+  }
+  
+  // 返回数据: {categories: [], products: [], has_more, total, page, page_size, current_category}
+  return responseData
+}
+
+/**
  * 获取商品列表
  * @param {Object} options 请求参数
  * @param {string} [options.searchName] 搜索关键词（可选）
@@ -47,34 +92,11 @@ export const getProductList = (options = {}) => {
       console.log('[商品列表] 已登录用户，token存在，调用API（不传shop_id）')
       get('/api/product/list', params, true)
         .then(res => {
-          // 检查后端返回的 token_status 字段（仅此接口需要判断）
-          if (res.data && res.data.token_status) {
-            const tokenStatus = res.data.token_status
-            const data = res.data
-            
-            if (tokenStatus === 'invalid') {
-              // Token 无效，提示用户重新登录
-              console.log(data.message || '登录已过期，请重新登录')
-              // 清除登录状态
-              uni.removeStorageSync('token')
-              uni.removeStorageSync('userInfo')
-              reject(new Error(data.message || '登录已过期，请重新登录'))
-              return
-            } else if (tokenStatus === 'valid') {
-              // Token 有效，用户已登录
-              console.log('[商品列表] 用户已登录')
-            } else if (tokenStatus === 'none') {
-              // 未传 token，未登录用户
-              console.log('[商品列表] 未登录用户')
-            }
-          }
-          
-          if (res.statusCode === 200 && res.data && typeof res.data === 'object') {
-            // 新接口返回结构: {categories: [], products: [], has_more, total, page, page_size, current_category}
-            resolve(res.data)
-          } else {
-            console.error('[商品列表] API返回数据格式错误:', res)
-            reject(new Error('API返回数据格式错误'))
+          try {
+            const data = parseProductListResponse(res, isLoggedIn)
+            resolve(data)
+          } catch (err) {
+            reject(err)
           }
         })
         .catch(err => {
@@ -106,28 +128,11 @@ export const getProductList = (options = {}) => {
         url: url,
         method: 'GET',
         success: (res) => {
-          // 检查后端返回的 token_status 字段（仅此接口需要判断）
-          if (res.data && res.data.token_status) {
-            const tokenStatus = res.data.token_status
-            const data = res.data
-            
-            if (tokenStatus === 'invalid') {
-              // Token 无效（虽然前端认为未登录，但后端返回了invalid状态）
-              console.log(data.message || '登录已过期，请重新登录')
-            } else if (tokenStatus === 'valid') {
-              // Token 有效，用户已登录
-              console.log('[商品列表] 用户已登录')
-            } else if (tokenStatus === 'none') {
-              // 未传 token，未登录用户
-              console.log('[商品列表] 未登录用户')
-            }
-          }
-          
-          // 新接口返回结构: {categories: [], products: [], has_more, total, page, page_size, current_category}
-          if (res.data && typeof res.data === 'object') {
-            resolve(res.data)
-          } else {
-            reject(new Error('API返回数据格式错误'))
+          try {
+            const data = parseProductListResponse(res, isLoggedIn)
+            resolve(data)
+          } catch (err) {
+            reject(err)
           }
         },
         fail: (err) => {
