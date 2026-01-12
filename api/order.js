@@ -65,3 +65,11 @@ export const payOrder = (data) => {
 export const payCombined = (data) => {
   return post('/api/pay/combined', data)
 }
+
+/**
+ * 再次购买：将已完成订单中的商品重新加入购物车
+ * @param {string} orderNo - 订单号
+ */
+export const rebuyOrder = (orderNo) => {
+  return post(`/api/order/rebuy?order_no=${encodeURIComponent(orderNo)}`, {}).then(res => res.data)
+}
