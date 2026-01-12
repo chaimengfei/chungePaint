@@ -230,7 +230,8 @@ export default {
       }
       
       let checkCount = 0
-      const maxChecks = 20 // 最多检查20次（约40秒，因为每2秒检查一次）
+      const maxChecks = 10 // 最多检查10次（约30秒，因为每3秒检查一次）
+
       
       // 延迟启动轮询，给 success 回调一些时间（真机环境通常1-2秒内就会触发）
       setTimeout(() => {
@@ -308,8 +309,8 @@ export default {
             console.error('轮询检查支付状态失败:', err)
             // 轮询失败不影响，继续检查
           }
-        }, 2000) // 每2秒检查一次（降低频率，减少服务器压力）
-      }, 3000) // 延迟3秒启动，给 success 回调足够的时间
+        }, 3000) // 每3秒检查一次（降低频率，减少服务器压力）
+      }, 10000) // 延迟10秒启动，给 success 回调足够的时间
     },
     async submitOrder() {
       if (!this.selectedAddress) {
