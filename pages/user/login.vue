@@ -169,7 +169,22 @@
 
 			// 调用登录接口
 			const loginApiRes = await goLogin(loginData)
-			const { token, user_id, nickname: backendNickname, avatar: backendAvatar } = loginApiRes.data.data
+			
+			// 从响应头获取 token（新机制：token 不再从 data 返回，只从响应头返回）
+			const headers = loginApiRes.header || {}
+			let token = null
+			for (const key in headers) {
+				if (key.toLowerCase() === 'x-token') {
+					token = headers[key]
+					break
+				}
+			}
+			if (!token) {
+				throw new Error('登录失败：未获取到token')
+			}
+			
+			// 从响应数据获取用户信息
+			const { user_id, nickname: backendNickname, avatar: backendAvatar } = loginApiRes.data.data
 
 			// 使用后端返回的用户信息（nickname 和 avatar）
 			const user_info = {
@@ -229,7 +244,22 @@
 			console.log('非首次登录，只传递code')
 
 			const loginApiRes = await goLogin(loginData)
-			const { token, user_id, nickname: backendNickname, avatar: backendAvatar } = loginApiRes.data.data
+			
+			// 从响应头获取 token（新机制：token 不再从 data 返回，只从响应头返回）
+			const headers = loginApiRes.header || {}
+			let token = null
+			for (const key in headers) {
+				if (key.toLowerCase() === 'x-token') {
+					token = headers[key]
+					break
+				}
+			}
+			if (!token) {
+				throw new Error('登录失败：未获取到token')
+			}
+			
+			// 从响应数据获取用户信息
+			const { user_id, nickname: backendNickname, avatar: backendAvatar } = loginApiRes.data.data
 
 			// 使用后端返回的用户信息（nickname 和 avatar）
 			const user_info = {

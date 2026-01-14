@@ -69,6 +69,23 @@ export const request = (options) => {
         const requestDuration = Date.now() - requestStartTime
         console.log(`API响应 - ${method} ${url} - 耗时: ${requestDuration}ms`, res)
         
+        // 检查响应头中是否有新的 token（自动刷新机制）
+        // 注意：uni.request 的响应头在 res.header 中，需要兼容不同的大小写
+        const headers = res.header || {}
+        // 查找 X-Token 响应头（兼容不同的大小写）
+        let newToken = null
+        for (const key in headers) {
+          if (key.toLowerCase() === 'x-token') {
+            newToken = headers[key]
+            break
+          }
+        }
+        
+        if (newToken) {
+          console.log(`[Token自动刷新] 检测到新token，自动更新本地存储`)
+          uni.setStorageSync('token', newToken)
+        }
+        
         // 统一处理 401 错误（token 无效或过期）
         if (res.statusCode === 401 || (res.data && res.data.code === -1 && res.data.message && res.data.message.includes('token'))) {
           // 清除无效的 token 和用户信息
