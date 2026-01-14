@@ -139,11 +139,25 @@ export default {
     // 购物车徽标只在用户点击购物车图标时更新
     const token = uni.getStorageSync('token')
     const userInfo = uni.getStorageSync('userInfo')
+    
     if (!token || !userInfo) {
       // 如果本地没有 token 或 userInfo，但页面状态显示已登录，则更新状态
       if (this.isLogin) {
         this.isLogin = false
         this.userInfo = {}
+      }
+    } else {
+      // 如果有 token 和 userInfo，说明用户已登录
+      // 如果之前是未登录状态，说明用户刚刚登录成功，需要重新加载商品数据
+      if (!this.isLogin) {
+        console.log('检测到用户刚刚登录成功，重新加载商品数据')
+        this.isLogin = true
+        this.userInfo = userInfo
+        // 重新加载商品数据（已登录用户不需要传shopId）
+        this.fetchData(null, 100, 1)
+      } else {
+        // 如果之前已经登录，只需要更新用户信息（可能用户信息有变化）
+        this.userInfo = userInfo
       }
     }
   },
@@ -411,10 +425,50 @@ export default {
       } catch (err) {
         const totalDuration = Date.now() - startTime
         console.error(`[商品列表] 加载商品数据失败 (总耗时: ${totalDuration}ms):`, err)
-        uni.showToast({
-          title: '数据加载失败',
-          icon: 'none'
-        })
+        
+        // 获取错误信息
+        const errorMessage = err.message || '数据加载失败'
+        
+        // 只针对 401 状态码的登录错误显示引导登录弹框
+        if (err.is401LoginError) {
+          // 清除登录状态
+          this.isLogin = false
+          this.userInfo = {}
+          
+          // 检查是否之前登录过（有 hasStoredUserInfo 标记）
+          const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
+          
+          // 直接显示引导登录的弹框，不显示toast
+          uni.showModal({
+            title: hasStoredUserInfo ? '登录已过期' : '需要登录',
+            content: hasStoredUserInfo 
+              ? '您的登录已过期，是否重新登录？' 
+              : '您还未登录，是否注册登录？',
+            confirmText: '去登录',
+            cancelText: '稍后',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                uni.navigateTo({
+                  url: '/pages/user/login'
+                })
+              } else {
+                // 用户取消，显示提示
+                uni.showToast({
+                  title: '部分功能需要登录后使用',
+                  icon: 'none',
+                  duration: 2000
+                })
+              }
+            }
+          })
+        } else {
+          // 其他错误，显示toast提示
+          uni.showToast({
+            title: errorMessage,
+            icon: 'none',
+            duration: 2000
+          })
+        }
       } finally {
         this.isLoading = false
       }

@@ -3,44 +3,59 @@ import { get } from './request'
 
 /**
  * 解析商品列表API响应数据
- * 后端统一返回格式: {code: 0, data: {categories: [], products: [], token_status: 'valid'|'invalid'|'none', ...}}
+ * 后端统一返回格式: {code: 0, data: {categories: [], products: [], ...}}
  * @param {Object} res API响应对象
  * @param {boolean} isLoggedIn 前端是否认为已登录
  * @returns {Object} 解析后的数据对象
  */
 function parseProductListResponse(res, isLoggedIn) {
-  // 检查响应状态
-  if (res.statusCode !== 200 || !res.data || typeof res.data !== 'object') {
+  // 检查响应数据是否存在
+  const hasData = res.data && typeof res.data === 'object'
+  
+  // 只针对 401 状态码进行特殊处理（引导重新登录）
+  if (res.statusCode === 401) {
+    // 清除本地存储
+    console.log('[商品列表] 401状态码，清除本地token')
+    uni.removeStorageSync('token')
+    uni.removeStorageSync('userInfo')
+    
+    // 如果响应数据中有message，使用message作为错误信息
+    const errorMessage = (hasData && res.data.message) ? res.data.message : '登录已过期，请重新登录'
+    
+    // 抛出特殊标记的错误，方便前端识别为401登录错误
+    const error = new Error(errorMessage)
+    error.is401LoginError = true // 标记为401登录错误
+    throw error
+  }
+  
+  // 其他非200状态码，正常处理错误信息
+  if (res.statusCode !== 200) {
+    // 如果响应数据中有message，优先使用message作为错误信息
+    if (hasData && res.data.message) {
+      throw new Error(res.data.message)
+    }
+    // 如果没有message，使用状态码错误
+    throw new Error(`API请求失败，状态码: ${res.statusCode}`)
+  }
+  
+  // 检查响应数据是否存在
+  if (!hasData) {
     throw new Error('API返回数据格式错误')
   }
   
-  // 后端统一返回格式: {code: 0, data: {...}}
-  if (res.data.code !== 0) {
-    throw new Error(res.data.message || 'API返回错误')
+  // 后端返回格式: {code: 0, data: {...}} 或 {code: -1, message: "..."}
+  // 如果 code !== 0，直接抛出错误，使用 message 作为错误信息
+  if (res.data.code !== undefined && res.data.code !== 0) {
+    const errorMessage = res.data.message || 'API返回错误'
+    throw new Error(errorMessage)
   }
   
+  // 成功响应，检查是否有 data 字段
   if (!res.data.data) {
     throw new Error('API返回数据为空')
   }
   
   const responseData = res.data.data
-  
-  // 检查后端返回的 token_status 字段（仅此接口需要判断）
-  if (responseData.token_status) {
-    const tokenStatus = responseData.token_status
-    
-    if (tokenStatus === 'invalid') {
-      // Token 无效，清除登录状态
-      console.log(responseData.message || '登录已过期，请重新登录')
-      uni.removeStorageSync('token')
-      uni.removeStorageSync('userInfo')
-      throw new Error(responseData.message || '登录已过期，请重新登录')
-    } else if (tokenStatus === 'valid') {
-      console.log('[商品列表] 用户已登录')
-    } else if (tokenStatus === 'none') {
-      console.log('[商品列表] 未登录用户')
-    }
-  }
   
   // 返回数据: {categories: [], products: [], has_more, total, page, page_size, current_category}
   return responseData
