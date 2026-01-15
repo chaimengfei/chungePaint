@@ -67,6 +67,17 @@ export const payCombined = (data) => {
 }
 
 /**
+ * 确认支付接口（取消线上支付，直接确认下单）
+ * @param {Object} data
+ * @param {string} data.order_no - 订单号
+ * @param {number} [data.total] - 支付总金额，可选校验
+ * @param {string} [data.note] - 备注
+ */
+export const payConfirm = (data) => {
+  return post('/api/pay/confirm', data).then(res => res.data)
+}
+
+/**
  * 再次购买：将已完成订单中的商品重新加入购物车
  * @param {string} orderNo - 订单号
  */

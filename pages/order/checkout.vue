@@ -53,7 +53,7 @@
       <view class="footer">
         <view class="price-total"><text>合计:</text><text class="price">¥{{ orderData.payment_amount }}</text></view>
         <button class="submit-btn" :disabled="!selectedAddress || submitting" @click="submitOrder">
-          {{ submitting ? '支付中...' : '立即支付' }}
+          {{ submitting ? '下单中...' : '确认下单' }}
         </button>
       </view>
     </view>
@@ -75,10 +75,8 @@
 </template>
 
 <script>
-import { checkoutOrder, payCombined, getOrderDetail } from '@/api/order.js'
-import { ENV_INFO } from '@/api/common.js'
+import { checkoutOrder, payConfirm, getOrderDetail } from '@/api/order.js'
 import { getAddressList } from '@/api/address.js'
-import { refreshBalance } from '@/api/balance.js'
 
 export default {
   data() {
@@ -92,9 +90,7 @@ export default {
       loading: true,
       error: null,
       submitting: false,
-	  incomingAddressId: null,
-      paymentCheckTimer: null, // 支付状态检查定时器
-      paymentSuccessHandled: false // 标记支付成功是否已处理
+	  incomingAddressId: null
     }
   },
   onLoad(options) {
@@ -132,13 +128,6 @@ export default {
       uni.removeStorageSync('selected_address')
     }else {
       this.loadAddress(); // 没有缓存才调用接口获取
-    }
-  },
-  onUnload() {
-    // 页面卸载时清除支付状态检查定时器
-    if (this.paymentCheckTimer) {
-      clearInterval(this.paymentCheckTimer)
-      this.paymentCheckTimer = null
     }
   },
   methods: {
@@ -220,98 +209,6 @@ export default {
         icon: 'none'
       })
     },
-    // 启动支付状态轮询检查（仅开发环境启用，作为备用方案）
-    startPaymentStatusCheck(orderNo, resolve, reject) {
-      // 只在开发环境启用轮询，生产环境不启用（真机环境 success 回调正常触发）
-      const isDevEnv = ENV_INFO.env === 'dev'
-      if (!isDevEnv) {
-        console.log('生产环境，不启用支付状态轮询')
-        return
-      }
-      
-      let checkCount = 0
-      const maxChecks = 10 // 最多检查10次（约20秒，因为每2秒检查一次）
-
-      
-      // 延迟启动轮询，给 success 回调一些时间（真机环境通常1-2秒内就会触发）
-      setTimeout(() => {
-        // 如果 success 回调已经触发，不需要轮询了
-        if (this.paymentSuccessHandled) {
-          console.log('支付成功回调已触发，跳过轮询')
-          return
-        }
-        
-        console.log('开发环境：启动支付状态轮询检查')
-        this.paymentCheckTimer = setInterval(async () => {
-          // 再次检查，防止在轮询过程中 success 回调触发
-          if (this.paymentSuccessHandled) {
-            clearInterval(this.paymentCheckTimer)
-            this.paymentCheckTimer = null
-            return
-          }
-          
-          checkCount++
-          
-          if (checkCount > maxChecks) {
-            // 超时，停止轮询（真机环境不应该走到这里）
-            console.log('轮询超时，停止检查')
-            clearInterval(this.paymentCheckTimer)
-            this.paymentCheckTimer = null
-            return
-          }
-          
-          try {
-            // 查询订单详情，检查支付状态
-            const res = await getOrderDetail(orderNo)
-            if (res.code === 0 && res.data) {
-              const orderStatus = res.data.order_status
-              // 订单状态不是"待付款"(1)，说明已支付或已取消
-              if (orderStatus !== 1) {
-                // 标记支付成功已处理，防止重复处理
-                this.paymentSuccessHandled = true
-                // 清除轮询定时器
-                clearInterval(this.paymentCheckTimer)
-                this.paymentCheckTimer = null
-                
-                // 如果订单已支付（状态为2已支付待发货、3待收货、5已完成）
-                if (orderStatus === 2 || orderStatus === 3 || orderStatus === 5) {
-                  console.log('轮询检测到支付成功，订单状态:', orderStatus)
-                  // 先关闭loading
-                  this.submitting = false
-                  uni.hideLoading()
-                  
-                  // 支付成功后刷新余额（强制刷新，确保获取最新余额）
-                  refreshBalance(true).catch(err => {
-                    console.warn('刷新余额失败:', err)
-                  })
-                  
-                  // 延迟跳转，给用户时间关闭二维码弹窗（开发者工具环境）
-                  setTimeout(() => {
-                    uni.redirectTo({
-                      url: `/pages/order/success?order_no=${orderNo}&amount=${this.orderData.payment_amount}`
-                    })
-                  }, 500) // 延迟500ms，让用户有时间关闭二维码弹窗
-                  resolve({ success: true, fromPolling: true })
-                } else if (orderStatus === 4) {
-                  // 订单已取消
-                  console.log('订单已取消')
-                  this.submitting = false
-                  uni.hideLoading()
-                  uni.showToast({
-                    title: '订单已取消',
-                    icon: 'none'
-                  })
-                  reject(new Error('订单已取消'))
-                }
-              }
-            }
-          } catch (err) {
-            console.error('轮询检查支付状态失败:', err)
-            // 轮询失败不影响，继续检查
-          }
-        }, 2000) // 每2秒检查一次（降低频率，减少服务器压力）
-      }, 10000) // 延迟10秒启动，给 success 回调足够的时间
-    },
     async submitOrder() {
       if (!this.selectedAddress) {
         return uni.showToast({ title: '请选择收货地址', icon: 'none' })
@@ -320,144 +217,83 @@ export default {
 		return uni.showToast({ title: '订单信息异常', icon: 'none' })
 	  }
       this.submitting = true
-      this.paymentSuccessHandled = false // 重置支付成功标记
-      uni.showLoading({ title: '支付中...', mask: true })
+      uni.showLoading({ title: '下单中...', mask: true })
 
       try {
-        // 构建支付请求数据（由后端自动判断余额/微信）
+        // 构建确认支付请求数据
         const payRequestData = {
           order_no: this.orderData.order_no,
           total: this.orderData.payment_amount, // 可选校验，不传则按订单应付
           note: this.orderNote || ''
         }
 
-        // 获取微信登录 code（后端仅在需要微信支付时使用）
-        try {
-          const loginRes = await new Promise((resolve, reject) => {
-            uni.login({
-              success: resolve,
-              fail: reject
-            })
-          })
-          const code = loginRes.code
-          if (code) {
-            payRequestData.code = code
-          }
-        } catch (err) {
-          console.warn('获取微信登录code失败，但继续请求由后端判断是否需要', err)
-        }
+        const payRes = await payConfirm(payRequestData)
 
-        const payRes = await payCombined(payRequestData)
-
-        if (payRes.data.code === 0) {
-          const payData = payRes.data.data || {}
-          const wxParamsFromServer = payData.wechat_pay_params
-          const wxParamsLegacy = payData.paySign && payData.package ? payData : null
-          const wxParams = wxParamsFromServer || wxParamsLegacy
-
+        if (payRes.code === 0) {
+          const payData = payRes.data || {}
+          const orderStatus = payData.order_status // 1: 待支付, 2: 已支付
+          const message = payData.message || '下单成功'
           const balanceAmount = Number(payData.balance_amount || 0)
-          const wechatAmount = Number(payData.wechat_amount || 0)
+          const offlineAmount = Number(payData.offline_amount || 0)
+          const wechatAmount = Number(payData.wechat_amount || 0) // 注意：这里实际表示线下支付金额
 
-          // 判断是否需要微信收银台：只要 wechat_amount > 0 就应该拉起
-          const needWxPay = wechatAmount > 0
+          this.submitting = false
+          uni.hideLoading()
 
-          if (!needWxPay) {
-            // 视为余额支付成功或后端已完成支付
-            console.log('余额或免调起支付成功')
-            this.paymentSuccessHandled = true
-            this.submitting = false
-            uni.hideLoading()
-            
-            // 余额支付成功后刷新余额（强制刷新，确保获取最新余额）
-            refreshBalance(true).catch(err => {
-              console.warn('刷新余额失败:', err)
+          if (orderStatus === 2) {
+            // 已支付（余额充足，全额支付）
+            console.log('下单成功，已全额支付')
+            uni.showToast({
+              title: message || '下单成功',
+              icon: 'success',
+              duration: 2000
             })
             
-            uni.redirectTo({
-              url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
-            })
-          } else {
-            if (!wxParams) {
-              console.error('需要微信支付但未返回微信支付参数')
-              this.submitting = false
-              uni.hideLoading()
-              uni.showToast({
-                title: '支付参数缺失，请重试',
-                icon: 'none'
+            // 延迟跳转到成功页
+            setTimeout(() => {
+              uni.redirectTo({
+                url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
               })
-              return
+            }, 1500)
+          } else if (orderStatus === 1) {
+            // 待支付（余额不足，需要线下支付）
+            const offlinePayAmount = offlineAmount || wechatAmount
+            let tipMessage = message
+            
+            if (balanceAmount > 0 && offlinePayAmount > 0) {
+              // 部分余额支付，部分线下支付
+              tipMessage = `下单成功，已使用余额支付 ¥${(balanceAmount / 100).toFixed(2)}，剩余 ¥${(offlinePayAmount / 100).toFixed(2)} 需线下支付`
+            } else if (offlinePayAmount > 0) {
+              // 完全线下支付
+              tipMessage = `下单成功，需线下支付 ¥${(offlinePayAmount / 100).toFixed(2)}`
             }
-            // 微信支付：调起收银台
-            console.log('需要拉起微信支付，balance_amount:', balanceAmount, 'wechat_amount:', wechatAmount)
-            await new Promise((resolve, reject) => {
-              uni.requestPayment({
-                provider: 'wxpay',
-                timeStamp: wxParams.timeStamp,
-                nonceStr: wxParams.nonceStr,
-                package: wxParams.package,
-                signType: wxParams.signType,
-                paySign: wxParams.paySign,
-                success: (res) => {
-                  console.log('支付成功回调:', res)
-                  this.paymentSuccessHandled = true
-                  if (this.paymentCheckTimer) {
-                    clearInterval(this.paymentCheckTimer)
-                    this.paymentCheckTimer = null
-                  }
-                  this.submitting = false
-                  uni.hideLoading()
-                  
-                  // 支付成功后刷新余额（强制刷新，确保获取最新余额）
-                  refreshBalance(true).catch(err => {
-                    console.warn('刷新余额失败:', err)
+            
+            console.log('下单成功，待支付:', tipMessage)
+            uni.showModal({
+              title: '下单成功',
+              content: tipMessage,
+              showCancel: false,
+              confirmText: '查看订单',
+              success: (res) => {
+                if (res.confirm) {
+                  // 跳转到订单详情页
+                  uni.redirectTo({
+                    url: `/pages/order/detail?order_no=${this.orderData.order_no}`
                   })
-                  
-                  setTimeout(() => {
-                    uni.redirectTo({
-                      url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
-                    })
-                  }, 500)
-                  resolve(res)
-                },
-                fail: (err) => {
-                  console.error('支付失败:', err)
-                  if (this.paymentSuccessHandled) {
-                    console.log('支付已成功处理，忽略后续 fail 回调')
-                    return
-                  }
-                  if (this.paymentCheckTimer) {
-                    clearInterval(this.paymentCheckTimer)
-                    this.paymentCheckTimer = null
-                  }
-                  
-                  if (err.errMsg && err.errMsg.includes('cancel')) {
-                    uni.showToast({ 
-                      title: '用户取消支付', 
-                      icon: 'none' 
-                    })
-                  } else {
-                    uni.showToast({ 
-                      title: '支付失败，请重试', 
-                      icon: 'none' 
-                    })
-                  }
-                  reject(err)
                 }
-              })
-              // 开发者工具扫码支付兜底轮询
-              this.startPaymentStatusCheck(this.orderData.order_no, resolve, reject)
+              }
             })
           }
         } else {
           uni.showToast({ 
-            title: payRes.data.message || '获取支付信息失败', 
+            title: payRes.message || '下单失败', 
             icon: 'none' 
           })
         }
       } catch (err) {
-        console.error('支付失败:', err)
+        console.error('下单失败:', err)
         uni.showToast({ 
-          title: err.message || '支付失败', 
+          title: err.message || '下单失败，请重试', 
           icon: 'none' 
         })
       } finally {
