@@ -240,50 +240,32 @@ export default {
           this.submitting = false
           uni.hideLoading()
 
+          // 构建支付信息字符串，传递给成功页
+          let paymentInfo = ''
+          const offlinePayAmount = offlineAmount || wechatAmount
+          
           if (orderStatus === 2) {
             // 已支付（余额充足，全额支付）
-            console.log('下单成功，已全额支付')
-            uni.showToast({
-              title: message || '下单成功',
-              icon: 'success',
-              duration: 2000
-            })
-            
-            // 延迟跳转到成功页
-            setTimeout(() => {
-              uni.redirectTo({
-                url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}`
-              })
-            }, 1500)
+            paymentInfo = message || '下单成功'
           } else if (orderStatus === 1) {
             // 待支付（余额不足，需要线下支付）
-            const offlinePayAmount = offlineAmount || wechatAmount
-            let tipMessage = message
-            
             if (balanceAmount > 0 && offlinePayAmount > 0) {
               // 部分余额支付，部分线下支付
-              tipMessage = `下单成功，已使用余额支付 ¥${(balanceAmount / 100).toFixed(2)}，剩余 ¥${(offlinePayAmount / 100).toFixed(2)} 需线下支付`
+              paymentInfo = `已使用余额支付 ¥${(balanceAmount / 100).toFixed(2)}，剩余 ¥${(offlinePayAmount / 100).toFixed(2)} 需线下支付`
             } else if (offlinePayAmount > 0) {
               // 完全线下支付
-              tipMessage = `下单成功，需线下支付 ¥${(offlinePayAmount / 100).toFixed(2)}`
+              paymentInfo = `需线下支付 ¥${(offlinePayAmount / 100).toFixed(2)}`
+            } else {
+              paymentInfo = message || '下单成功'
             }
-            
-            console.log('下单成功，待支付:', tipMessage)
-            uni.showModal({
-              title: '下单成功',
-              content: tipMessage,
-              showCancel: false,
-              confirmText: '查看订单',
-              success: (res) => {
-                if (res.confirm) {
-                  // 跳转到订单详情页
-                  uni.redirectTo({
-                    url: `/pages/order/detail?order_no=${this.orderData.order_no}`
-                  })
-                }
-              }
-            })
           }
+
+          console.log('下单成功，订单状态:', orderStatus, '支付信息:', paymentInfo)
+          
+          // 统一跳转到成功页，传递订单状态和支付信息
+          uni.redirectTo({
+            url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}&order_status=${orderStatus}&payment_info=${encodeURIComponent(paymentInfo)}`
+          })
         } else {
           uni.showToast({ 
             title: payRes.message || '下单失败', 

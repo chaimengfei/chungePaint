@@ -7,23 +7,25 @@
           <text class="checkmark">✓</text>
         </view>
       </view>
-      <text class="success-title">支付成功</text>
+      <text class="success-title">下单成功</text>
+      <text class="success-subtitle" v-if="orderStatus === 1">等待接单...</text>
       <text class="success-order-no" v-if="orderNo">订单号：{{ orderNo }}</text>
       <text class="success-amount" v-if="displayAmount">{{ displayAmount }}</text>
+      <text class="payment-info" v-if="paymentInfo">{{ paymentInfo }}</text>
     </view>
 
     <!-- 订单信息卡片 -->
     <view v-if="orderInfo" class="order-info-card">
-      <view v-if="orderInfo.order_items && orderInfo.order_items.length > 0" class="order-item-preview">
+      <view v-if="orderInfo.items && orderInfo.items.length > 0" class="order-item-preview">
         <image 
-          v-if="orderInfo.order_items[0].product_image" 
+          v-if="orderInfo.items[0].product_image" 
           class="product-thumb" 
-          :src="orderInfo.order_items[0].product_image" 
+          :src="orderInfo.items[0].product_image" 
           mode="aspectFill"
         />
         <view class="product-details">
-          <text class="product-name">{{ orderInfo.order_items[0].product_name }}</text>
-          <text v-if="orderInfo.order_items[0].specification" class="product-spec">{{ orderInfo.order_items[0].specification }}</text>
+          <text class="product-name">{{ orderInfo.items[0].product_name }}</text>
+          <text v-if="orderInfo.items[0].specification" class="product-spec">{{ orderInfo.items[0].specification }}</text>
           <text v-if="orderInfo.receiver_address" class="delivery-address">{{ orderInfo.receiver_address }}</text>
         </view>
       </view>
@@ -44,7 +46,9 @@ export default {
     return {
       orderNo: '',
       paymentAmount: '',
-      orderInfo: null
+      orderInfo: null,
+      orderStatus: null, // 1: 待支付, 2: 已支付
+      paymentInfo: '' // 支付信息提示
     }
   },
   computed: {
@@ -65,6 +69,12 @@ export default {
     }
     if (options.amount) {
       this.paymentAmount = options.amount
+    }
+    if (options.order_status) {
+      this.orderStatus = parseInt(options.order_status)
+    }
+    if (options.payment_info) {
+      this.paymentInfo = decodeURIComponent(options.payment_info)
     }
   },
   methods: {
@@ -148,6 +158,12 @@ export default {
   margin-bottom: 20rpx;
 }
 
+.success-subtitle {
+  font-size: 32rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+}
+
 .success-amount {
   font-size: 36rpx;
   color: #666;
@@ -158,6 +174,15 @@ export default {
   margin-top: 8rpx;
   font-size: 28rpx;
   color: #888;
+}
+
+.payment-info {
+  margin-top: 10rpx;
+  font-size: 28rpx;
+  color: #999;
+  line-height: 1.5;
+  text-align: center;
+  padding: 0 40rpx;
 }
 
 /* 订单信息卡片 */
