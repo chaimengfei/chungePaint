@@ -52,9 +52,14 @@
       <!-- 支付按钮 -->
       <view class="footer">
         <view class="price-total"><text>合计:</text><text class="price">¥{{ orderData.payment_amount }}</text></view>
-        <button class="submit-btn" :disabled="!selectedAddress || submitting" @click="submitOrder">
-          {{ submitting ? '下单中...' : '确认下单' }}
+        <button class="submit-btn" @tap="testClick" @click="testClick">
+          确认支付
         </button>
+        <!-- 调试信息 -->
+        <view v-if="false" style="font-size: 12px; color: red; padding: 5px;">
+          调试: selectedAddress={{ !!selectedAddress }}, submitting={{ submitting }}, 
+          orderData={{ !!orderData }}, order_no={{ orderData?.order_no }}
+        </view>
       </view>
     </view>
 
@@ -209,25 +214,52 @@ export default {
         icon: 'none'
       })
     },
-    async submitOrder() {
+    testClick(e) {
+      console.log('123')
+      console.log('========== [测试] 按钮被点击 ==========')
+      console.log('[测试] 事件对象:', e)
+      console.log('[测试] selectedAddress:', this.selectedAddress)
+      console.log('[测试] submitting:', this.submitting)
+      console.log('[测试] orderData:', this.orderData)
+      this.submitOrder(e)
+    },
+    async submitOrder(e) {
+      console.log('========== [确认支付] 开始执行 submitOrder 方法 ==========')
+      console.log('[确认支付] 事件对象:', e)
+      console.log('[确认支付] selectedAddress:', this.selectedAddress)
+      console.log('[确认支付] orderData:', this.orderData)
+      console.log('[确认支付] submitting:', this.submitting)
+      
       if (!this.selectedAddress) {
+        console.warn('[确认支付] 未选择收货地址，提前返回')
         return uni.showToast({ title: '请选择收货地址', icon: 'none' })
       }
 	  if (!this.orderData || !this.orderData.order_no) {
+        console.warn('[确认支付] 订单信息异常，提前返回', {
+          hasOrderData: !!this.orderData,
+          orderNo: this.orderData?.order_no
+        })
 		return uni.showToast({ title: '订单信息异常', icon: 'none' })
 	  }
+      
+        console.log('[确认支付] 通过验证，开始调用接口')
       this.submitting = true
-      uni.showLoading({ title: '下单中...', mask: true })
+      uni.showLoading({ title: '支付中...', mask: true })
 
       try {
         // 构建确认支付请求数据
+        // 直接使用结算接口返回的 payment_amount 值（已经是"分"为单位）
         const payRequestData = {
           order_no: this.orderData.order_no,
-          total: this.orderData.payment_amount, // 可选校验，不传则按订单应付
+          total: this.orderData.payment_amount, // 直接使用结算接口返回的值
           note: this.orderNote || ''
         }
 
+        console.log('[确认支付] 开始调用 /api/pay/confirm，请求数据:', JSON.stringify(payRequestData))
+        console.log('[确认支付] payConfirm 函数:', typeof payConfirm, payConfirm)
+        
         const payRes = await payConfirm(payRequestData)
+        console.log('[确认支付] /api/pay/confirm 接口返回:', JSON.stringify(payRes))
 
         if (payRes.code === 0) {
           const payData = payRes.data || {}
@@ -267,15 +299,16 @@ export default {
             url: `/pages/order/success?order_no=${this.orderData.order_no}&amount=${this.orderData.payment_amount}&order_status=${orderStatus}&payment_info=${encodeURIComponent(paymentInfo)}`
           })
         } else {
+          console.error('[确认支付] 接口返回错误:', payRes)
           uni.showToast({ 
-            title: payRes.message || '下单失败', 
+            title: payRes.message || '支付失败', 
             icon: 'none' 
           })
         }
       } catch (err) {
-        console.error('下单失败:', err)
+        console.error('[确认支付] 接口调用失败:', err)
         uni.showToast({ 
-          title: err.message || '下单失败，请重试', 
+          title: err.message || '支付失败，请重试', 
           icon: 'none' 
         })
       } finally {
@@ -459,6 +492,7 @@ export default {
   justify-content: space-between;
   padding: 0 15px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
 }
 
 .price-total {
@@ -482,6 +516,8 @@ export default {
   line-height: 36px;
   font-size: 14px;
   border: none;
+  position: relative;
+  z-index: 1001;
 }
 
 .submit-btn[disabled] {
