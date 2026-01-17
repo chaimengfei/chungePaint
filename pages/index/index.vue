@@ -2,22 +2,16 @@
   <view class="container">
     <!-- 品牌展示区域 -->
     <view class="brand-card">
-      <view class="brand-logo-section">
-        <view class="logo-container">
-          <view class="text-logo">
-            <text class="logo-text">贸彩</text>
-            <text class="logo-tm">®</text>
-          </view>
-        </view>
-        <view class="brand-text">
-          <text class="desc-text">汽车漆、工业漆、雕塑&广告牌漆、各种辅料供应</text>
-          <view class="contact-info">
-            <text class="phone-icon">📞</text>
-            <text class="phone-icon"> </text>
-            <text class="contact-text">李增春-13161621688</text>
-          </view>
-        </view>
+      <view class="brand-header">
+        <text class="brand-title">贸彩漆业</text>
+        <text class="brand-desc">汽车漆、工业漆、雕塑&广告牌漆、各种辅料</text>
       </view>
+    </view>
+    
+    <!-- 公告栏 -->
+    <view class="notice-bar">
+      <text class="notice-icon">📢</text>
+      <text class="notice-text">本平台为产品展示与询价中心，如需采购请提交需求，专属客服将为您服务。</text>
     </view>
     
     <!-- 搜索框 -->
@@ -77,11 +71,15 @@
           <image class="product-image" :src="product.image" mode="aspectFill" />
           <view class="product-info">
             <text class="product-name">{{ product.name }}</text>
-            <text class="product-price">¥{{ product.seller_price }}</text>
-            <text class="product-unit">{{ product.unit }}</text>
+            <view class="price-info">
+              <text class="price-label">参考价：</text>
+              <text class="product-price">¥{{ product.seller_price }}</text>
+              <text class="product-unit">/ {{ product.unit }}</text>
+            </view>
+            <text class="price-tip">（具体价格因采购量及规格可能浮动）</text>
             <view class="action-buttons">
-              <button class="add-btn" @click="addToCart(product.id)">加入购物车</button>
-              <button class="buy-btn" @click="buyNow(product)">立即购买</button>
+              <button class="add-requirement-btn" @click="addToCart(product.id)">📋 加入需求单</button>
+              <button class="inquiry-btn" @click="goToInquiry(product)">📞 立即询价</button>
             </view>
           </view>
         </view>
@@ -558,6 +556,23 @@ export default {
     },
     
     // 立即购买
+    // 跳转到询价页面
+    goToInquiry(product) {
+      // 将商品信息存储到本地，然后跳转到询价表单页面
+      // 这里先跳转到需求单页面，用户可以在那里提交询价
+      uni.switchTab({
+        url: '/pages/cart/index'
+      })
+      // 提示用户可以在需求单中提交询价
+      setTimeout(() => {
+        uni.showToast({
+          title: '请在需求单中提交询价',
+          icon: 'none',
+          duration: 2000
+        })
+      }, 500)
+    },
+    
     async buyNow(product) {
       try {
         console.log('首页 - 开始立即购买，商品ID:', product.id)
@@ -961,24 +976,30 @@ export default {
 
 /* 品牌展示区域 */
 .brand-card {
-  background-color: #e6f7ff;
+  background-color: #fff;
   margin: 20rpx;
   border-radius: 16rpx;
   padding: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-  border: 2rpx solid #4169E1;
-  position: relative;
-  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
-.brand-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 6rpx;
-  background: linear-gradient(90deg, #4169E1 0%, #ffb6c1 100%);
+.brand-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.brand-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.brand-desc {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
 }
 
 .brand-logo-section {
@@ -1172,16 +1193,58 @@ export default {
   margin-bottom: 10rpx;
 }
 
+/* 公告栏样式 */
+.notice-bar {
+  background-color: #fff3cd;
+  margin: 0 20rpx 20rpx;
+  padding: 20rpx;
+  border-radius: 8rpx;
+  border-left: 4rpx solid #ffc107;
+  display: flex;
+  align-items: flex-start;
+}
+
+.notice-icon {
+  font-size: 32rpx;
+  margin-right: 10rpx;
+  flex-shrink: 0;
+}
+
+.notice-text {
+  font-size: 24rpx;
+  color: #856404;
+  line-height: 1.6;
+  flex: 1;
+}
+
+.price-info {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 8rpx;
+}
+
+.price-label {
+  font-size: 24rpx;
+  color: #666;
+  margin-right: 4rpx;
+}
+
 .product-price {
-  color: #4169E1;
+  color: #e93b3d;
   font-size: 32rpx;
   font-weight: bold;
-  margin-bottom: 10rpx;
+  margin-right: 4rpx;
 }
 
 .product-unit {
   color: #999;
   font-size: 24rpx;
+}
+
+.price-tip {
+  font-size: 22rpx;
+  color: #999;
+  margin-bottom: 10rpx;
   margin-bottom: 15rpx;
 }
 
@@ -1191,26 +1254,27 @@ export default {
   gap: 20rpx;
 }
 
-.add-btn, .buy-btn {
-  height: 50rpx;
-  line-height: 50rpx;
-  font-size: 24rpx;
-  padding: 0 30rpx;
+.add-requirement-btn, .inquiry-btn {
+  height: 64rpx;
+  line-height: 64rpx;
+  font-size: 26rpx;
+  padding: 0 20rpx;
   flex: 1;
   text-align: center;
   white-space: nowrap;
   min-width: 120rpx;
+  border-radius: 8rpx;
+  border: none;
 }
 
-.add-btn {
+.add-requirement-btn {
   background-color: #4169E1;
   color: #fff;
 }
 
-.buy-btn {
-  background-color: #fff;
-  color: #4169E1;
-  border: 2rpx solid #4169E1;
+.inquiry-btn {
+  background-color: #ff9500;
+  color: #fff;
 }
 
 .empty {

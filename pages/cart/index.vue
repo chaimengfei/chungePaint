@@ -1,11 +1,8 @@
 <template>
 	<view class="container">
-		<!-- 默认地址信息 -->
+		<!-- 默认地址信息（用于运费估算） -->
 		<view v-if="defaultAddress" class="address-section" @click="goToAddressList">
-			<view class="address-tags">
-				<text v-if="defaultAddress.is_default" class="tag default-tag">默认</text>
-				<!-- <text class="tag home-tag">家</text> -->
-			</view>
+			<view class="address-label">**默认地址** (用于运费估算)</view>
 			<view class="address-info">
 				<view class="address-detail">
 					<text class="location">
@@ -14,22 +11,29 @@
 				</view>
 			</view>
 			<view class="address-arrow">
-				<text>></text>
+				<text>[修改]</text>
 			</view>
 		</view>
 
 		<!-- 无地址提示 -->
 		<view v-else class="no-address" @click="goToAddressList">
 			<view class="no-address-content">
-				<text class="no-address-text">请选择收货地址</text>
-				<text class="no-address-arrow">></text>
+				<text class="no-address-label">**默认地址** (用于运费估算)</text>
+				<text class="no-address-text">（仅作为信息记录，非必填）</text>
+				<text class="no-address-arrow">[修改]</text>
 			</view>
 		</view>
 
 		<view class="header">
-			<text class="title">购物车</text>
+			<text class="title">我的需求单</text>
+			<text class="subtitle">（您可以在此整理意向商品，提交后客服将为您统一报价）</text>
 		</view>
 
+		<!-- 清单商品 -->
+		<view class="list-title" v-if="cartItems.length > 0">
+			<text>**清单商品**</text>
+		</view>
+		
 		<!-- 购物车列表 -->
 		<view v-if="cartItems.length > 0">
 			<view v-for="item in cartItems" :key="item.id" class="cart-item" :class="{ 'disabled-item': !item.can_purchase }">
@@ -39,9 +43,13 @@
 				</view>
 				<view class="item-right">
 					<text class="product-name">{{ item.product_name }}</text>
+					<view class="spec-info">
+						<text class="spec-label">规格：</text>
+						<text class="spec-value">{{ item.product_unit }}</text>
+					</view>
 					<view class="price-container">
+						<text class="price-label">参考单价：</text>
 						<text class="product-price">¥{{ item.product_seller_price }}</text>
-						<text class="product-unit">/{{ item.product_unit }}</text>
 					</view>
 					
 					<!-- 不可购买商品的提示信息 -->
@@ -65,30 +73,34 @@
 				</view>
 			</view>
 
-			<!-- 结算栏 -->
+			<!-- 底部固定栏 -->
 			<view class="checkout-bar">
 				<view class="select-all">
 					<checkbox :checked="isAllSelected" @click="toggleSelectAll" />
 					<text>全选</text>
 				</view>
-				<view class="total">
-					<text>合计: ¥{{ totalPrice }}</text>
-					<button 
-						class="checkout-btn" 
-						:class="{ 'disabled': selectedCount === 0 }"
-						:disabled="selectedCount === 0"
-						@click="goToCheckout"
-					>
-						结算({{ selectedCount }})
-					</button>
+				<view class="total-info">
+					<view class="total-row">
+						<text class="total-label">合计：</text>
+						<text class="total-price">¥{{ totalPrice }}</text>
+					</view>
+					<text class="total-tip">（此金额仅为参考，以最终报价为准）</text>
 				</view>
+				<button 
+					class="submit-requirement-btn" 
+					:class="{ 'disabled': selectedCount === 0 }"
+					:disabled="selectedCount === 0"
+					@click="submitRequirement"
+				>
+					提交需求，联系客服
+				</button>
 			</view>
 		</view>
 
-		<!-- 空购物车 -->
+		<!-- 空需求单 -->
 		<view v-else class="empty-cart">
 			<image src="/static/images/empty-cart.png" mode="aspectFit"></image>
-			<text class="tip">购物车还是空的</text>
+			<text class="tip">需求单还是空的</text>
 			<button class="btn" @click="goToIndex">去逛逛</button>
 		</view>
 	</view>
@@ -251,7 +263,24 @@
 			},
 
 			// 跳转到结算页面
-			async goToCheckout() {
+			// 提交需求，联系客服
+		async submitRequirement() {
+			if (this.selectedCount === 0) {
+				uni.showToast({
+					title: '请选择要询价的商品',
+					icon: 'none'
+				})
+				return
+			}
+			
+			// 跳转到确认需求页面（使用原来的结算页面，但改为确认需求）
+			// 这里先跳转到结算页面，后续可以改为专门的确认需求页面
+			uni.navigateTo({
+				url: '/pages/order/checkout'
+			})
+		},
+		
+		async goToCheckout() {
 				if (this.selectedCount === 0) {
 					uni.showToast({
 						title: '请至少选择一件商品',
@@ -453,21 +482,44 @@
 	.header {
 		padding: 20rpx;
 		border-bottom: 1rpx solid #eee;
+		background-color: #fff;
 	}
 
 	.title {
 		font-size: 36rpx;
+		font-weight: bold;
+		margin-bottom: 8rpx;
+	}
+
+	.subtitle {
+		font-size: 24rpx;
+		color: #999;
+		line-height: 1.5;
+	}
+
+	.list-title {
+		padding: 20rpx;
+		background-color: #fff;
+		border-bottom: 1rpx solid #eee;
+		font-size: 28rpx;
 		font-weight: bold;
 	}
 
 	/* 地址信息样式 */
 	.address-section {
 		display: flex;
-		align-items: center;
+		flex-direction: column;
 		padding: 20rpx;
 		background-color: #fff;
 		border-bottom: 1rpx solid #eee;
 		margin-bottom: 10rpx;
+	}
+
+	.address-label {
+		font-size: 26rpx;
+		font-weight: bold;
+		margin-bottom: 8rpx;
+		color: #333;
 	}
 
 	.address-tags {
@@ -496,6 +548,8 @@
 
 	.address-info {
 		flex: 1;
+		width: 100%;
+		margin-bottom: 8rpx;
 	}
 
 	.address-detail {
@@ -530,8 +584,16 @@
 	}
 
 	.address-arrow {
-		color: #999;
-		font-size: 32rpx;
+		color: #4169E1;
+		font-size: 24rpx;
+		align-self: flex-end;
+	}
+
+	.no-address-label {
+		font-size: 26rpx;
+		font-weight: bold;
+		margin-bottom: 4rpx;
+		color: #333;
 	}
 
 	/* 无地址提示样式 */
@@ -688,18 +750,39 @@
 		border-radius: 25rpx;
 	}
 
+	.spec-info {
+		display: flex;
+		align-items: center;
+		margin-bottom: 8rpx;
+		font-size: 24rpx;
+	}
+
+	.spec-label {
+		color: #666;
+		margin-right: 4rpx;
+	}
+
+	.spec-value {
+		color: #333;
+	}
+
+	.price-label {
+		color: #666;
+		font-size: 24rpx;
+		margin-right: 4rpx;
+	}
+
 	.checkout-bar {
 		position: fixed;
 		bottom: 0;
 		left: 0;
 		right: 0;
-		height: 100rpx;
 		background-color: #fff;
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 0 20rpx;
+		flex-direction: column;
+		padding: 20rpx;
 		border-top: 1rpx solid #eee;
+		box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
 	}
 
 	.select-all {
@@ -712,31 +795,53 @@
 		font-size: 28rpx;
 	}
 
-	.total {
+	.total-info {
+		flex: 1;
 		display: flex;
-		align-items: center;
+		flex-direction: column;
+		align-items: flex-end;
+		margin-bottom: 10rpx;
 	}
 
-	.total text {
-		margin-right: 20rpx;
-		font-size: 28rpx;
-		color: #4169E1;
+	.total-row {
+		display: flex;
+		align-items: baseline;
+		margin-bottom: 4rpx;
+	}
+
+	.total-label {
+		font-size: 26rpx;
+		color: #333;
+		margin-right: 4rpx;
+	}
+
+	.total-price {
+		font-size: 32rpx;
 		font-weight: bold;
+		color: #e93b3d;
 	}
 
-	.checkout-btn {
+	.total-tip {
+		font-size: 22rpx;
+		color: #999;
+		line-height: 1.4;
+	}
+
+	.submit-requirement-btn {
 		background-color: #4169E1;
 		color: white;
-		height: 70rpx;
-		line-height: 70rpx;
+		height: 80rpx;
+		line-height: 80rpx;
 		padding: 0 30rpx;
-		border-radius: 35rpx;
+		border-radius: 8rpx;
 		font-size: 28rpx;
-		transition: all 0.3s;
+		font-weight: bold;
+		width: 100%;
+		border: none;
 	}
 
-	.checkout-btn.disabled,
-	.checkout-btn:disabled {
+	.submit-requirement-btn.disabled,
+	.submit-requirement-btn:disabled {
 		background-color: #cccccc;
 		color: #999999;
 		opacity: 0.6;

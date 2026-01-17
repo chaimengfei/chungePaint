@@ -98,8 +98,8 @@ export default {
           url: `/pages/order/detail?order_no=${this.orderNo}`
         })
       } else {
-        // 如果没有订单号，跳转到订单列表
-        uni.switchTab({
+        // 如果没有订单号，跳转到询价列表
+        uni.navigateTo({
           url: '/pages/order/index'
         })
       }

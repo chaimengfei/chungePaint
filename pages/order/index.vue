@@ -1,10 +1,10 @@
 <template>
   <view class="container">
     <view class="header">
-      <text class="title">我的订单</text>
+      <text class="title">我的询价</text>
     </view>
     
-    <!-- 订单状态选项卡 -->
+    <!-- 询价状态选项卡 -->
     <view class="order-tabs">
       <text 
         v-for="tab in tabs" 
@@ -30,18 +30,15 @@
           @click="viewOrderDetail(order.order_no)"
         >
           <view class="order-header">
-            <text class="order-no">订单号: {{ order.order_no }}</text>
+            <text class="order-no">询价单号：{{ order.order_no }}</text>
             <view class="header-right">
-              <text class="order-status">{{ getStatusText(order) }}</text>
-              <!-- 已付款订单在头部显示"查看详情"链接 -->
-              <text 
-                v-if="order.order_status === 2" 
-                class="view-detail-link"
-                @click.stop="viewOrderDetail(order.order_no)"
-              >
-                查看详情 >
-              </text>
+              <text class="order-status">[状态：{{ getStatusText(order) }}]</text>
             </view>
+          </view>
+          
+          <view class="inquiry-time">
+            <text class="time-label">**提交时间：**</text>
+            <text class="time-value">{{ formatTime(order.created_at) }}</text>
           </view>
           
           <view class="order-body">
@@ -63,31 +60,47 @@
           </view>
           
           <view class="order-footer">
-            <text class="total-amount">共{{ order.items ? order.items.length : 0 }}件商品 合计: ¥{{ order.total_amount }}</text>
+            <view class="total-amount">
+              <text class="amount-label">**合计参考金额：**</text>
+              <text class="amount-value">¥{{ order.total_amount }}</text>
+            </view>
+            
+            <!-- 客服备注 -->
+            <view v-if="order.remark" class="service-remark">
+              <text class="remark-label">**客服备注：**</text>
+              <text class="remark-text">{{ order.remark }}</text>
+            </view>
+            
+            <!-- 已报价显示报价信息 -->
+            <view v-if="order.order_status === 2" class="quote-info">
+              <text class="quote-label">**客服报价：**</text>
+              <text class="quote-value">¥{{ order.payment_amount || order.total_amount }}</text>
+              <text v-if="order.quote_note" class="quote-note">({{ order.quote_note }})</text>
+            </view>
             
             <view class="action-buttons">
-              <!-- 待付款订单：根据outbound_type显示不同按钮 -->
+              <!-- 待处理状态：显示联系客服按钮 -->
               <button 
-                v-if="order.order_status === 1 && order.outbound_type === 2" 
-                class="action-btn pay-btn pay-btn-disabled"
-                disabled
+                v-if="order.order_status === 1" 
+                class="action-btn contact-btn"
+                @click.stop="contactService(order)"
               >
-                未付款(线下单)
+                📞 联系客服
               </button>
-              <button 
-                v-if="order.order_status === 1 && order.outbound_type === 1" 
-                class="action-btn pay-btn"
-                @click.stop="payOrder(order.id)"
-              >
-                去支付
-              </button>
-              <!-- 已付款订单显示"再次购买"按钮 -->
+              <!-- 已报价状态：显示查看报价单和联系下单按钮 -->
               <button 
                 v-if="order.order_status === 2" 
-                class="action-btn buy-again-btn"
-                @click.stop="buyAgain(order)"
+                class="action-btn view-quote-btn"
+                @click.stop="viewOrderDetail(order.order_no)"
               >
-                再次购买
+                💬 查看报价单
+              </button>
+              <button 
+                v-if="order.order_status === 2" 
+                class="action-btn contact-order-btn"
+                @click.stop="contactService(order)"
+              >
+                📞 联系下单
               </button>
             </view>
           </view>
@@ -118,8 +131,9 @@ export default {
     return {
       tabs: [
         { name: '全部', status: 0 },
-        { name: '待付款', status: 1 },
-        { name: '已付款', status: 2 }
+        { name: '待处理', status: 1 },
+        { name: '已报价', status: 2 },
+        { name: '已完成', status: 3 }
       ],
       activeTab: 0,
       orders: [],
@@ -272,32 +286,59 @@ export default {
       }
     },
     
-    // 获取订单状态文本
+    // 格式化时间
+    formatTime(timeStr) {
+      if (!timeStr) return ''
+      const date = new Date(timeStr)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      return `${year}/${month}/${day} ${hours}:${minutes}`
+    },
+    
+    // 获取询价状态文本
     getStatusText(order) {
-      // 如果传入的是订单对象，根据outbound_type判断
+      // 如果传入的是订单对象
       if (typeof order === 'object' && order !== null) {
         const status = order.order_status
-        const outboundType = order.outbound_type
         
-        // outbound_type=2（admin后台操作）且order_status=1（待付款）：显示"未付款(线下单)"
-        if (outboundType === 2 && status === 1) {
-          return '未付款(线下单)'
-        }
-        
-        // 其他情况按原逻辑
+        // 询价状态映射
         const statusMap = {
-          1: '待付款',
-          2: '已付款'
+          1: '待处理',
+          2: '已报价',
+          3: '已完成'
         }
         return statusMap[status] || '未知状态'
       }
       
-      // 兼容旧代码：如果传入的是数字，按原逻辑处理
+      // 兼容旧代码：如果传入的是数字
       const statusMap = {
-        1: '待付款',
-        2: '已付款'
+        1: '待处理',
+        2: '已报价',
+        3: '已完成'
       }
       return statusMap[order] || '未知状态'
+    },
+    
+    // 联系客服
+    contactService(order) {
+      // 可以跳转到客服页面或拨打电话
+      uni.makePhoneCall({
+        phoneNumber: '13161621688',
+        success: () => {
+          console.log('拨打电话成功')
+        },
+        fail: (err) => {
+          console.log('拨打电话失败:', err)
+          uni.showToast({
+            title: '请手动拨打客服电话：13161621688',
+            icon: 'none',
+            duration: 3000
+          })
+        }
+      })
     },
     
     // 获取要显示的商品列表（最多显示2个）
