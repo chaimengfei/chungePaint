@@ -71,7 +71,6 @@
 
     <!-- 底部操作栏 -->
     <view class="action-bar" v-if="order.order_status === 1">
-      <button class="action-btn secondary" @click="cancelOrderFn">取消订单</button>
       <button class="action-btn primary" @click="payOrder">立即支付</button>
     </view>
   </view>
@@ -80,7 +79,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getOrderDetail, cancelOrder } from '@/api/order.js'
+import { getOrderDetail } from '@/api/order.js'
 
 const order = ref({
   items: [],
@@ -180,20 +179,6 @@ const navigateBack = () => {
 // 格式化时间
 const formatTime = (timeStr) => {
   return new Date(timeStr).toLocaleString()
-}
-
-// 取消订单
-const cancelOrderFn = () => {
-  uni.showModal({
-    title: '确认取消订单？',
-    success: async (res) => {
-      if (res.confirm) {
-        await cancelOrder(order.value.order_no)
-        uni.showToast({ title: '已取消' })
-        loadData(order.value.order_no)
-      }
-    }
-  })
 }
 
 // 去支付

@@ -81,13 +81,6 @@
               >
                 去支付
               </button>
-              <button 
-                v-if="order.order_status === 1 && order.outbound_type === 1" 
-                class="action-btn cancel-btn"
-                @click.stop="cancelOrder(order.order_no)"
-              >
-                取消订单
-              </button>
               <!-- 已付款订单显示"再次购买"按钮 -->
               <button 
                 v-if="order.order_status === 2" 
@@ -118,7 +111,7 @@
 </template>
 
 <script>
-import { getOrderList, cancelOrder as cancelOrderApi, confirmReceipt, rebuyOrder } from '@/api/order.js'
+import { getOrderList, confirmReceipt, rebuyOrder } from '@/api/order.js'
 
 export default {
   data() {
@@ -133,8 +126,7 @@ export default {
       page: 1,
       pageSize: 10,
       loading: false,
-      hasMore: true,
-      checkTimer: null // 定时检查订单的定时器
+      hasMore: true
     }
   },
   onLoad() {
@@ -161,8 +153,6 @@ export default {
       return
     }
     this.loadOrders()
-    // 启动定时检查
-    this.startOrderCheckTimer()
   },
   onShow() {
     // 检查是否首次登录（没有token）
@@ -193,8 +183,7 @@ export default {
     this.startOrderCheckTimer()
   },
   onUnload() {
-    // 页面卸载时清除定时器
-    this.stopOrderCheckTimer()
+    // 页面卸载时的清理工作
   },
   onReachBottom() {
     // 滚动到底部时自动加载更多
@@ -341,50 +330,6 @@ export default {
       })
     },
     
-    // 取消订单（用户手动取消，带确认对话框）
-    async cancelOrder(orderNo) {
-      uni.showModal({
-        title: '提示',
-        content: '确定要取消该订单吗？',
-        success: async (res) => {
-          if (res.confirm) {
-            await this.cancelOrderSilently(orderNo, true)
-          }
-        }
-      })
-    },
-    
-    // 静默取消订单（不显示确认对话框，用于自动取消）
-    async cancelOrderSilently(orderNo, showToast = false) {
-      try {
-        const res = await cancelOrderApi(orderNo)
-        if (res.code === 0) {
-          if (showToast) {
-            uni.showToast({
-              title: '订单已取消',
-              icon: 'success'
-            })
-          }
-          this.refreshOrders()
-        } else {
-          if (showToast) {
-            uni.showToast({
-              title: res.message || '取消订单失败',
-              icon: 'none'
-            })
-          }
-        }
-      } catch (err) {
-        console.error('取消订单失败:', err)
-        if (showToast) {
-          uni.showToast({
-            title: '取消订单失败',
-            icon: 'none'
-          })
-        }
-      }
-    },
-    
     // 确认收货
     async confirmReceipt(orderId) {
       uni.showModal({
@@ -410,55 +355,6 @@ export default {
           }
         }
       })
-    },
-    
-    // 启动订单检查定时器（检查超过15分钟未支付的小程序订单）
-    startOrderCheckTimer() {
-      // 清除之前的定时器
-      this.stopOrderCheckTimer()
-      
-      // 每30秒检查一次
-      this.checkTimer = setInterval(() => {
-        this.checkAndCancelExpiredOrders()
-      }, 30000) // 30秒检查一次
-      
-      // 立即执行一次检查
-      this.checkAndCancelExpiredOrders()
-    },
-    
-    // 停止订单检查定时器
-    stopOrderCheckTimer() {
-      if (this.checkTimer) {
-        clearInterval(this.checkTimer)
-        this.checkTimer = null
-      }
-    },
-    
-    // 检查并取消超过15分钟未支付的订单
-    async checkAndCancelExpiredOrders() {
-      const now = Date.now()
-      const expireTime = 15 * 60 * 1000 // 15分钟（毫秒）
-      
-      // 遍历所有待付款的小程序订单
-      for (const order of this.orders) {
-        // 只处理：小程序购买（outbound_type=1）且待付款（order_status=1）的订单
-        if (order.order_status === 1 && order.outbound_type === 1 && order.created_at) {
-          try {
-            // 计算订单创建时间
-            const createTime = new Date(order.created_at).getTime()
-            const timeDiff = now - createTime
-            
-            // 如果超过15分钟，自动取消订单
-            if (timeDiff > expireTime) {
-              console.log(`订单 ${order.order_no} 超过15分钟未支付，自动取消`)
-              // 使用静默取消方法，不显示确认对话框
-              await this.cancelOrderSilently(order.order_no, false)
-            }
-          } catch (err) {
-            console.error(`检查订单 ${order.order_no} 时间失败:`, err)
-          }
-        }
-      }
     },
     
     // 再次购买：将已完成订单中的商品重新加入购物车
