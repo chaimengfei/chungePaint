@@ -48,7 +48,7 @@ export const confirmReceipt = (data) => {
  * 支付订单
  * @param {Object} data 
  * @param {number} data.order_id - 订单ID
- * @param {number} data.payment_type - 支付方式(1:微信,2:支付宝,3:余额)
+ * @param {number} data.payment_type - 支付方式(1:线下转账,2:余额支付,3:微信支付,4:余额+线下组合支付)
  */
 export const payOrder = (data) => {
   return post('/api/order/pay', data).then(res => res.data)

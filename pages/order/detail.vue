@@ -70,16 +70,18 @@
     </view>
 
     <!-- 底部操作栏 -->
-    <view class="action-bar" v-if="order.order_status === 1">
-      <button class="action-btn primary" @click="payOrder">立即支付</button>
+    <view class="action-bar">
+      <button class="action-btn share-btn" @click="shareOrder">分享</button>
+      <button class="action-btn rebuy-btn" @click="rebuyOrder">再次下单</button>
     </view>
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { getOrderDetail } from '@/api/order.js'
+import { rebuyOrder as rebuyOrderApi } from '@/api/order.js'
 
 const order = ref({
   items: [],
@@ -119,6 +121,16 @@ onLoad((options) => {
   loadData(orderNo)
 })
 
+// 分享给朋友（页面级分享）
+onShareAppMessage(() => {
+  return {
+    title: `订单详情 - ${order.value.order_no || ''}`,
+    desc: `订单金额：¥${order.value.payment_amount || 0}`,
+    path: `/pages/order/detail?order_no=${order.value.order_no || ''}`,
+    imageUrl: '' // 可以设置分享图片
+  }
+})
+
 // 计算订单状态
 const statusText = computed(() => {
   const statusMap = {
@@ -130,11 +142,12 @@ const statusText = computed(() => {
 
 // 计算支付方式
 const paymentTypeText = computed(() => {
-  // 支付方式映射: 1:微信支付, 2:支付宝, 3:余额支付
+  // 支付方式映射: 1:线下转账, 2:余额支付, 3:微信支付, 4:余额+线下组合支付
   const paymentTypeMap = {
-    1: '微信支付',
-    2: '支付宝',
-    3: '余额支付'
+    1: '线下转账',
+    2: '余额支付',
+    3: '微信支付',
+    4: '混合支付'
   }
   
   // 如果有支付方式字段，显示具体支付方式
@@ -181,12 +194,72 @@ const formatTime = (timeStr) => {
   return new Date(timeStr).toLocaleString()
 }
 
-// 去支付
-const payOrder = () => {
-  uni.navigateTo({
-    url: `/pages/order/pay?id=${order.value.id}`
+// 分享订单
+const shareOrder = () => {
+  // 触发分享功能
+  uni.showShareMenu({
+    withShareTicket: true,
+    menus: ['shareAppMessage', 'shareTimeline']
+  })
+  
+  // 提示用户使用右上角分享
+  uni.showToast({
+    title: '请点击右上角分享',
+    icon: 'none',
+    duration: 2000
   })
 }
+
+// 再次下单
+const rebuyOrder = async () => {
+  if (!order.value.order_no) {
+    uni.showToast({
+      title: '订单号缺失',
+      icon: 'none'
+    })
+    return
+  }
+  
+  uni.showLoading({
+    title: '正在加入购物车...'
+  })
+  
+  try {
+    const res = await rebuyOrderApi(order.value.order_no)
+    
+    if (res.code === 0) {
+      uni.hideLoading()
+      uni.showToast({
+        title: res.message || '商品已加入购物车',
+        icon: 'success'
+      })
+      
+      // 延迟跳转到购物车页面
+      setTimeout(() => {
+        uni.switchTab({
+          url: '/pages/cart/index'
+        })
+      }, 1000)
+    } else {
+      uni.hideLoading()
+      uni.showToast({
+        title: res.message || '加入购物车失败',
+        icon: 'none',
+        duration: 2000
+      })
+    }
+  } catch (err) {
+    console.error('再次下单失败:', err)
+    uni.hideLoading()
+    const errorMsg = err.message || '加入购物车失败'
+    uni.showToast({
+      title: errorMsg,
+      icon: 'none',
+      duration: 2000
+    })
+  }
+}
+
 </script>
 
 <style scoped>
@@ -378,17 +451,27 @@ const payOrder = () => {
   background-color: #fff;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-around;
   padding: 0 30rpx;
   box-shadow: 0 -2rpx 12rpx rgba(0,0,0,0.05);
+  gap: 20rpx;
 }
 .action-btn {
+  flex: 1;
   height: 72rpx;
   line-height: 72rpx;
   border-radius: 36rpx;
   font-size: 28rpx;
-  margin-left: 20rpx;
-  padding: 0 40rpx;
+  border: none;
+  text-align: center;
+}
+.share-btn {
+  background-color: #ff9500;
+  color: #fff;
+}
+.rebuy-btn {
+  background-color: #00c896;
+  color: #fff;
 }
 .secondary {
   background-color: #fff;
