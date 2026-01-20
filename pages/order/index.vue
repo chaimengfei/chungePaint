@@ -124,7 +124,6 @@
 </template>
 
 <script>
-import { getOrderList, confirmReceipt, rebuyOrder } from '@/api/order.js'
 
 export default {
   data() {
@@ -235,7 +234,8 @@ export default {
         }
         
         const requestStartTime = Date.now()
-        const res = await getOrderList(params)
+        // TODO: 需要替换为询价列表接口
+        const res = { code: 0, data: { list: [] } }
         const requestEndTime = Date.now()
         const requestDuration = requestEndTime - requestStartTime
         
@@ -364,98 +364,8 @@ export default {
       })
     },
     
-    // 支付订单
-    payOrder(orderId) {
-      uni.navigateTo({
-        url: `/pages/order/pay?id=${orderId}`
-      })
-    },
     
-    // 确认收货
-    async confirmReceipt(orderId) {
-      uni.showModal({
-        title: '提示',
-        content: '请确认已收到商品，确认后将完成订单',
-        success: async (res) => {
-          if (res.confirm) {
-            try {
-              const res = await confirmReceipt({ order_id: orderId })
-              if (res.code === 0) {
-                uni.showToast({
-                  title: '确认收货成功',
-                  icon: 'success'
-                })
-                this.refreshOrders()
-              }
-            } catch (err) {
-              uni.showToast({
-                title: '确认收货失败',
-                icon: 'none'
-              })
-            }
-          }
-        }
-      })
-    },
     
-    // 再次购买：将已完成订单中的商品重新加入购物车
-    async buyAgain(order) {
-      if (!order.order_no) {
-        uni.showToast({
-          title: '订单号缺失',
-          icon: 'none'
-        })
-        return
-      }
-      
-      // 检查订单状态，只能对已完成的订单（order_status = 2）进行再次购买
-      if (order.order_status !== 2) {
-        uni.showToast({
-          title: '只能对已完成的订单进行再次购买',
-          icon: 'none'
-        })
-        return
-      }
-      
-      uni.showLoading({
-        title: '正在加入购物车...'
-      })
-      
-      try {
-        const res = await rebuyOrder(order.order_no)
-        
-        if (res.code === 0) {
-          uni.hideLoading()
-          uni.showToast({
-            title: res.message || '商品已加入购物车',
-            icon: 'success'
-          })
-          
-          // 延迟跳转到购物车页面
-          setTimeout(() => {
-            uni.switchTab({
-              url: '/pages/draft/index'
-            })
-          }, 1000)
-        } else {
-          uni.hideLoading()
-          uni.showToast({
-            title: res.message || '加入购物车失败',
-            icon: 'none',
-            duration: 2000
-          })
-        }
-      } catch (err) {
-        console.error('再次购买失败:', err)
-        uni.hideLoading()
-        const errorMsg = err.message || '加入购物车失败'
-        uni.showToast({
-          title: errorMsg,
-          icon: 'none',
-          duration: 2000
-        })
-      }
-    }
   }
 }
 </script>

@@ -7,7 +7,7 @@
           <text class="checkmark">✓</text>
         </view>
       </view>
-      <text class="success-title">{{  '询价提交成功'  }}</text>
+      <text class="success-title">{{  '提交成功'  }}</text>
       <text class="success-subtitle">{{  '客服将尽快联系您...' }}</text>
     </view>
 
@@ -36,7 +36,6 @@
 </template>
 
 <script>
-import { getOrderDetail } from '@/api/order.js'
 
 export default {
   data() {
@@ -63,7 +62,6 @@ export default {
   onLoad(options) {
     if (options.order_no) {
       this.orderNo = options.order_no
-      this.loadOrderInfo()
     }
     if (options.amount) {
       this.paymentAmount = options.amount
@@ -76,27 +74,15 @@ export default {
     }
   },
   methods: {
-    // 加载订单信息
-    async loadOrderInfo() {
-      if (!this.orderNo) return
-      
-      try {
-        const res = await getOrderDetail(this.orderNo)
-        if (res.code === 0 && res.data) {
-          this.orderInfo = res.data
-        }
-      } catch (err) {
-        console.error('加载订单信息失败:', err)
-      }
-    },
-    // 查看订单详情
+    // 查看询价详情
     viewOrderDetail() {
       if (this.orderNo) {
+        // 跳转到询价详情页
         uni.redirectTo({
-          url: `/pages/order/detail?order_no=${this.orderNo}`
+          url: `/pages/order/detail?inquiry_no=${this.orderNo}`
         })
       } else {
-        // 如果没有订单号，跳转到询价列表
+        // 如果没有询价单号，跳转到询价列表
         uni.navigateTo({
           url: '/pages/order/index'
         })
@@ -150,7 +136,6 @@ export default {
   background-color: #f5f5f5;
   display: flex;
   flex-direction: column;
-  padding-bottom: 120rpx;
 }
 
 .success-header {
@@ -263,16 +248,13 @@ export default {
   margin-bottom: 10rpx;
 }
 
-/* 底部操作按钮 */
-.bottom-actions {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 20rpx 40rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background-color: #fff;
-  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
+/* 操作按钮区域 */
+.action-buttons {
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-top: 40rpx;
 }
 
 .view-detail-btn {
@@ -284,5 +266,16 @@ export default {
   background-color: #e93b3d;
   color: #fff;
   border: none;
+}
+
+.contact-service-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  background-color: #fff;
+  color: #333;
+  border: 1rpx solid #ddd;
 }
 </style>

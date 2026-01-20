@@ -5,7 +5,7 @@
       <view class="nav-back" @click="navigateBack">
         <image src="/static/images/back.png" mode="aspectFit" class="back-icon"/>
       </view>
-      <text class="nav-title">订单详情</text>
+      <text class="nav-title">询价详情</text>
     </view>
 
     <!-- 订单卡片 -->
@@ -13,7 +13,7 @@
       <view class="order-header">
         <text class="order-status">{{ statusText }}</text>
         <view class="order-no-wrapper">
-          <text class="order-no">订单号：{{ order.order_no }}</text>
+          <text class="order-no">询价单号：{{ order.order_no }}</text>
         </view>
       </view>
 
@@ -30,33 +30,41 @@
               <text class="product-quantity">×{{ item.quantity }}</text>
             </view>
             <view class="total-price">
-              <text class="total-price-text">小计: ¥{{ item.total_price }}</text>
+              <text class="total-price-text">参考小计: ¥{{ item.total_price }}</text>
             </view>
             <text v-if="item.unit" class="product-unit">{{ item.unit }}</text>
           </view>
         </view>
       </view>
 
-      <!-- 订单信息 -->
+      <!-- 询价信息 -->
       <view class="order-info">
         <view class="info-row">
           <text class="info-label">创建时间</text>
           <text class="info-value">{{ formatTime(order.created_at) }}</text>
         </view>
-        <view class="info-row">
-          <text class="info-label">支付方式</text>
-          <text class="info-value">{{ paymentTypeText }}<text v-if="paymentStatusText" class="payment-status">（{{ paymentStatusText }}）</text></text>
+        <view v-if="order.note" class="info-row">
+          <text class="info-label">需求备注</text>
+          <text class="info-value">{{ order.note }}</text>
+        </view>
+        <view v-if="order.final_quote" class="info-row">
+          <text class="info-label">最终报价</text>
+          <text class="info-value">¥{{ (order.final_quote / 100).toFixed(2) }}</text>
         </view>
       </view>
 
       <!-- 金额汇总 -->
       <view class="amount-summary">
         <view class="amount-row">
-          <text>商品总额</text>
+          <text>预估总计</text>
           <text>¥{{ order.total_amount }}</text>
         </view>
+        <view v-if="order.final_quote" class="amount-row">
+          <text>最终报价</text>
+          <text>¥{{ (order.final_quote / 100).toFixed(2) }}</text>
+        </view>
         <view class="amount-row total-row">
-          <text>实付金额</text>
+          <text>合计参考金额</text>
           <text>¥{{ order.payment_amount }}</text>
         </view>
       </view>
@@ -64,8 +72,7 @@
 
     <!-- 底部操作栏 -->
     <view class="action-bar">
-      <button class="action-btn share-btn" @click="shareOrder">分享</button>
-      <button class="action-btn rebuy-btn" @click="rebuyOrder">再次下单</button>
+      <button class="action-btn contact-btn" @click="contactService">联系客服</button>
     </view>
   </view>
 </template>
@@ -73,8 +80,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
-import { getOrderDetail } from '@/api/order.js'
-import { rebuyOrder as rebuyOrderApi } from '@/api/order.js'
+import { getInquiryDetail } from '@/api/order.js'
 
 const order = ref({
   items: [],
@@ -89,12 +95,38 @@ const order = ref({
   id: 0
 })
 
-// 加载订单详情
-const loadData = async (orderNo) => {
+const isInquiry = ref(true) // 默认为询价单
+
+// 加载询价详情
+const loadInquiryData = async (inquiryNo) => {
   try {
-    const res = await getOrderDetail(orderNo)
+    const res = await getInquiryDetail(inquiryNo)
     if (res.code === 0) {
-      order.value = res.data
+      const inquiryData = res.data
+      // 将询价数据转换为订单格式，方便复用显示逻辑
+      order.value = {
+        items: inquiryData.items.map(item => ({
+          id: item.id,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          product_image: item.product_image,
+          specification: item.specification || item.unit,
+          unit_price: (item.reference_unit_price / 100).toFixed(2), // 分转元
+          total_price: (item.reference_total / 100).toFixed(2), // 分转元
+          quantity: item.quantity,
+          unit: item.unit,
+          remark: item.remark
+        })),
+        order_no: inquiryData.inquiry_no,
+        total_amount: inquiryData.estimated_total ? (inquiryData.estimated_total / 100).toFixed(2) : '0.00',
+        payment_amount: inquiryData.final_quote ? (inquiryData.final_quote / 100).toFixed(2) : inquiryData.estimated_total ? (inquiryData.estimated_total / 100).toFixed(2) : '0.00',
+        created_at: inquiryData.created_at,
+        note: inquiryData.note,
+        total_quantity: inquiryData.total_quantity,
+        estimated_total: inquiryData.estimated_total,
+        final_quote: inquiryData.final_quote
+      }
+      isInquiry.value = true
     }
   } catch (err) {
     uni.showToast({ title: '加载失败', icon: 'none' })
@@ -103,76 +135,35 @@ const loadData = async (orderNo) => {
 
 // 页面加载
 onLoad((options) => {
-  const orderNo = options.order_no
-  if (!orderNo) {
-    uni.showToast({ title: '订单号缺失', icon: 'none' })
-    return
+  const inquiryNo = options.inquiry_no || options.order_no
+  
+  if (inquiryNo) {
+    // 询价单
+    loadInquiryData(inquiryNo)
+  } else {
+    uni.showToast({ title: '询价单号缺失', icon: 'none' })
   }
-  loadData(orderNo)
 })
 
 // 分享给朋友（页面级分享）
 onShareAppMessage(() => {
   return {
-    title: `订单详情 - ${order.value.order_no || ''}`,
-    desc: `订单金额：¥${order.value.payment_amount || 0}`,
-    path: `/pages/order/detail?order_no=${order.value.order_no || ''}`,
+    title: `询价详情 - ${order.value.order_no || ''}`,
+    desc: `询价单号：${order.value.order_no || ''}`,
+    path: `/pages/order/detail?inquiry_no=${order.value.order_no || ''}`,
     imageUrl: '' // 可以设置分享图片
   }
 })
 
-// 计算订单状态
+// 计算询价状态
 const statusText = computed(() => {
-  const statusMap = {
-    1: '待付款',
-    2: '已付款'
+  // 询价单状态
+  if (order.value.final_quote) {
+    return '已报价'
   }
-  return statusMap[order.value.order_status] || '未知状态'
+  return '待处理'
 })
 
-// 计算支付方式
-const paymentTypeText = computed(() => {
-  // 支付方式映射: 1:线下转账, 2:余额支付, 3:微信支付, 4:余额+线下组合支付
-  const paymentTypeMap = {
-    1: '线下转账',
-    2: '余额支付',
-    3: '微信支付',
-    4: '混合支付'
-  }
-  
-  // 如果有支付方式字段，显示具体支付方式
-  if (order.value.payment_type && order.value.payment_type > 0) {
-    return paymentTypeMap[order.value.payment_type] || '未知支付方式'
-  }
-  
-  // 如果订单状态不是"待付款"(1)，说明已支付，但不知道支付方式
-  if (order.value.order_status !== 1) {
-    return '已支付'
-  }
-  
-  // 订单状态是"待付款"，显示未支付
-  return '未支付'
-})
-
-// 计算支付状态
-const paymentStatusText = computed(() => {
-  // 支付状态映射: 1:未支付, 2:支付中, 3:已支付, 4:退款中, 5:已退款, 6:支付失败
-  const paymentStatusMap = {
-    1: '未支付',
-    2: '支付中',
-    3: '已支付',
-    4: '退款中',
-    5: '已退款',
-    6: '支付失败'
-  }
-  
-  // 如果有支付状态字段，显示支付状态
-  if (order.value.payment_status && order.value.payment_status > 0) {
-    return paymentStatusMap[order.value.payment_status] || ''
-  }
-  
-  return ''
-})
 
 // 返回上一页
 const navigateBack = () => {
@@ -184,70 +175,42 @@ const formatTime = (timeStr) => {
   return new Date(timeStr).toLocaleString()
 }
 
-// 分享订单
-const shareOrder = () => {
-  // 触发分享功能
-  uni.showShareMenu({
-    withShareTicket: true,
-    menus: ['shareAppMessage', 'shareTimeline']
-  })
-  
-  // 提示用户使用右上角分享
-  uni.showToast({
-    title: '请点击右上角分享',
-    icon: 'none',
-    duration: 2000
-  })
-}
 
-// 再次下单
-const rebuyOrder = async () => {
-  if (!order.value.order_no) {
-    uni.showToast({
-      title: '订单号缺失',
-      icon: 'none'
-    })
-    return
-  }
-  
-  uni.showLoading({
-    title: '正在加入购物车...'
-  })
-  
-  try {
-    const res = await rebuyOrderApi(order.value.order_no)
-    
-    if (res.code === 0) {
-      uni.hideLoading()
-      uni.showToast({
-        title: res.message || '商品已加入购物车',
-        icon: 'success'
-      })
-      
-      // 延迟跳转到购物车页面
-      setTimeout(() => {
-        uni.switchTab({
-          url: '/pages/draft/index'
+// 联系客服
+const contactService = () => {
+  const servicePhone = '131-6162-1688'
+  uni.showActionSheet({
+    itemList: [servicePhone, '呼叫', '取消'],
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        // 点击电话号码，复制到剪贴板
+        uni.setClipboardData({
+          data: servicePhone.replace(/-/g, ''),
+          success: () => {
+            uni.showToast({
+              title: '电话号码已复制',
+              icon: 'success'
+            })
+          }
         })
-      }, 1000)
-    } else {
-      uni.hideLoading()
-      uni.showToast({
-        title: res.message || '加入购物车失败',
-        icon: 'none',
-        duration: 2000
-      })
+      } else if (res.tapIndex === 1) {
+        // 点击呼叫，直接拨打电话
+        uni.makePhoneCall({
+          phoneNumber: servicePhone.replace(/-/g, ''),
+          success: () => {
+            console.log('拨打电话成功')
+          },
+          fail: (err) => {
+            console.error('拨打电话失败:', err)
+            uni.showToast({
+              title: '拨打电话失败',
+              icon: 'none'
+            })
+          }
+        })
+      }
     }
-  } catch (err) {
-    console.error('再次下单失败:', err)
-    uni.hideLoading()
-    const errorMsg = err.message || '加入购物车失败'
-    uni.showToast({
-      title: errorMsg,
-      icon: 'none',
-      duration: 2000
-    })
-  }
+  })
 }
 
 </script>
