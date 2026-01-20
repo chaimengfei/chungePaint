@@ -102,7 +102,6 @@
 <script>
 import { getProductList } from '@/api/product.js'
 import { addToDraft as addToDraftApi, getDraftList } from '@/api/draft.js'
-import { checkoutOrder } from '@/api/order.js'
 import { goLogin } from '@/api/user.js'
 import { getNearestShop, isShopIdExpired } from '@/api/common.js'
 
@@ -575,48 +574,51 @@ export default {
     
     async buyNow(product) {
       try {
-        console.log('首页 - 开始立即购买，商品ID:', product.id)
-        console.log('首页 - 当前登录状态:', this.isLogin)
+        console.log('首页 - 立即询价，商品ID:', product.id)
         
-        // 检查登录状态，如果未登录则跳转到登录页
+        // 检查登录状态
         const token = uni.getStorageSync('token')
         if (!token) {
-          console.log('首页 - 用户未登录，跳转到登录页')
           uni.navigateTo({
             url: '/pages/user/login'
           })
           return
         }
         
-        uni.showLoading({ title: '处理中...' })
+        // 直接调用提交询价接口
+        uni.showLoading({ title: '提交中...', mask: true })
         
-        console.log('首页 - 登录完成，开始立即购买')
-        // 调用checkout接口
-        const res = await checkoutOrder({
-          draft_ids: null,
+        const { submitInquiry } = await import('@/api/order.js')
+        const res = await submitInquiry({
           product_id: product.id,
-          quantity: 1,
-          address_id: null // 这里可以传入默认地址ID，或者让用户在结算页面选择
+          quantity: 1
         })
         
         uni.hideLoading()
         
-        if (res.data.code === 0) {
-          // 跳转到结算页面
-          uni.navigateTo({
-            url: `/pages/order/checkout?product_id=${product.id}&quantity=1`
+        if (res.data && res.data.code === 0) {
+          const inquiryNo = res.data.data?.inquiry_no
+          uni.showToast({
+            title: '提交成功',
+            icon: 'success'
           })
+          
+          setTimeout(() => {
+            uni.redirectTo({
+              url: `/pages/order/success?order_no=${inquiryNo}&amount=0&order_status=1&payment_info=询价已提交，客服将尽快联系您`
+            })
+          }, 1500)
         } else {
           uni.showToast({
-            title: res.data.message || '立即购买失败',
+            title: res.data?.message || '提交失败',
             icon: 'none'
           })
         }
       } catch (err) {
         uni.hideLoading()
-        console.error('立即购买失败:', err)
+        console.error('立即询价失败:', err)
         uni.showToast({
-          title: '立即购买失败',
+          title: err.message || '提交失败，请重试',
           icon: 'none'
         })
       }

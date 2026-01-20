@@ -26,12 +26,6 @@
 	  }
 	},
 	{
-	  "path": "pages/order/checkout",
-	  "style": {
-		"navigationBarTitleText": "确认订单" // 页面标题
-	  }
-	},
-	{
 	  "path": "pages/order/success",
 	  "style": {
 		"navigationBarTitleText": "支付成功",
@@ -49,7 +43,7 @@
 	  "style": {
 	    "navigationBarTitleText": "登陆"
 	  }
-	},
+	}
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

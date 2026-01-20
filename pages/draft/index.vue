@@ -50,7 +50,7 @@
 			</view>
 
 			<!-- 底部固定栏 -->
-			<view class="checkout-bar">
+			<view class="submit-bar">
 				<view class="select-all">
 					<checkbox :checked="isAllSelected" @click="toggleSelectAll" />
 					<text>全选</text>
@@ -64,9 +64,9 @@
 				</view>
 				<button 
 					class="submit-requirement-btn" 
-					:class="{ 'disabled': selectedCount === 0 }"
-					:disabled="selectedCount === 0"
-					@click="submitRequirement"
+					@click.stop="handleClick"
+					@tap.stop="handleClick"
+					type="button"
 				>
 					提交需求，联系客服
 				</button>
@@ -88,10 +88,8 @@
 		updateDraftItem,
 		deleteDraftItem
 	} from '@/api/draft.js'
+	import { submitInquiry } from '@/api/order.js'
 
-	import {
-		checkoutOrder
-	} from '@/api/order.js'
 
 
 	export default {
@@ -143,7 +141,15 @@
 			},
 			// 选中商品数量
 			selectedCount() {
-				return this.draftItems.filter(item => item.selected && item.can_purchase).length
+				const count = this.draftItems.filter(item => item.selected && item.can_purchase).length
+				console.log('[需求单页面] selectedCount 计算 - draftItems:', this.draftItems.length, '选中数量:', count)
+				console.log('[需求单页面] selectedCount 计算 - 选中的商品:', this.draftItems.filter(item => item.selected && item.can_purchase).map(item => ({
+					id: item.id,
+					name: item.product_name,
+					selected: item.selected,
+					can_purchase: item.can_purchase
+				})))
+				return count
 			},
 			// 选中的需求单ID数组
 			selectedDraftIds() {
@@ -207,72 +213,62 @@
 				})
 			},
 
-			// 跳转到结算页面
-			// 提交需求，联系客服
-		async submitRequirement() {
-			if (this.selectedCount === 0) {
+		// 处理按钮点击
+		handleClick(e) {
+			console.log('========== handleClick 被调用 ==========')
+			console.log('事件对象:', e)
+			e.stopPropagation()
+			e.preventDefault()
+			this.submitRequirement()
+			return false
+		},
+		
+		// 提交需求，联系客服 - 直接调用接口，不跳转
+		submitRequirement() {
+			console.log('========== submitRequirement 被调用 ==========')
+			
+			// 获取选中的需求单ID
+			const selectedIds = this.selectedDraftIds
+			console.log('选中的ID:', selectedIds)
+			
+			if (!selectedIds || selectedIds.length === 0) {
 				uni.showToast({
-					title: '请选择要询价的商品',
+					title: '请至少选择一件商品',
 					icon: 'none'
 				})
 				return
 			}
 			
-			// 跳转到确认需求页面（使用原来的结算页面，但改为确认需求）
-			// 这里先跳转到结算页面，后续可以改为专门的确认需求页面
-			uni.navigateTo({
-				url: '/pages/order/checkout'
+			// 直接调用接口
+			console.log('开始调用 submitInquiry 接口')
+			uni.showLoading({ title: '提交中...', mask: true })
+			
+			submitInquiry({ draft_ids: selectedIds }).then(res => {
+				uni.hideLoading()
+				console.log('接口返回:', res)
+				
+				if (res.data && res.data.code === 0) {
+					uni.showToast({
+						title: '提交成功，客服将尽快联系您',
+						icon: 'success',
+						duration: 2000
+					})
+				} else {
+					uni.showToast({
+						title: res.data?.message || '提交失败',
+						icon: 'none'
+					})
+				}
+			}).catch(err => {
+				uni.hideLoading()
+				console.error('提交失败:', err)
+				uni.showToast({
+					title: err.message || '提交失败，请重试',
+					icon: 'none'
+				})
 			})
 		},
 		
-		async goToCheckout() {
-				if (this.selectedCount === 0) {
-					uni.showToast({
-						title: '请至少选择一件商品',
-						icon: 'none'
-					})
-					return
-				}
-				
-				// 先保存当前选中的需求单ID，避免重新加载后丢失选中状态
-				const selectedIds = this.selectedDraftIds
-				console.log('跳转结算页面 - 保存的选中需求单ID:', selectedIds)
-				
-				if (selectedIds.length === 0) {
-					uni.showToast({
-						title: '请至少选择一件商品',
-						icon: 'none'
-					})
-					return
-				}
-				
-				// 跳转前，先重新加载需求单数据，确保数量是最新的
-				await this.loadDraftData()
-				
-				// 恢复选中状态（因为重新加载后可能丢失）
-				this.draftItems.forEach(item => {
-					if (selectedIds.includes(item.id) && item.can_purchase) {
-						item.selected = true
-					}
-				})
-				
-				// 打印选中的需求单项信息，用于调试
-				const selectedItems = this.draftItems.filter(item => item.selected && item.can_purchase)
-				console.log('跳转结算页面 - 选中的需求单项:', selectedItems.map(item => ({
-					draft_id: item.id,
-					product_name: item.product_name,
-					quantity: item.quantity
-				})))
-				
-				// 使用保存的ID，确保传递正确的需求单ID
-				const finalSelectedIds = this.selectedDraftIds
-				console.log('跳转结算页面 - 最终传递的需求单ID:', finalSelectedIds)
-				
-				// 跳转到结算页面，传递结算数据
-				uni.navigateTo({
-					url: `/pages/order/checkout?draft_ids=${JSON.stringify(finalSelectedIds)}`
-				})
-			},
 
 			// 切换商品选中状态
 			toggleSelect(item) {
@@ -603,7 +599,7 @@
 		margin-right: 4rpx;
 	}
 
-	.checkout-bar {
+	.submit-bar {
 		position: fixed;
 		bottom: 0;
 		left: 0;
@@ -669,14 +665,18 @@
 		font-weight: bold;
 		width: 100%;
 		border: none;
+		position: relative;
+		z-index: 999;
+		pointer-events: auto !important;
 	}
 
-	.submit-requirement-btn.disabled,
-	.submit-requirement-btn:disabled {
+	.submit-requirement-btn.disabled {
 		background-color: #cccccc;
 		color: #999999;
 		opacity: 0.6;
 		cursor: not-allowed;
+		/* 即使有 disabled 类，也允许点击 */
+		pointer-events: auto !important;
 	}
 
 	.empty-cart {
