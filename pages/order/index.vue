@@ -434,7 +434,7 @@ export default {
           // 延迟跳转到购物车页面
           setTimeout(() => {
             uni.switchTab({
-              url: '/pages/cart/index'
+              url: '/pages/draft/index'
             })
           }, 1000)
         } else {

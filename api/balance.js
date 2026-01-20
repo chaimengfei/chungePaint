@@ -54,7 +54,7 @@ export function onBalanceChange(callback) {
   listeners.push(callback)
   // 立即调用一次，传递当前余额（使用 try-catch 防止回调错误影响其他监听器）
   try {
-    callback(balanceState.balance)
+  callback(balanceState.balance)
   } catch (error) {
     console.error('余额监听器初始化调用错误:', error)
   }
@@ -82,10 +82,10 @@ function notifyListeners() {
     // 使用 for 循环而不是 forEach，性能更好
     for (let i = 0; i < listeners.length; i++) {
       const callback = listeners[i]
-      try {
-        callback(balanceState.balance)
-      } catch (error) {
-        console.error('余额监听器执行错误:', error)
+    try {
+      callback(balanceState.balance)
+    } catch (error) {
+      console.error('余额监听器执行错误:', error)
         // 如果监听器出错，移除它（防止错误监听器影响其他监听器）
         listeners.splice(i, 1)
         i-- // 调整索引

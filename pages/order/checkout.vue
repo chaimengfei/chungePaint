@@ -86,7 +86,7 @@ import { getAddressList } from '@/api/address.js'
 export default {
   data() {
     return {
-      cartIds: [],
+      draftIds: [],
       productId: null,
       quantity: 1,
       orderData: null,
@@ -100,13 +100,13 @@ export default {
   },
   onLoad(options) {
     console.log('结算页面 onLoad - 接收到的参数:', options)
-    if (options.cart_ids) {
-      // 购物车结算
+    if (options.draft_ids) {
+      // 需求单结算
       try {
-        this.cartIds = JSON.parse(options.cart_ids)
-        console.log('购物车结算 - 解析后的 cartIds:', this.cartIds)
-        if (!Array.isArray(this.cartIds) || this.cartIds.length === 0) {
-          this.handleError('购物车ID无效')
+        this.draftIds = JSON.parse(options.draft_ids)
+        console.log('需求单结算 - 解析后的 draftIds:', this.draftIds)
+        if (!Array.isArray(this.draftIds) || this.draftIds.length === 0) {
+          this.handleError('需求单ID无效')
           return
         }
       } catch (err) {
@@ -141,14 +141,14 @@ export default {
       this.error = null
       try {
         let requestData
-        if (this.cartIds.length > 0) {
-          // 购物车结算
-          requestData = { cart_ids: this.cartIds }
-          console.log('购物车结算 - 请求数据:', JSON.stringify(requestData))
+        if (this.draftIds.length > 0) {
+          // 需求单结算
+          requestData = { draft_ids: this.draftIds }
+          console.log('需求单结算 - 请求数据:', JSON.stringify(requestData))
         } else {
           // 立即购买
           requestData = {
-            cart_ids: null,
+            draft_ids: null,
             product_id: this.productId,
             quantity: this.quantity,
             address_id: null

@@ -45,7 +45,7 @@ import { BASE_URL } from './common'
 
   1. 购物车地址管理逻辑冲突
 
-  问题位置： pages/cart/index.vue:110-116
+  问题位置： pages/draft/index.vue:110-116
   - onLoad时检查缓存地址，onShow时又调用loadDefaultAddress()，可能导致地址信
   息覆盖
   - 购物车顶部地址信息缺少收货人姓名和电话，用户体验不够友好
@@ -78,9 +78,9 @@ import { BASE_URL } from './common'
 
   1. 修复购物车地址管理
 
-  在pages/cart/index.vue中统一地址加载逻辑：
+  在pages/draft/index.vue中统一地址加载逻辑：
   onShow() {
-      this.loadCartData()
+      this.loadDraftData()
       // 只有没有缓存地址时才调用API
       const selectedAddress = uni.getStorageSync('selected_address')
       if (selectedAddress) {
@@ -98,7 +98,7 @@ import { BASE_URL } from './common'
       const pages = getCurrentPages();
       const prevPage = pages[pages.length - 2];
       if (prevPage.route === 'pages/order/checkout' || prevPage.route ===
-  'pages/cart/index') {
+  'pages/draft/index') {
           uni.setStorageSync('selected_address', item);
           uni.navigateBack();
       }

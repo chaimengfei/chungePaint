@@ -7,7 +7,7 @@
       }
     },
     {
-      "path": "pages/cart/index",
+      "path": "pages/draft/index",
       "style": {
         "navigationBarTitleText": "需求单"
       }
@@ -89,7 +89,7 @@
         "selectedIconPath": "static/tabbar/product_selected.png"
       },
       {
-        "pagePath": "pages/cart/index",
+        "pagePath": "pages/draft/index",
         "text": "需求单",
         "iconPath": "static/tabbar/cart_unselected.png",
         "selectedIconPath": "static/tabbar/cart_selected.png"

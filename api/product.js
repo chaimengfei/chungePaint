@@ -137,24 +137,24 @@ export const getProductList = (options = {}) => {
       
       if (queryParams.length > 0) {
         url += `?${queryParams.join('&')}`
-      }
-      
-      uni.request({
-        url: url,
-        method: 'GET',
-        success: (res) => {
+    }
+    
+    uni.request({
+      url: url,
+      method: 'GET',
+      success: (res) => {
           try {
             const data = parseProductListResponse(res, isLoggedIn)
             resolve(data)
           } catch (err) {
             reject(err)
-          }
-        },
-        fail: (err) => {
-          console.error('[商品列表] API请求失败:', err)
-          reject(err)
         }
-      })
+      },
+      fail: (err) => {
+          console.error('[商品列表] API请求失败:', err)
+        reject(err)
+      }
+    })
     }
   })
 }

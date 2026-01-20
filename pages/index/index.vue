@@ -101,7 +101,7 @@
 
 <script>
 import { getProductList } from '@/api/product.js'
-import { addToCart as addToCartApi, getCartList } from '@/api/cart.js'
+import { addToDraft as addToDraftApi, getDraftList } from '@/api/draft.js'
 import { checkoutOrder } from '@/api/order.js'
 import { goLogin } from '@/api/user.js'
 import { getNearestShop, isShopIdExpired } from '@/api/common.js'
@@ -505,10 +505,10 @@ export default {
       await this.fetchData(shopId, categoryId, 1)
     },
     
-    // 添加商品到购物车
+    // 添加商品到需求单
     async addToCart(productId) {
       try {
-        console.log('首页 - 开始添加商品到购物车，商品ID:', productId)
+        console.log('首页 - 开始添加商品到需求单，商品ID:', productId)
         
         // 检查登录状态，如果未登录则跳转到登录页
         const token = uni.getStorageSync('token')
@@ -520,36 +520,36 @@ export default {
           return
         }
         
-        console.log('首页 - 开始添加商品到购物车')
-        const res = await addToCartApi({ product_id: productId })
-        console.log('首页 - 购物车添加API返回:', res)
+        console.log('首页 - 开始添加商品到需求单')
+        const res = await addToDraftApi({ product_id: productId })
+        console.log('首页 - 需求单添加API返回:', res)
         
         if (res.data.code === 0) {
           uni.showToast({
-            title: '已加入购物车',
+            title: '已加入需求单',
             icon: 'success'
           })
           
-          // 更新底部购物车徽标
+          // 更新底部需求单徽标
           this.updateCartBadge()
           
-          // 延迟跳转到购物车页面，让用户看到提示
+          // 延迟跳转到需求单页面，让用户看到提示
           setTimeout(() => {
             uni.switchTab({
-              url: '/pages/cart/index'
+              url: '/pages/draft/index'
             })
           }, 1000)
         } else {
-          console.error('首页 - 购物车添加失败:', res.data.message)
+          console.error('首页 - 需求单添加失败:', res.data.message)
           uni.showToast({
-            title: res.data.message || '添加购物车失败',
+            title: res.data.message || '添加需求单失败',
             icon: 'none'
           })
         }
       } catch (err) {
-        console.error('首页 - 购物车添加异常:', err)
+        console.error('首页 - 需求单添加异常:', err)
         uni.showToast({
-          title: '添加购物车失败',
+          title: '添加需求单失败',
           icon: 'none'
         })
       }
@@ -561,7 +561,7 @@ export default {
       // 将商品信息存储到本地，然后跳转到询价表单页面
       // 这里先跳转到需求单页面，用户可以在那里提交询价
       uni.switchTab({
-        url: '/pages/cart/index'
+        url: '/pages/draft/index'
       })
       // 提示用户可以在需求单中提交询价
       setTimeout(() => {
@@ -593,7 +593,7 @@ export default {
         console.log('首页 - 登录完成，开始立即购买')
         // 调用checkout接口
         const res = await checkoutOrder({
-          cart_ids: null,
+          draft_ids: null,
           product_id: product.id,
           quantity: 1,
           address_id: null // 这里可以传入默认地址ID，或者让用户在结算页面选择
@@ -661,22 +661,22 @@ export default {
       })
     },
     
-    // 更新购物车徽标
+    // 更新需求单徽标
     async updateCartBadge() {
-      // 只有在已登录状态下才更新购物车徽标
+      // 只有在已登录状态下才更新需求单徽标
       if (!this.isLogin) {
-        console.log('用户未登录，跳过购物车徽标更新')
+        console.log('用户未登录，跳过需求单徽标更新')
         return
       }
       
       try {
-        console.log('开始更新购物车徽标...')
-        const res = await getCartList()
+        console.log('开始更新需求单徽标...')
+        const res = await getDraftList()
         if (res.data.code === 0) {
-          const cartItems = res.data.data || []
-          const uniqueItemCount = cartItems.length
+          const draftItems = res.data.data || []
+          const uniqueItemCount = draftItems.length
           
-          console.log('购物车商品数量:', uniqueItemCount)
+          console.log('需求单商品数量:', uniqueItemCount)
           
           if (uniqueItemCount > 0) {
             uni.setTabBarBadge({
@@ -689,13 +689,13 @@ export default {
             })
           }
         } else {
-          console.error('获取购物车列表失败:', res.data.message)
+          console.error('获取需求单列表失败:', res.data.message)
         }
       } catch (error) {
-        console.error('更新购物车徽标失败:', error)
+        console.error('更新需求单徽标失败:', error)
         // 如果是401错误，说明token可能过期，可以尝试重新登录
         if (error.statusCode === 401) {
-          console.log('购物车接口返回401，可能需要重新登录')
+          console.log('需求单接口返回401，可能需要重新登录')
         }
       }
     },
