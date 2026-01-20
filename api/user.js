@@ -4,11 +4,3 @@ import { post, get } from './request'
 export const goLogin = (data) => {
 	return post('/api/login', data, false) // 登录接口不需要认证
 }
-
-/**
- * 获取用户余额
- * @returns {Promise}
- */
-export const getUserBalance = () => {
-	return get('/api/user/balance', {}, true)
-}

@@ -1,23 +1,6 @@
 <template>
   <view class="container">
     <view v-if="orderData">
-      <!-- 地址 -->
-      <view class="section address-section" @click="selectAddress">
-        <view v-if="selectedAddress" class="address-info">
-          <view class="address-header">
-            <text class="name">{{ selectedAddress.recipient_name }}</text>
-            <text class="phone">{{ selectedAddress.recipient_phone }}</text>
-          </view>
-          <text class="address-detail">
-            {{ selectedAddress.province }}{{ selectedAddress.city }}{{ selectedAddress.district }}{{ selectedAddress.detail }}
-          </text>
-        </view>
-        <view v-else class="add-address">
-          <text>+ 添加收货地址</text>
-        </view>
-        <uni-icons type="arrowright" size="20" color="#999"></uni-icons>
-      </view>
-
       <!-- 商品 -->
       <view class="section">
         <view class="section-title">商品清单</view>
@@ -57,7 +40,7 @@
         </button>
         <!-- 调试信息 -->
         <view v-if="false" style="font-size: 12px; color: red; padding: 5px;">
-          调试: selectedAddress={{ !!selectedAddress }}, submitting={{ submitting }}, 
+          调试: submitting={{ submitting }}, 
           orderData={{ !!orderData }}, order_no={{ orderData?.order_no }}
         </view>
       </view>
@@ -81,7 +64,6 @@
 
 <script>
 import { checkoutOrder, payConfirm, getOrderDetail } from '@/api/order.js'
-import { getAddressList } from '@/api/address.js'
 
 export default {
   data() {
@@ -90,12 +72,10 @@ export default {
       productId: null,
       quantity: 1,
       orderData: null,
-      selectedAddress: null,
       orderNote: '',
       loading: true,
       error: null,
-      submitting: false,
-	  incomingAddressId: null
+      submitting: false
     }
   },
   onLoad(options) {
@@ -127,13 +107,7 @@ export default {
     }
   },
   onShow() {
-    const address = uni.getStorageSync('selected_address')
-    if (address) {
-      this.selectedAddress = address
-      uni.removeStorageSync('selected_address')
-    }else {
-      this.loadAddress(); // 没有缓存才调用接口获取
-    }
+    // 地址功能已移除
   },
   methods: {
     async fetchCheckoutData() {
@@ -160,8 +134,6 @@ export default {
         console.log('结算接口返回数据:', JSON.stringify(res.data))
         if (res.data.code === 0) {
           this.orderData = res.data.data
-		   // ✅ 新增：把返回的 address_info 作为当前选中的地址
-		   this.selectedAddress = res.data.data.address_info || null
         } else {
           this.handleError(res.data.msg || '获取结算信息失败')
         }
@@ -171,42 +143,6 @@ export default {
         this.loading = false
       }
     },
-    selectAddress() {
-		if (this.orderData?.address_info) {
-			// 如果已有地址，进入选择地址页面
-			uni.navigateTo({
-			  url: '/pages/address/list?selectMode=1'
-			})
-		} else {
-			// 如果没有地址，直接跳转到创建地址页面
-			uni.navigateTo({
-			  url: '/pages/address/edit'
-			})
-		}
-    },
-    async loadAddress() {
-        try {
-		  const res = await getAddressList()
-
-		  if (res.code === 0) {
-		    const list = res.data || [];
-			if (list.length > 0) {
-			  // 优先默认地址，否则取第一个
-			  const defaultAddr = list.find(addr => addr.is_default);
-			  this.selectedAddress = defaultAddr || list[0];
-			} else {
-			  // 如果列表为空，跳转引导用户新建地址
-			  setTimeout(() => {
-			    uni.navigateTo({ url: '/pages/address/edit' });
-			  }, 300);
-			}
-		  } else {
-		    this.handleError(res.data.msg || '获取地址失败')
-		  }
-        } catch (err) {
-          console.error('获取地址失败', err);
-        }
-     },
 	handleError(msg) {
       this.error = msg
       uni.showToast({
@@ -218,7 +154,6 @@ export default {
       console.log('123')
       console.log('========== [测试] 按钮被点击 ==========')
       console.log('[测试] 事件对象:', e)
-      console.log('[测试] selectedAddress:', this.selectedAddress)
       console.log('[测试] submitting:', this.submitting)
       console.log('[测试] orderData:', this.orderData)
       this.submitOrder(e)
@@ -226,15 +161,10 @@ export default {
     async submitOrder(e) {
       console.log('========== [确认支付] 开始执行 submitOrder 方法 ==========')
       console.log('[确认支付] 事件对象:', e)
-      console.log('[确认支付] selectedAddress:', this.selectedAddress)
       console.log('[确认支付] orderData:', this.orderData)
       console.log('[确认支付] submitting:', this.submitting)
       
-      if (!this.selectedAddress) {
-        console.warn('[确认支付] 未选择收货地址，提前返回')
-        return uni.showToast({ title: '请选择收货地址', icon: 'none' })
-      }
-	  if (!this.orderData || !this.orderData.order_no) {
+      if (!this.orderData || !this.orderData.order_no) {
         console.warn('[确认支付] 订单信息异常，提前返回', {
           hasOrderData: !!this.orderData,
           orderNo: this.orderData?.order_no
@@ -265,7 +195,6 @@ export default {
           const payData = payRes.data || {}
           const orderStatus = payData.order_status // 1: 待支付, 2: 已支付
           const message = payData.message || '下单成功'
-          const balanceAmount = Number(payData.balance_amount || 0)
           const offlineAmount = Number(payData.offline_amount || 0)
           const wechatAmount = Number(payData.wechat_amount || 0) // 注意：这里实际表示线下支付金额
 
@@ -277,14 +206,11 @@ export default {
           const offlinePayAmount = offlineAmount || wechatAmount
           
           if (orderStatus === 2) {
-            // 已支付（余额充足，全额支付）
+            // 已支付
             paymentInfo = message || '下单成功'
           } else if (orderStatus === 1) {
-            // 待支付（余额不足，需要线下支付）
-            if (balanceAmount > 0 && offlinePayAmount > 0) {
-              // 部分余额支付，部分线下支付
-              paymentInfo = `已使用余额支付 ¥${(balanceAmount / 100).toFixed(2)}，剩余 ¥${(offlinePayAmount / 100).toFixed(2)} 需线下支付`
-            } else if (offlinePayAmount > 0) {
+            // 待支付（需要线下支付）
+            if (offlinePayAmount > 0) {
               // 完全线下支付
               paymentInfo = `需线下支付 ¥${(offlinePayAmount / 100).toFixed(2)}`
             } else {
@@ -341,44 +267,6 @@ export default {
   color: #333;
 }
 
-.address-section {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px;
-}
-
-.address-info {
-  flex: 1;
-}
-
-.address-header {
-  margin-bottom: 8px;
-}
-
-.address-header .name {
-  font-size: 16px;
-  font-weight: bold;
-  margin-right: 10px;
-}
-
-.address-header .phone {
-  font-size: 14px;
-  color: #666;
-}
-
-.address-detail {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.5;
-}
-
-.add-address {
-  flex: 1;
-  text-align: center;
-  color: #e93b3d;
-  font-size: 14px;
-}
 
 .order-item {
   display: flex;

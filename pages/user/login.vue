@@ -40,7 +40,6 @@
 
 <script>
 	import { goLogin } from '@/api/user.js'
-	import { refreshBalance } from '@/api/balance.js'
 	import { getNearestShop } from '@/api/common.js'
 	export default {
 	  data() {
@@ -202,9 +201,6 @@
 			// 以后登录只需要传code，不需要传shop_id
 			uni.removeStorageSync('shopIdCache')
 
-			// 登录成功后刷新余额（使用全局状态管理，自动处理请求去重）
-			await refreshBalance()
-
 			uni.hideLoading()
 			uni.showToast({ title: '注册成功', icon: 'success' })
 
@@ -275,9 +271,6 @@
 			// 登录成功后，清除shopIdCache（因为后端已经有了用户的店铺信息）
 			// 以后登录只需要传code，不需要传shop_id
 			uni.removeStorageSync('shopIdCache')
-
-			// 登录成功后刷新余额（使用全局状态管理，自动处理请求去重）
-			await refreshBalance()
 
 			uni.hideLoading()
 			uni.showToast({ title: '登录成功', icon: 'success' })

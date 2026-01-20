@@ -50,18 +50,6 @@
 	    "navigationBarTitleText": "登陆"
 	  }
 	},
-	{
-	  "path": "pages/address/list",
-	  "style": {
-	    "navigationBarTitleText": "收货地址列表"
-	  }
-	},
-	{
-	  "path": "pages/address/edit",
-	  "style": {
-	    "navigationBarTitleText": "地址页面"
-	  }
-	}
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

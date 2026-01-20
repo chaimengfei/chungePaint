@@ -33,11 +33,6 @@
         <text class="label">我的资料</text>
         <uni-icons type="arrowright" size="16" color="#999"></uni-icons>
       </view>
-      <view class="menu-item" @click="goToAddress">
-        <text class="label">收货地址管理</text>
-        <text class="sub-label">（可用于接收样品或资料）</text>
-        <uni-icons type="arrowright" size="16" color="#999"></uni-icons>
-      </view>
       <view class="menu-item contact-info">
         <text class="label">客服电话：400-XXX-XXXX</text>
       </view>
@@ -126,24 +121,6 @@ export default {
     goLogin() {
       uni.navigateTo({
         url: '/pages/user/login'
-      })
-    },
-    
-    goToAddress() {
-      // 检查登录状态
-      const token = uni.getStorageSync('token')
-      if (!token) {
-        // 未登录，提示需要登录
-        uni.showToast({
-          title: '需登录才能查看',
-          icon: 'none',
-          duration: 2000
-        })
-        return
-      }
-      // 已登录，跳转到地址列表
-      uni.navigateTo({
-        url: '/pages/address/list'
       })
     },
     

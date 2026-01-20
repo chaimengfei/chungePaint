@@ -26,7 +26,6 @@
         <view class="product-details">
           <text class="product-name">{{ orderInfo.items[0].product_name }}</text>
           <text v-if="orderInfo.items[0].specification" class="product-spec">{{ orderInfo.items[0].specification }}</text>
-          <text v-if="orderInfo.receiver_address" class="delivery-address">{{ orderInfo.receiver_address }}</text>
         </view>
       </view>
     </view>
@@ -228,12 +227,6 @@ export default {
   font-size: 24rpx;
   color: #999;
   margin-bottom: 10rpx;
-}
-
-.delivery-address {
-  font-size: 24rpx;
-  color: #666;
-  line-height: 1.5;
 }
 
 /* 底部操作按钮 */

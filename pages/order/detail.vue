@@ -47,13 +47,6 @@
           <text class="info-label">支付方式</text>
           <text class="info-value">{{ paymentTypeText }}<text v-if="paymentStatusText" class="payment-status">（{{ paymentStatusText }}）</text></text>
         </view>
-        <view class="info-row">
-          <text class="info-label">收货信息</text>
-          <text class="info-value">{{ order.receiver_name }} {{ order.receiver_phone }}</text>
-        </view>
-        <view class="info-row address-row">
-          <text class="info-value">{{ order.receiver_address }}</text>
-        </view>
       </view>
 
       <!-- 金额汇总 -->
@@ -85,9 +78,6 @@ import { rebuyOrder as rebuyOrderApi } from '@/api/order.js'
 
 const order = ref({
   items: [],
-  receiver_name: '',
-  receiver_phone: '',
-  receiver_address: '',
   order_status: 0,
   payment_type: 0,
   payment_status: 0,
@@ -416,10 +406,6 @@ const rebuyOrder = async () => {
   color: #999;
   font-size: 24rpx;
   margin-left: 10rpx;
-}
-.address-row {
-  margin-top: -15rpx;
-  padding-left: 160rpx;
 }
 
 /* 金额汇总 */

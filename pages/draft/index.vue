@@ -1,29 +1,5 @@
 <template>
 	<view class="container">
-		<!-- 默认地址信息（用于运费估算） -->
-		<view v-if="defaultAddress" class="address-section" @click="goToAddressList">
-			<view class="address-label">**默认地址** (用于运费估算)</view>
-			<view class="address-info">
-				<view class="address-detail">
-					<text class="location">
-						{{ defaultAddress.province }}{{ defaultAddress.city }}{{ defaultAddress.district }} {{ defaultAddress.detail }}
-					</text>
-				</view>
-			</view>
-			<view class="address-arrow">
-				<text>[修改]</text>
-			</view>
-		</view>
-
-		<!-- 无地址提示 -->
-		<view v-else class="no-address" @click="goToAddressList">
-			<view class="no-address-content">
-				<text class="no-address-label">**默认地址** (用于运费估算)</text>
-				<text class="no-address-text">（仅作为信息记录，非必填）</text>
-				<text class="no-address-arrow">[修改]</text>
-			</view>
-		</view>
-
 		<view class="header">
 			<text class="title">我的需求单</text>
 			<text class="subtitle">（您可以在此整理意向商品，提交后客服将为您统一报价）</text>
@@ -117,15 +93,11 @@
 		checkoutOrder
 	} from '@/api/order.js'
 
-	import {
-		getAddressList
-	} from '@/api/address.js'
 
 	export default {
 		data() {
 			return {
-				draftItems: [], // 需求单商品列表
-				defaultAddress: null // 默认地址信息
+				draftItems: [] // 需求单商品列表
 			}
 		},
 		onShow() {
@@ -152,15 +124,6 @@
 				return
 			}
 			this.loadDraftData()
-			this.loadDefaultAddress()
-		},
-		onLoad() {
-			// 检查是否有选中的地址（从地址列表页面返回时）
-			const selectedAddress = uni.getStorageSync('selected_address')
-			if (selectedAddress) {
-				this.defaultAddress = selectedAddress
-				uni.removeStorageSync('selected_address')
-			}
 		},
 		computed: {
 			// 可购买的商品列表
@@ -241,26 +204,6 @@
 			goToIndex() {
 				uni.switchTab({
 					url: '/pages/index/index'
-				})
-			},
-
-			// 加载默认地址
-			async loadDefaultAddress() {
-				try {
-					const res = await getAddressList()
-					if (res.data && res.data.length > 0) {
-						// 查找默认地址，如果没有默认地址则使用第一个地址
-						this.defaultAddress = res.data.find(addr => addr.is_default) || res.data[0]
-					}
-				} catch (err) {
-					console.error('获取地址列表失败:', err)
-				}
-			},
-
-			// 跳转到地址列表
-			goToAddressList() {
-				uni.navigateTo({
-					url: '/pages/address/list'
 				})
 			},
 
@@ -507,120 +450,6 @@
 		font-weight: bold;
 	}
 
-	/* 地址信息样式 */
-	.address-section {
-		display: flex;
-		flex-direction: column;
-		padding: 20rpx;
-		background-color: #fff;
-		border-bottom: 1rpx solid #eee;
-		margin-bottom: 10rpx;
-	}
-
-	.address-label {
-		font-size: 26rpx;
-		font-weight: bold;
-		margin-bottom: 8rpx;
-		color: #333;
-	}
-
-	.address-tags {
-		display: flex;
-		flex-direction: column;
-		margin-right: 20rpx;
-	}
-
-	.tag {
-		font-size: 20rpx;
-		padding: 4rpx 8rpx;
-		border-radius: 4rpx;
-		margin-bottom: 4rpx;
-		text-align: center;
-	}
-
-	.default-tag {
-		background-color: #4169E1;
-		color: white;
-	}
-
-	.home-tag {
-		background-color: #f0f0f0;
-		color: #666;
-	}
-
-	.address-info {
-		flex: 1;
-		width: 100%;
-		margin-bottom: 8rpx;
-	}
-
-	.address-detail {
-		margin-bottom: 8rpx;
-	}
-
-	.location {
-		font-size: 28rpx;
-		color: #333;
-	}
-
-	.default-text {
-		color: #4169E1;
-		font-weight: bold;
-		margin-right: 8rpx;
-	}
-
-	.recipient-info {
-		display: flex;
-		align-items: center;
-	}
-
-	.name {
-		font-size: 26rpx;
-		color: #333;
-		margin-right: 20rpx;
-	}
-
-	.phone {
-		font-size: 26rpx;
-		color: #666;
-	}
-
-	.address-arrow {
-		color: #4169E1;
-		font-size: 24rpx;
-		align-self: flex-end;
-	}
-
-	.no-address-label {
-		font-size: 26rpx;
-		font-weight: bold;
-		margin-bottom: 4rpx;
-		color: #333;
-	}
-
-	/* 无地址提示样式 */
-	.no-address {
-		padding: 20rpx;
-		background-color: #fff;
-		border-bottom: 1rpx solid #eee;
-		margin-bottom: 10rpx;
-	}
-
-	.no-address-content {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-
-	.no-address-text {
-		font-size: 28rpx;
-		color: #999;
-	}
-
-	.no-address-arrow {
-		color: #999;
-		font-size: 32rpx;
-	}
 
 	.cart-item {
 		display: flex;
