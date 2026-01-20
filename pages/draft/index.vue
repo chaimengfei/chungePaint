@@ -248,10 +248,12 @@
 				console.log('接口返回:', res)
 				
 				if (res.data && res.data.code === 0) {
-					uni.showToast({
-						title: '提交成功，客服将尽快联系您',
-						icon: 'success',
-						duration: 2000
+					const inquiryNo = res.data.data?.inquiry_no
+					console.log('提交成功，询价单号:', inquiryNo)
+					
+					// 跳转到成功页面
+					uni.redirectTo({
+						url: `/pages/order/success?order_no=${inquiryNo}&amount=0&order_status=1&payment_info=询价已提交，客服将尽快联系您`
 					})
 				} else {
 					uni.showToast({

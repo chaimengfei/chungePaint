@@ -7,11 +7,8 @@
           <text class="checkmark">✓</text>
         </view>
       </view>
-      <text class="success-title">下单成功</text>
-      <text class="success-subtitle" v-if="orderStatus === 1">等待接单...</text>
-      <text class="success-order-no" v-if="orderNo">订单号：{{ orderNo }}</text>
-      <text class="success-amount" v-if="displayAmount">{{ displayAmount }}</text>
-      <text class="payment-info" v-if="paymentInfo">{{ paymentInfo }}</text>
+      <text class="success-title">{{  '询价提交成功'  }}</text>
+      <text class="success-subtitle">{{  '客服将尽快联系您...' }}</text>
     </view>
 
     <!-- 订单信息卡片 -->
@@ -30,9 +27,10 @@
       </view>
     </view>
 
-    <!-- 底部操作按钮 -->
-    <view class="bottom-actions">
+    <!-- 操作按钮区域 -->
+    <view class="action-buttons">
       <button class="view-detail-btn" @click="viewOrderDetail">查看详情</button>
+      <button class="contact-service-btn" @click="contactService">联系客服</button>
     </view>
   </view>
 </template>
@@ -47,7 +45,8 @@ export default {
       paymentAmount: '',
       orderInfo: null,
       orderStatus: null, // 1: 待支付, 2: 已支付
-      paymentInfo: '' // 支付信息提示
+      paymentInfo: '', // 支付信息提示
+      servicePhone: '131-6162-1688' // 客服电话
     }
   },
   computed: {
@@ -102,6 +101,41 @@ export default {
           url: '/pages/order/index'
         })
       }
+    },
+    // 联系客服
+    contactService() {
+      uni.showActionSheet({
+        itemList: [this.servicePhone, '呼叫', '取消'],
+        success: (res) => {
+          if (res.tapIndex === 0) {
+            // 点击电话号码，复制到剪贴板
+            uni.setClipboardData({
+              data: this.servicePhone.replace(/-/g, ''),
+              success: () => {
+                uni.showToast({
+                  title: '电话号码已复制',
+                  icon: 'success'
+                })
+              }
+            })
+          } else if (res.tapIndex === 1) {
+            // 点击呼叫，直接拨打电话
+            uni.makePhoneCall({
+              phoneNumber: this.servicePhone.replace(/-/g, ''),
+              success: () => {
+                console.log('拨打电话成功')
+              },
+              fail: (err) => {
+                console.error('拨打电话失败:', err)
+                uni.showToast({
+                  title: '拨打电话失败',
+                  icon: 'none'
+                })
+              }
+            })
+          }
+        }
+      })
     }
   }
 }
