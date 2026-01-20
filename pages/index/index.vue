@@ -73,7 +73,7 @@
             <text class="product-name">{{ product.name }}</text>
             <view class="price-info">
               <text class="price-label">参考价：</text>
-              <text class="product-price">¥{{ product.seller_price }}</text>
+              <text class="product-price">¥{{ product.reference_price }}</text>
               <text class="product-unit">/ {{ product.unit }}</text>
             </view>
             <text class="price-tip">（具体价格因采购量及规格可能浮动）</text>
