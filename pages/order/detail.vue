@@ -72,6 +72,7 @@
 
     <!-- 底部操作栏 -->
     <view class="action-bar">
+      <button class="action-btn share-btn" open-type="share">分享</button>
       <button class="action-btn contact-btn" @click="contactService">联系客服</button>
     </view>
   </view>
@@ -145,13 +146,13 @@ onLoad((options) => {
   }
 })
 
-// 分享给朋友（页面级分享）
+// 分享给朋友（页面级分享） - 使用 inquiry_no 即可（接口无需认证）
 onShareAppMessage(() => {
   return {
     title: `询价详情 - ${order.value.order_no || ''}`,
     desc: `询价单号：${order.value.order_no || ''}`,
     path: `/pages/order/detail?inquiry_no=${order.value.order_no || ''}`,
-    imageUrl: '' // 可以设置分享图片
+    imageUrl: '' // 可选：分享卡片图片
   }
 })
 
