@@ -18,3 +18,15 @@ export const getInquiryDetail = (inquiryNo) => {
 export const submitInquiry = (data) => {
   return post('/api/inquiry/submit', data)
 }
+
+/**
+ * 获取询价列表
+ * @param {Object} params 查询参数
+ * @param {number} [params.page] - 页码（默认：1）
+ * @param {number} [params.page_size] - 每页数量（默认：10）
+ * @param {number} [params.start_time] - 开始时间（Unix时间戳，秒）
+ * @param {number} [params.end_time] - 结束时间（Unix时间戳，秒）
+ */
+export const getInquiryList = (params) => {
+  return get('/api/inquiry/list', params).then(res => res.data)
+}

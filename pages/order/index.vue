@@ -4,36 +4,17 @@
       <text class="title">我的询价</text>
     </view>
     
-    <!-- 询价状态选项卡 -->
-    <view class="order-tabs">
-      <text 
-        v-for="tab in tabs" 
-        :key="tab.status" 
-        class="tab" 
-        :class="{ 
-          active: activeTab === tab.status,
-          'tab-all': tab.status === 0
-        }"
-        @click="changeTab(tab.status)"
-      >
-        {{ tab.name }}
-      </text>
-    </view>
-    
-    <!-- 订单列表 -->
+    <!-- 询价列表 -->
     <scroll-view class="order-list" scroll-y>
       <view v-if="orders.length > 0">
         <view 
           v-for="order in orders" 
           :key="order.id" 
           class="order-item"
-          @click="viewOrderDetail(order.order_no)"
+          @click="viewOrderDetail(order.inquiry_no || order.order_no)"
         >
           <view class="order-header">
             <text class="order-no">询价单号：{{ order.order_no }}</text>
-            <view class="header-right">
-              <text class="order-status">[状态：{{ getStatusText(order) }}]</text>
-            </view>
           </view>
           
           <view class="inquiry-time">
@@ -42,20 +23,26 @@
           </view>
           
           <view class="order-body">
-            <!-- 只显示前2个商品 -->
-            <view v-for="item in getDisplayItems(order.items)" :key="item.id" class="order-product">
-              <image class="product-image" :src="item.product_image || '/static/images/empty-cart.png'" mode="aspectFill" />
-              <view class="product-info">
-                <text class="product-name">{{ item.product_name }}</text>
-                <view class="price-quantity">
-                  <text class="product-price">¥{{ item.unit_price }}</text>
-                  <text class="product-quantity">×{{ item.quantity }}</text>
+            <!-- 商品列表（列表接口不返回商品详情，点击查看详情可看到完整商品信息） -->
+            <view v-if="order.items && order.items.length > 0">
+              <!-- 只显示前2个商品 -->
+              <view v-for="item in getDisplayItems(order.items)" :key="item.id" class="order-product">
+                <image class="product-image" :src="item.product_image || '/static/images/empty-cart.png'" mode="aspectFill" />
+                <view class="product-info">
+                  <text class="product-name">{{ item.product_name }}</text>
+                  <view class="price-quantity">
+                    <text class="product-price">¥{{ item.unit_price }}</text>
+                    <text class="product-quantity">×{{ item.quantity }}</text>
+                  </view>
                 </view>
               </view>
+              <!-- 如果商品数量超过2个，显示"还有X件商品"提示 -->
+              <view v-if="order.items.length > 2" class="more-products-tip">
+                <text class="more-text">还有 {{ order.items.length - 2 }} 件商品，点击查看详情</text>
+              </view>
             </view>
-            <!-- 如果商品数量超过2个，显示"还有X件商品"提示 -->
-            <view v-if="order.items && order.items.length > 2" class="more-products-tip">
-              <text class="more-text">还有 {{ order.items.length - 2 }} 件商品，点击查看详情</text>
+            <view v-else class="no-items-tip">
+              <text class="tip-text">共 {{ order.total_quantity || 0 }} 件商品，点击查看详情</text>
             </view>
           </view>
           
@@ -71,36 +58,24 @@
               <text class="remark-text">{{ order.remark }}</text>
             </view>
             
-            <!-- 已报价显示报价信息 -->
-            <view v-if="order.order_status === 2" class="quote-info">
+            <!-- 如果有最终报价，显示报价信息 -->
+            <view v-if="order.final_quote && order.final_quote > 0" class="quote-info">
               <text class="quote-label">**客服报价：**</text>
-              <text class="quote-value">¥{{ order.payment_amount || order.total_amount }}</text>
-              <text v-if="order.quote_note" class="quote-note">({{ order.quote_note }})</text>
+              <text class="quote-value">¥{{ order.final_quote }}</text>
             </view>
             
             <view class="action-buttons">
-              <!-- 待处理状态：显示联系客服按钮 -->
               <button 
-                v-if="order.order_status === 1" 
+                class="action-btn view-quote-btn"
+                @click.stop="viewOrderDetail(order.inquiry_no || order.order_no)"
+              >
+                💬 查看详情
+              </button>
+              <button 
                 class="action-btn contact-btn"
                 @click.stop="contactService(order)"
               >
                 📞 联系客服
-              </button>
-              <!-- 已报价状态：显示查看报价单和联系下单按钮 -->
-              <button 
-                v-if="order.order_status === 2" 
-                class="action-btn view-quote-btn"
-                @click.stop="viewOrderDetail(order.order_no)"
-              >
-                💬 查看报价单
-              </button>
-              <button 
-                v-if="order.order_status === 2" 
-                class="action-btn contact-order-btn"
-                @click.stop="contactService(order)"
-              >
-                📞 联系下单
               </button>
             </view>
           </view>
@@ -124,17 +99,11 @@
 </template>
 
 <script>
+import { getInquiryList } from '@/api/order.js'
 
 export default {
   data() {
     return {
-      tabs: [
-        { name: '全部', status: 0 },
-        { name: '待处理', status: 1 },
-        { name: '已报价', status: 2 },
-        { name: '已完成', status: 3 }
-      ],
-      activeTab: 0,
       orders: [],
       page: 1,
       pageSize: 10,
@@ -165,7 +134,7 @@ export default {
       })
       return
     }
-    this.loadOrders()
+    this.loadInquirys()
   },
   onShow() {
     // 检查是否首次登录（没有token）
@@ -201,26 +170,17 @@ export default {
   onReachBottom() {
     // 滚动到底部时自动加载更多
     if (!this.loading && this.hasMore) {
-      this.loadOrders()
+      this.loadInquirys()
     }
   },
   methods: {
-    // 切换订单状态选项卡
-    changeTab(status) {
-      this.activeTab = status
-      this.page = 1
-      this.hasMore = true
-      this.orders = []
-      this.loadOrders()
-    },
-    
-    // 加载订单数据
-    async loadOrders() {
+    // 加载询价数据
+    async loadInquirys() {
       if (this.loading || !this.hasMore) return
       
       this.loading = true
       const startTime = Date.now()
-      console.log(`[订单列表] 开始加载 - 页码: ${this.page}, 状态: ${this.activeTab}`)
+      console.log(`[询价列表] 开始加载 - 页码: ${this.page}`)
       
       try {
         const params = {
@@ -228,42 +188,60 @@ export default {
           page_size: this.pageSize
         }
         
-        // status: 0=全部, 1=待付款, 2=已付款
-        if (this.activeTab !== 0) {
-          params.status = this.activeTab
-        }
-        
         const requestStartTime = Date.now()
-        // TODO: 需要替换为询价列表接口
-        const res = { code: 0, data: { list: [] } }
+        const res = await getInquiryList(params)
         const requestEndTime = Date.now()
         const requestDuration = requestEndTime - requestStartTime
         
-        console.log(`[订单列表] API请求耗时: ${requestDuration}ms`)
-        console.log(`[订单列表] API返回数据量: ${res.data?.list?.length || 0} 条`)
+        console.log(`[询价列表] API请求耗时: ${requestDuration}ms`)
+        console.log(`[询价列表] API返回数据量: ${res.data?.list?.length || 0} 条`)
         
         if (res.code === 0) {
           const processStartTime = Date.now()
-          const newOrders = res.data.list || []
+          const newInquirys = res.data.list || []
+          
+          // 将 API 返回的数据映射到页面需要的格式
+          const mappedInquirys = newInquirys.map(inquiry => ({
+            id: inquiry.id,
+            order_no: inquiry.inquiry_no, // 映射为 order_no 以兼容模板
+            inquiry_no: inquiry.inquiry_no,
+            estimated_total: inquiry.estimated_total || 0,
+            final_quote: inquiry.final_quote || 0,
+            note: inquiry.note || '',
+            total_quantity: inquiry.total_quantity || 0,
+            created_at: inquiry.created_at,
+            // 用于显示的总金额（优先显示 final_quote，否则显示 estimated_total）
+            total_amount: inquiry.final_quote && inquiry.final_quote > 0 
+              ? inquiry.final_quote 
+              : inquiry.estimated_total,
+            // 商品列表为空（列表接口不返回商品详情）
+            items: []
+          }))
+          
           if (this.page === 1) {
-            this.orders = newOrders
+            this.orders = mappedInquirys
           } else {
-            this.orders = [...this.orders, ...newOrders]
+            this.orders = [...this.orders, ...mappedInquirys]
           }
-          this.hasMore = newOrders.length >= this.pageSize
+          this.hasMore = newInquirys.length >= this.pageSize
           this.page++
           const processEndTime = Date.now()
           const processDuration = processEndTime - processStartTime
           
           const totalDuration = Date.now() - startTime
-          console.log(`[订单列表] 数据处理耗时: ${processDuration}ms`)
-          console.log(`[订单列表] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
+          console.log(`[询价列表] 数据处理耗时: ${processDuration}ms`)
+          console.log(`[询价列表] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
+        } else {
+          uni.showToast({
+            title: res.message || '获取询价列表失败',
+            icon: 'none'
+          })
         }
       } catch (err) {
         const totalDuration = Date.now() - startTime
-        console.error(`[订单列表] 获取订单失败 (总耗时: ${totalDuration}ms):`, err)
+        console.error(`[询价列表] 获取询价失败 (总耗时: ${totalDuration}ms):`, err)
         uni.showToast({
-          title: '获取订单失败',
+          title: err.message || '获取询价列表失败',
           icon: 'none'
         })
       } finally {
@@ -271,18 +249,18 @@ export default {
       }
     },
     
-    // 刷新订单数据
+    // 刷新询价数据
     async refreshOrders() {
       this.page = 1
       this.hasMore = true
       this.orders = []
-      await this.loadOrders()
+      await this.loadInquirys()
     },
     
     // 加载更多订单
     loadMore() {
       if (!this.loading && this.hasMore) {
-        this.loadOrders()
+        this.loadInquirys()
       }
     },
     
@@ -296,30 +274,6 @@ export default {
       const hours = String(date.getHours()).padStart(2, '0')
       const minutes = String(date.getMinutes()).padStart(2, '0')
       return `${year}/${month}/${day} ${hours}:${minutes}`
-    },
-    
-    // 获取询价状态文本
-    getStatusText(order) {
-      // 如果传入的是订单对象
-      if (typeof order === 'object' && order !== null) {
-        const status = order.order_status
-        
-        // 询价状态映射
-        const statusMap = {
-          1: '待处理',
-          2: '已报价',
-          3: '已完成'
-        }
-        return statusMap[status] || '未知状态'
-      }
-      
-      // 兼容旧代码：如果传入的是数字
-      const statusMap = {
-        1: '待处理',
-        2: '已报价',
-        3: '已完成'
-      }
-      return statusMap[order] || '未知状态'
     },
     
     // 联系客服
@@ -357,10 +311,10 @@ export default {
       })
     },
     
-    // 查看订单详情
+    // 查看询价详情
     viewOrderDetail(orderNo) {
       uni.navigateTo({
-        url: `/pages/order/detail?order_no=${orderNo}`
+        url: `/pages/order/detail?inquiry_no=${orderNo}`
       })
     },
     

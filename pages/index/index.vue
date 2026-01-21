@@ -554,74 +554,11 @@ export default {
       }
     },
     
-    // 立即购买
-    // 跳转到询价页面
+    // 跳转到我的询价页面
     goToInquiry(product) {
-      // 将商品信息存储到本地，然后跳转到询价表单页面
-      // 这里先跳转到需求单页面，用户可以在那里提交询价
-      uni.switchTab({
-        url: '/pages/draft/index'
+      uni.navigateTo({
+        url: '/pages/order/index'
       })
-      // 提示用户可以在需求单中提交询价
-      setTimeout(() => {
-        uni.showToast({
-          title: '请在需求单中提交询价',
-          icon: 'none',
-          duration: 2000
-        })
-      }, 500)
-    },
-    
-    async buyNow(product) {
-      try {
-        console.log('首页 - 立即询价，商品ID:', product.id)
-        
-        // 检查登录状态
-        const token = uni.getStorageSync('token')
-        if (!token) {
-          uni.navigateTo({
-            url: '/pages/user/login'
-          })
-          return
-        }
-        
-        // 直接调用提交询价接口
-        uni.showLoading({ title: '提交中...', mask: true })
-        
-        const { submitInquiry } = await import('@/api/order.js')
-        const res = await submitInquiry({
-          product_id: product.id,
-          quantity: 1
-        })
-        
-        uni.hideLoading()
-        
-        if (res.data && res.data.code === 0) {
-          const inquiryNo = res.data.data?.inquiry_no
-          uni.showToast({
-            title: '提交成功',
-            icon: 'success'
-          })
-          
-          setTimeout(() => {
-            uni.redirectTo({
-              url: `/pages/order/success?order_no=${inquiryNo}&amount=0&order_status=1&payment_info=询价已提交，客服将尽快联系您`
-            })
-          }, 1500)
-        } else {
-          uni.showToast({
-            title: res.data?.message || '提交失败',
-            icon: 'none'
-          })
-        }
-      } catch (err) {
-        uni.hideLoading()
-        console.error('立即询价失败:', err)
-        uni.showToast({
-          title: err.message || '提交失败，请重试',
-          icon: 'none'
-        })
-      }
     },
     
     // 拨打电话
