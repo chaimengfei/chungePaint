@@ -82,6 +82,7 @@
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { getInquiryDetail } from '@/api/order.js'
+import { showContactService } from '@/api/common.js'
 
 const order = ref({
   items: [],
@@ -177,39 +178,7 @@ const formatTime = (timeStr) => {
 
 // 联系客服
 const contactService = () => {
-  const servicePhone = '131-6162-1688'
-  uni.showActionSheet({
-    itemList: [servicePhone, '呼叫', '取消'],
-    success: (res) => {
-      if (res.tapIndex === 0) {
-        // 点击电话号码，复制到剪贴板
-        uni.setClipboardData({
-          data: servicePhone.replace(/-/g, ''),
-          success: () => {
-            uni.showToast({
-              title: '电话号码已复制',
-              icon: 'success'
-            })
-          }
-        })
-      } else if (res.tapIndex === 1) {
-        // 点击呼叫，直接拨打电话
-        uni.makePhoneCall({
-          phoneNumber: servicePhone.replace(/-/g, ''),
-          success: () => {
-            console.log('拨打电话成功')
-          },
-          fail: (err) => {
-            console.error('拨打电话失败:', err)
-            uni.showToast({
-              title: '拨打电话失败',
-              icon: 'none'
-            })
-          }
-        })
-      }
-    }
-  })
+  showContactService()
 }
 
 </script>

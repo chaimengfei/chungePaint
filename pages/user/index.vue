@@ -44,6 +44,8 @@
 </template>
 
 <script>
+import { showContactService } from '@/api/common.js'
+
 export default {
   data() {
     return {
@@ -133,20 +135,7 @@ export default {
     
     // 联系客服
     contactService() {
-      uni.makePhoneCall({
-        phoneNumber: '13161621688',
-        success: () => {
-          console.log('拨打电话成功')
-        },
-        fail: (err) => {
-          console.log('拨打电话失败:', err)
-          uni.showToast({
-            title: '请手动拨打客服电话：13161621688',
-            icon: 'none',
-            duration: 3000
-          })
-        }
-      })
+      showContactService()
     },
     
     // 添加企业微信

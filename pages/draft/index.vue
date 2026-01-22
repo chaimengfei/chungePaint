@@ -1,13 +1,12 @@
 <template>
 	<view class="container">
-		<view class="header">
-			<text class="title">我的需求单</text>
-			<text class="subtitle">（您可以在此整理意向商品，提交后客服将为您统一报价）</text>
-		</view>
+	<view class="header">
+		<text class="subtitle">您可以在此整理意向商品，提交后客服将为您统一报价</text>
+	</view>
 
 		<!-- 清单商品 -->
 		<view class="list-title" v-if="draftItems.length > 0">
-			<text>**清单商品**</text>
+			<text>清单商品</text>
 		</view>
 		
 		<!-- 需求单列表 -->
@@ -75,7 +74,7 @@
 
 		<!-- 空需求单 -->
 		<view v-else class="empty-draft">
-			<image src="/static/images/empty-draft.png" mode="aspectFit"></image>
+			<image src="/static/images/empty-inquiry.png" mode="aspectFit"></image>
 			<text class="tip">需求单还是空的</text>
 			<button class="btn" @click="goToIndex">去逛逛</button>
 		</view>

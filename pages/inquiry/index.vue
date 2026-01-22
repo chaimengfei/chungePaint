@@ -14,11 +14,11 @@
           @click="viewOrderDetail(order.inquiry_no)"
         >
           <view class="order-header">
-            <text class="order-no">询价单号：{{ order.inquiry_no }}</text>
+            <text class="order-no">{{ order.inquiry_no }}</text>
           </view>
           
           <view class="inquiry-time">
-            <text class="time-label">**提交时间：**</text>
+            <text class="time-label">提交时间：</text>
             <text class="time-value">{{ formatTime(order.created_at) }}</text>
           </view>
           
@@ -44,19 +44,14 @@
           </view>
           
           <view class="order-footer">
-            <view class="total-amount">
-              <text class="amount-label">**合计参考金额：**</text>
-              <text class="amount-value">¥{{ order.total_amount }}</text>
-            </view>
-            
             <view v-if="order.remark" class="service-remark">
-              <text class="remark-label">**客服备注：**</text>
+              <text class="remark-label">客服备注：</text>
               <text class="remark-text">{{ order.remark }}</text>
             </view>
             
-            <view v-if="order.final_quote && order.final_quote > 0" class="quote-info">
-              <text class="quote-label">**客服报价：**</text>
-              <text class="quote-value">¥{{ order.final_quote }}</text>
+            <view v-if="order.final_quote && order.final_quote > 0" class="total-amount">
+              <text class="amount-label">客服报价：</text>
+              <text class="amount-value">¥{{ order.final_quote }}</text>
             </view>
             
             <view class="action-buttons">
@@ -95,6 +90,7 @@
 
 <script>
 import { getInquiryList } from '@/api/inquiry.js'
+import { showContactService } from '@/api/common.js'
 
 export default {
   data() {
@@ -255,20 +251,7 @@ export default {
     },
     
     contactService(order) {
-      uni.makePhoneCall({
-        phoneNumber: '13161621688',
-        success: () => {
-          console.log('拨打电话成功')
-        },
-        fail: (err) => {
-          console.log('拨打电话失败:', err)
-          uni.showToast({
-            title: '请手动拨打客服电话：13161621688',
-            icon: 'none',
-            duration: 3000
-          })
-        }
-      })
+      showContactService()
     },
     
     getDisplayItems(items) {
@@ -507,14 +490,15 @@ export default {
 }
 
 .view-quote-btn {
-  background-color: #ff9500;
-  color: #fff;
+  background-color: transparent;
+  color: #333;
+  border: 1rpx solid #ddd;
 }
 
 .contact-btn {
-  background-color: #fff;
-  color: #666;
-  border: 1rpx solid #ddd;
+  background-color: #ffd700;
+  color: #333;
+  border: none;
 }
 
 .empty-inquiry {

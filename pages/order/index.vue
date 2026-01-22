@@ -18,7 +18,7 @@
           </view>
           
           <view class="inquiry-time">
-            <text class="time-label">**提交时间：**</text>
+            <text class="time-label">提交时间</text>
             <text class="time-value">{{ formatTime(order.created_at) }}</text>
           </view>
           
@@ -48,13 +48,13 @@
           
           <view class="order-footer">
             <view class="total-amount">
-              <text class="amount-label">**合计参考金额：**</text>
+              <text class="amount-label">合计参考金额</text>
               <text class="amount-value">¥{{ order.total_amount }}</text>
             </view>
             
             <!-- 客服备注 -->
             <view v-if="order.remark" class="service-remark">
-              <text class="remark-label">**客服备注：**</text>
+              <text class="remark-label">客服备注</text>
               <text class="remark-text">{{ order.remark }}</text>
             </view>
             
@@ -100,6 +100,7 @@
 
 <script>
 import { getInquiryList } from '@/api/order.js'
+import { showContactService } from '@/api/common.js'
 
 export default {
   data() {
@@ -278,21 +279,7 @@ export default {
     
     // 联系客服
     contactService(order) {
-      // 可以跳转到客服页面或拨打电话
-      uni.makePhoneCall({
-        phoneNumber: '13161621688',
-        success: () => {
-          console.log('拨打电话成功')
-        },
-        fail: (err) => {
-          console.log('拨打电话失败:', err)
-          uni.showToast({
-            title: '请手动拨打客服电话：13161621688',
-            icon: 'none',
-            duration: 3000
-          })
-        }
-      })
+      showContactService()
     },
     
     // 获取要显示的商品列表（最多显示2个）

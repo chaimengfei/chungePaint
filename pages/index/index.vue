@@ -103,7 +103,7 @@
 import { getProductList } from '@/api/product.js'
 import { addToDraft as addToDraftApi, getDraftList } from '@/api/draft.js'
 import { goLogin } from '@/api/user.js'
-import { getNearestShop, isServicePointIdExpired } from '@/api/common.js'
+import { getNearestShop, isServicePointIdExpired, showContactService } from '@/api/common.js'
 
 export default {
   data() {
@@ -554,11 +554,9 @@ export default {
       }
     },
     
-    // 跳转到我的询价页面
+    // 立即询价 - 显示联系客服弹窗
     goToInquiry(product) {
-      uni.navigateTo({
-        url: '/pages/inquiry/index'
-      })
+      showContactService()
     },
     
     // 拨打电话

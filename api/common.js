@@ -143,3 +143,43 @@ export function isServicePointIdExpired() {
   console.log(`服务网点ID缓存有效，剩余 ${remainingDays} 天`)
   return false
 }
+
+/**
+ * 联系客服 - 统一方法
+ * 显示客服电话弹窗，支持复制电话号码和直接拨打
+ * @param {string} [phoneNumber='131-6162-1688'] 客服电话号码，默认为 '131-6162-1688'
+ */
+export function showContactService(phoneNumber = '131-6162-1688') {
+  uni.showActionSheet({
+    itemList: [phoneNumber, '呼叫'],
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        // 点击电话号码，复制到剪贴板
+        uni.setClipboardData({
+          data: phoneNumber.replace(/-/g, ''),
+          success: () => {
+            uni.showToast({
+              title: '电话号码已复制',
+              icon: 'success'
+            })
+          }
+        })
+      } else if (res.tapIndex === 1) {
+        // 点击呼叫，直接拨打电话
+        uni.makePhoneCall({
+          phoneNumber: phoneNumber.replace(/-/g, ''),
+          success: () => {
+            console.log('拨打电话成功')
+          },
+          fail: (err) => {
+            console.error('拨打电话失败:', err)
+            uni.showToast({
+              title: '拨打电话失败',
+              icon: 'none'
+            })
+          }
+        })
+      }
+    }
+  })
+}

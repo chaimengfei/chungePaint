@@ -20,7 +20,7 @@
       <view class="product-list">
         <view class="section-title">商品信息</view>
         <view v-for="item in order.items" :key="item.id" class="product-item">
-          <image class="product-image" :src="item.product_image || '/static/images/empty-draft.png'" mode="aspectFill"/>
+          <image class="product-image" :src="item.product_image || '/static/images/empty-inquiry.png'" mode="aspectFill"/>
           <view class="product-info">
             <text class="product-name">{{ item.product_name }}</text>
             <text v-if="item.specification" class="product-spec">{{ item.specification }}</text>
@@ -69,6 +69,7 @@
 import { ref, computed } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import { getInquiryDetail } from '@/api/inquiry.js'
+import { showContactService } from '@/api/common.js'
 
 const order = ref({
   items: [],
@@ -165,37 +166,7 @@ const formatTime = (timeStr) => {
 
 // 联系客服
 const contactService = () => {
-  const servicePhone = '131-6162-1688'
-  uni.showActionSheet({
-    itemList: [servicePhone, '呼叫', '取消'],
-    success: (res) => {
-      if (res.tapIndex === 0) {
-        uni.setClipboardData({
-          data: servicePhone.replace(/-/g, ''),
-          success: () => {
-            uni.showToast({
-              title: '电话号码已复制',
-              icon: 'success'
-            })
-          }
-        })
-      } else if (res.tapIndex === 1) {
-        uni.makePhoneCall({
-          phoneNumber: servicePhone.replace(/-/g, ''),
-          success: () => {
-            console.log('拨打电话成功')
-          },
-          fail: (err) => {
-            console.error('拨打电话失败:', err)
-            uni.showToast({
-              title: '拨打电话失败',
-              icon: 'none'
-            })
-          }
-        })
-      }
-    }
-  })
+  showContactService()
 }
 
 </script>

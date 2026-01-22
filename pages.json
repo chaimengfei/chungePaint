@@ -66,15 +66,15 @@
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "首页",
+        "text": "看看",
         "iconPath": "static/tabbar/product_unselected.png",
         "selectedIconPath": "static/tabbar/product_selected.png"
       },
       {
         "pagePath": "pages/draft/index",
         "text": "需求单",
-        "iconPath": "static/tabbar/draft_unselected.png",
-        "selectedIconPath": "static/tabbar/draft_selected.png"
+        "iconPath": "/static/tabbar/inquiry_unselected.png",
+        "selectedIconPath": "/static/tabbar/inquiry_selected.png"
       },
       {
         "pagePath": "pages/user/index",
