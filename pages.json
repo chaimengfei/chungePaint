@@ -7,6 +7,12 @@
       }
     },
     {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "首页"
+      }
+    },
+    {
       "path": "pages/draft/index",
       "style": {
         "navigationBarTitleText": "需求单"
@@ -64,6 +70,12 @@
     "iconWidth": "24px",
     "spacing": "3px",
     "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页",
+        "iconPath": "static/tabbar/user_unselected.png",
+        "selectedIconPath": "static/tabbar/user_selected.png"
+      },
       {
         "pagePath": "pages/index/index",
         "text": "看看",

@@ -1,17 +1,9 @@
 <template>
   <view class="container">
-    <!-- 品牌展示区域 -->
-    <view class="brand-card">
-      <view class="brand-header">
-        <text class="brand-title">贸彩漆业</text>
-        <text class="brand-desc">汽车漆、工业漆、雕塑&广告牌漆、各种辅料</text>
-      </view>
-    </view>
-    
     <!-- 公告栏 -->
     <view class="notice-bar">
       <text class="notice-icon">📢</text>
-      <text class="notice-text">本平台为产品展示与询价中心，如需采购请提交需求，专属客服将为您服务。</text>
+      <text class="notice-text">本平台为产品展示询价中心，如需采购请联系客服(微信同号)</text>
     </view>
     
     <!-- 搜索框 -->
@@ -911,33 +903,6 @@ export default {
   background-color: #f5f5f5;
 }
 
-/* 品牌展示区域 */
-.brand-card {
-  background-color: #fff;
-  margin: 20rpx;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
-}
-
-.brand-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.brand-title {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10rpx;
-}
-
-.brand-desc {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.5;
-}
 
 .brand-logo-section {
   display: flex;

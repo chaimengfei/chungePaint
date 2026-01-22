@@ -167,7 +167,15 @@ const statusText = computed(() => {
 
 // 返回上一页
 const navigateBack = () => {
-  uni.navigateBack()
+  const pages = getCurrentPages()
+  if (pages.length > 1) {
+    uni.navigateBack()
+  } else {
+    // 如果没有上一页，跳转到看看页面
+    uni.switchTab({
+      url: '/pages/index/index'
+    })
+  }
 }
 
 // 格式化时间
