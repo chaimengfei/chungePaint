@@ -38,8 +38,8 @@
                 <text class="more-text">还有 {{ order.items.length - 2 }} 件商品，点击查看详情</text>
               </view>
             </view>
-            <view v-else class="no-items-tip">
-              <text class="tip-text">共 {{ order.total_quantity || 0 }} 件商品，点击查看详情</text>
+            <view v-else-if="order.total_quantity > 0" class="no-items-tip">
+              <text class="tip-text">共 {{ order.total_quantity }} 件商品，点击查看详情</text>
             </view>
           </view>
           
@@ -188,7 +188,15 @@ export default {
             total_amount: inquiry.final_quote && inquiry.final_quote > 0 
               ? inquiry.final_quote 
               : inquiry.estimated_total,
-            items: []
+            items: (inquiry.items || []).map(item => ({
+              id: item.id,
+              product_id: item.product_id,
+              product_name: item.product_name,
+              product_image: item.product_image,
+              unit_price: item.reference_unit_price || 0,
+              quantity: item.quantity,
+              unit: item.unit
+            }))
           }))
           
           if (this.page === 1) {

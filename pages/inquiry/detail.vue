@@ -11,7 +11,6 @@
     <!-- 订单卡片 -->
     <view class="order-card">
       <view class="order-header">
-        <text class="order-status">{{ statusText }}</text>
         <view class="order-no-wrapper">
           <text class="order-no">询价单号：{{ order.inquiry_no }}</text>
         </view>
@@ -47,22 +46,10 @@
           <text class="info-label">需求备注</text>
           <text class="info-value">{{ order.note }}</text>
         </view>
-        <view v-if="order.final_quote" class="info-row">
-          <text class="info-label">最终报价</text>
-          <text class="info-value">¥{{ (order.final_quote / 100).toFixed(2) }}</text>
-        </view>
       </view>
 
       <!-- 金额汇总 -->
       <view class="amount-summary">
-        <view class="amount-row">
-          <text>预估总计</text>
-          <text>¥{{ order.total_amount }}</text>
-        </view>
-        <view v-if="order.final_quote" class="amount-row">
-          <text>最终报价</text>
-          <text>¥{{ (order.final_quote / 100).toFixed(2) }}</text>
-        </view>
         <view class="amount-row total-row">
           <text>合计参考金额</text>
           <text>¥{{ order.final_quote || order.estimated_total || 0 }}</text>
@@ -108,14 +95,14 @@ const loadInquiryData = async (inquiryNo) => {
           product_name: item.product_name,
           product_image: item.product_image,
           specification: item.specification || item.unit,
-          unit_price: (item.reference_unit_price / 100).toFixed(2),
-          total_price: (item.reference_total / 100).toFixed(2),
+          unit_price: item.reference_unit_price || 0,
+          total_price: item.reference_total || 0,
           quantity: item.quantity,
           unit: item.unit,
           remark: item.remark
         })),
         inquiry_no: inquiryData.inquiry_no,
-        total_amount: inquiryData.estimated_total ? (inquiryData.estimated_total / 100).toFixed(2) : '0.00',
+        total_amount: inquiryData.estimated_total || 0,
         created_at: inquiryData.created_at,
         note: inquiryData.note,
         total_quantity: inquiryData.total_quantity,
@@ -160,7 +147,15 @@ const statusText = computed(() => {
 
 // 返回上一页
 const navigateBack = () => {
-  uni.navigateBack()
+  const pages = getCurrentPages()
+  if (pages.length > 1) {
+    uni.navigateBack()
+  } else {
+    // 如果没有上一页，跳转到首页
+    uni.switchTab({
+      url: '/pages/index/index'
+    })
+  }
 }
 
 // 格式化时间
