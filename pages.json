@@ -21,14 +21,14 @@
 	{
 	  "path": "pages/order/detail",
 	  "style": {
-		"navigationBarTitleText": "订单详情",
+		"navigationBarTitleText": "询价详情",
 		"navigationStyle": "custom"  // 可选：如果需要自定义导航栏
 	  }
 	},
 	{
 	  "path": "pages/order/success",
 	  "style": {
-		"navigationBarTitleText": "支付成功",
+		"navigationBarTitleText": "提交成功",
 		"navigationStyle": "custom"
 	  }
 	},

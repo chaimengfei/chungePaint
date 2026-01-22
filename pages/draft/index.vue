@@ -253,7 +253,7 @@
 					
 					// 跳转到成功页面
 					uni.redirectTo({
-						url: `/pages/order/success?order_no=${inquiryNo}&amount=0&order_status=1&payment_info=询价已提交，客服将尽快联系您`
+						url: `/pages/order/success?order_no=${inquiryNo}&inquiry_info=询价已提交，客服将尽快联系您`
 					})
 				} else {
 					uni.showToast({

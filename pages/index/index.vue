@@ -103,7 +103,7 @@
 import { getProductList } from '@/api/product.js'
 import { addToDraft as addToDraftApi, getDraftList } from '@/api/draft.js'
 import { goLogin } from '@/api/user.js'
-import { getNearestShop, isShopIdExpired } from '@/api/common.js'
+import { getNearestShop, isServicePointIdExpired } from '@/api/common.js'
 
 export default {
   data() {
@@ -196,17 +196,17 @@ export default {
           let shopId = null
           
           // 检查店铺ID缓存是否过期
-          if (isShopIdExpired()) {
+          if (isServicePointIdExpired()) {
             // 店铺ID缓存过期或不存在，需要重新获取位置并计算
             console.log('店铺ID缓存已过期或不存在，重新获取位置并计算')
             await this.getLocationOnly()
             // 从缓存中获取计算好的店铺ID
-            const shopIdCache = uni.getStorageSync('shopIdCache')
-            shopId = shopIdCache ? shopIdCache.shopId : null
+            const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
+            shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
           } else {
             // 店铺ID缓存仍然有效，直接使用
-            const shopIdCache = uni.getStorageSync('shopIdCache')
-            shopId = shopIdCache ? shopIdCache.shopId : null
+            const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
+            shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
             console.log('使用缓存的店铺ID:', shopId)
           }
           
@@ -214,8 +214,8 @@ export default {
           if (!shopId) {
             shopId = 1 // 默认使用第一个店铺
             // 存储默认店铺ID（带时间戳）
-            uni.setStorageSync('shopIdCache', {
-              shopId: shopId,
+            uni.setStorageSync('servicePointIdCache', {
+              servicePointId: shopId,
               timestamp: Date.now()
             })
             console.warn('店铺ID无效，使用默认店铺ID:', shopId)
@@ -262,16 +262,16 @@ export default {
           console.warn('获取位置信息失败，使用默认店铺ID:', shopId)
         }
         
-        // 存储店铺ID和时间戳
-        uni.setStorageSync('shopIdCache', {
-          shopId: shopId,
+        // 存储服务网点ID和时间戳
+        uni.setStorageSync('servicePointIdCache', {
+          servicePointId: shopId,
           timestamp: Date.now()
         })
       } catch (err) {
         console.warn('获取位置信息异常:', err)
-        // 异常情况，使用默认店铺ID
-        uni.setStorageSync('shopIdCache', {
-          shopId: 1, // 默认使用第一个店铺
+        // 异常情况，使用默认服务网点ID
+        uni.setStorageSync('servicePointIdCache', {
+          servicePointId: 1, // 默认使用第一个服务网点
           timestamp: Date.now()
         })
       }
@@ -300,20 +300,20 @@ export default {
         const nickname = '微信用户'
         const avatar = '/static/images/default-avatar.png'
         
-        // 获取店铺ID（从缓存中获取，如果没有则使用默认值）
-        const shopIdCache = uni.getStorageSync('shopIdCache')
-        let shopId = shopIdCache ? shopIdCache.shopId : null
+        // 获取服务网点ID（从缓存中获取，如果没有则使用默认值）
+        const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
+        let shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
         if (!shopId) {
-          // 如果没有店铺ID，使用默认店铺
-          shopId = 1 // 默认使用第一个店铺
-          console.warn('登录时未找到店铺ID缓存，使用默认店铺')
+          // 如果没有服务网点ID，使用默认服务网点
+          shopId = 1 // 默认使用第一个服务网点
+          console.warn('登录时未找到服务网点ID缓存，使用默认服务网点')
         }
 
         const loginData = {
           code: code,
           nickname: nickname,
           avatar: avatar,
-          shop_id: shopId
+          service_point_id: shopId
         }
 
         console.log('调用登录接口，数据:', loginData)
@@ -348,9 +348,9 @@ export default {
           uni.setStorageSync('userInfo', user_info)
           uni.setStorageSync('hasStoredUserInfo', true)
           
-          // 登录成功后，清除shopIdCache（因为后端已经有了用户的店铺信息）
+          // 登录成功后，清除servicePointIdCache（因为后端已经有了用户的服务网点信息）
           // 以后登录只需要传code，不需要传shop_id
-          uni.removeStorageSync('shopIdCache')
+          uni.removeStorageSync('servicePointIdCache')
 
           // 更新页面状态
           this.isLogin = true
@@ -664,9 +664,9 @@ export default {
         const token = uni.getStorageSync('token')
         let shopId = null
         if (!token) {
-          // 未登录用户：从缓存获取店铺ID
-          const shopIdCache = uni.getStorageSync('shopIdCache')
-          shopId = shopIdCache ? shopIdCache.shopId : null
+          // 未登录用户：从缓存获取服务网点ID
+          const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
+          shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
           if (!shopId) {
             // 如果缓存中没有shop_id，使用默认店铺
             // （正常情况下，initPage中已经获取了位置和shop_id）
@@ -778,8 +778,8 @@ export default {
           let shopId = null
           if (!token) {
             // 未登录用户：从缓存获取店铺ID
-            const shopIdCache = uni.getStorageSync('shopIdCache')
-            shopId = shopIdCache ? shopIdCache.shopId : null
+            const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
+            shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
             if (!shopId) {
               // 如果缓存中没有shop_id，使用默认店铺
               // （正常情况下，initPage中已经获取了位置和shop_id）

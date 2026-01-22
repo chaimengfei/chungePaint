@@ -65,7 +65,7 @@ function parseProductListResponse(res, isLoggedIn) {
  * 获取商品列表
  * @param {Object} options 请求参数
  * @param {string} [options.searchName] 搜索关键词（可选）
- * @param {number} [options.shopId] 店铺ID（可选，未登录用户需要传，已登录用户不需要）
+ * @param {number} [options.shopId] 服务网点ID（可选，未登录用户需要传，已登录用户不需要）
  * @param {number} [options.categoryId] 分类ID（可选，100表示热销分类，其他值表示具体分类）
  * @param {number} [options.page=1] 页码（可选，默认1）
  * @param {number} [options.pageSize=20] 每页数量（可选，默认20）
@@ -95,9 +95,9 @@ export const getProductList = (options = {}) => {
     params.page = page
     params.page_size = pageSize
     
-    // 未登录用户需要传shop_id，已登录用户不需要（后端根据Authorization判断）
+    // 未登录用户需要传service_point_id，已登录用户不需要（后端根据Authorization判断）
     if (!isLoggedIn && shopId) {
-      params.shop_id = shopId
+      params.service_point_id = shopId
     }
     
     // 已登录用户使用统一的get函数（会自动添加Authorization）
@@ -126,8 +126,8 @@ export const getProductList = (options = {}) => {
       if (params.name) {
         queryParams.push(`name=${encodeURIComponent(params.name)}`)
       }
-      if (params.shop_id) {
-        queryParams.push(`shop_id=${params.shop_id}`)
+      if (params.service_point_id) {
+        queryParams.push(`service_point_id=${params.service_point_id}`)
       }
       if (params.category_id !== undefined) {
         queryParams.push(`category_id=${params.category_id}`)

@@ -41,36 +41,19 @@ export default {
   data() {
     return {
       orderNo: '',
-      paymentAmount: '',
-      orderInfo: null,
-      orderStatus: null, // 1: 待支付, 2: 已支付
-      paymentInfo: '', // 支付信息提示
+      inquiryInfo: '', // 询价信息提示
       servicePhone: '131-6162-1688' // 客服电话
-    }
-  },
-  computed: {
-    displayAmount() {
-      if (this.orderInfo && this.orderInfo.pay_summary) {
-        return this.orderInfo.pay_summary
-      }
-      if (this.paymentAmount) {
-        return `¥${this.paymentAmount}`
-      }
-      return ''
     }
   },
   onLoad(options) {
     if (options.order_no) {
       this.orderNo = options.order_no
     }
-    if (options.amount) {
-      this.paymentAmount = options.amount
-    }
-    if (options.order_status) {
-      this.orderStatus = parseInt(options.order_status)
-    }
-    if (options.payment_info) {
-      this.paymentInfo = decodeURIComponent(options.payment_info)
+    if (options.inquiry_info) {
+      this.inquiryInfo = decodeURIComponent(options.inquiry_info)
+    } else if (options.payment_info) {
+      // 兼容旧参数名
+      this.inquiryInfo = decodeURIComponent(options.payment_info)
     }
   },
   methods: {

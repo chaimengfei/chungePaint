@@ -65,7 +65,7 @@
         </view>
         <view class="amount-row total-row">
           <text>合计参考金额</text>
-          <text>¥{{ order.payment_amount }}</text>
+          <text>¥{{ order.final_quote || order.estimated_total || 0 }}</text>
         </view>
       </view>
     </view>
@@ -85,14 +85,12 @@ import { getInquiryDetail } from '@/api/order.js'
 
 const order = ref({
   items: [],
-  order_status: 0,
-  payment_type: 0,
-  payment_status: 0,
   total_amount: 0,
-  shipping_fee: 0,
-  payment_amount: 0,
+  estimated_total: 0,
+  final_quote: 0,
   created_at: '',
-  order_no: '',
+  inquiry_no: '',
+  order_no: '', // 兼容字段
   id: 0
 })
 
@@ -120,7 +118,7 @@ const loadInquiryData = async (inquiryNo) => {
         })),
         order_no: inquiryData.inquiry_no,
         total_amount: inquiryData.estimated_total ? (inquiryData.estimated_total / 100).toFixed(2) : '0.00',
-        payment_amount: inquiryData.final_quote ? (inquiryData.final_quote / 100).toFixed(2) : inquiryData.estimated_total ? (inquiryData.estimated_total / 100).toFixed(2) : '0.00',
+        // 不再使用 payment_amount，使用 final_quote 和 estimated_total
         created_at: inquiryData.created_at,
         note: inquiryData.note,
         total_quantity: inquiryData.total_quantity,

@@ -126,13 +126,13 @@
 			const code = loginRes.code
 			if (!code) throw new Error("无法获取微信登录 code")
 
-			// 获取店铺ID（从缓存中获取，如果没有则使用默认值）
-			const shopIdCache = uni.getStorageSync('shopIdCache')
-			let shopId = shopIdCache ? shopIdCache.shopId : null
-			if (!shopId) {
-			  // 如果没有店铺ID，使用默认店铺
-			  shopId = 1 // 默认使用第一个店铺
-			  console.warn('登录时未找到店铺ID缓存，使用默认店铺')
+			// 获取服务网点ID（从缓存中获取，如果没有则使用默认值）
+			const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
+			let servicePointId = servicePointIdCache ? servicePointIdCache.servicePointId : null
+			if (!servicePointId) {
+			  // 如果没有服务网点ID，使用默认服务网点
+			  servicePointId = 1 // 默认使用第一个服务网点
+			  console.warn('登录时未找到服务网点ID缓存，使用默认服务网点')
 			}
 
 			// 处理用户信息
@@ -150,14 +150,14 @@
 			  finalAvatar = '/static/images/default-avatar.png'
 			}
 
-			// 构建登录数据（使用shop_id替代latitude和longitude）
+			// 构建登录数据（使用service_point_id替代latitude和longitude）
 			const loginData = {
 			  code: code,
 			  encryptedData: this.phoneAuth.encryptedData,
 			  iv: this.phoneAuth.iv,
 			  nickname: nickname,
 			  avatar: finalAvatar,
-			  shop_id: shopId
+			  service_point_id: servicePointId
 			}
 			
 			if (this.phoneAuth.phoneCode) {
@@ -197,9 +197,9 @@
 			uni.setStorageSync('userInfo', user_info)
 			uni.setStorageSync('hasStoredUserInfo', true)
 			
-			// 登录成功后，清除shopIdCache（因为后端已经有了用户的店铺信息）
-			// 以后登录只需要传code，不需要传shop_id
-			uni.removeStorageSync('shopIdCache')
+			// 登录成功后，清除servicePointIdCache（因为后端已经有了用户的服务网点信息）
+			// 以后登录只需要传code，不需要传service_point_id
+			uni.removeStorageSync('servicePointIdCache')
 
 			uni.hideLoading()
 			uni.showToast({ title: '注册成功', icon: 'success' })
@@ -268,9 +268,9 @@
 			uni.setStorageSync('token', token)
 			uni.setStorageSync('userInfo', user_info)
 			
-			// 登录成功后，清除shopIdCache（因为后端已经有了用户的店铺信息）
-			// 以后登录只需要传code，不需要传shop_id
-			uni.removeStorageSync('shopIdCache')
+			// 登录成功后，清除servicePointIdCache（因为后端已经有了用户的服务网点信息）
+			// 以后登录只需要传code，不需要传service_point_id
+			uni.removeStorageSync('servicePointIdCache')
 
 			uni.hideLoading()
 			uni.showToast({ title: '登录成功', icon: 'success' })
