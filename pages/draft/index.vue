@@ -74,8 +74,8 @@
 		</view>
 
 		<!-- 空需求单 -->
-		<view v-else class="empty-cart">
-			<image src="/static/images/empty-cart.png" mode="aspectFit"></image>
+		<view v-else class="empty-draft">
+			<image src="/static/images/empty-draft.png" mode="aspectFit"></image>
 			<text class="tip">需求单还是空的</text>
 			<button class="btn" @click="goToIndex">去逛逛</button>
 		</view>
@@ -88,7 +88,7 @@
 		updateDraftItem,
 		deleteDraftItem
 	} from '@/api/draft.js'
-	import { submitInquiry } from '@/api/order.js'
+	import { submitInquiry } from '@/api/inquiry.js'
 
 
 
@@ -253,7 +253,7 @@
 					
 					// 跳转到成功页面
 					uni.redirectTo({
-						url: `/pages/order/success?order_no=${inquiryNo}&inquiry_info=询价已提交，客服将尽快联系您`
+						url: `/pages/inquiry/success?inquiry_no=${inquiryNo}&inquiry_info=询价已提交，客服将尽快联系您`
 					})
 				} else {
 					uni.showToast({
@@ -681,14 +681,14 @@
 		pointer-events: auto !important;
 	}
 
-	.empty-cart {
+	.empty-draft {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		padding-top: 100rpx;
 	}
 
-	.empty-cart image {
+	.empty-draft image {
 		width: 300rpx;
 		height: 300rpx;
 		margin-bottom: 40rpx;

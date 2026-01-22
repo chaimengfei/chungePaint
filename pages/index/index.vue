@@ -557,7 +557,7 @@ export default {
     // 跳转到我的询价页面
     goToInquiry(product) {
       uni.navigateTo({
-        url: '/pages/order/index'
+        url: '/pages/inquiry/index'
       })
     },
     

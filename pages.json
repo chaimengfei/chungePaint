@@ -13,20 +13,20 @@
       }
     },
     {
-      "path": "pages/order/index",
+      "path": "pages/inquiry/index",
       "style": {
         "navigationBarTitleText": "我的询价"
       }
     },
 	{
-	  "path": "pages/order/detail",
+	  "path": "pages/inquiry/detail",
 	  "style": {
 		"navigationBarTitleText": "询价详情",
-		"navigationStyle": "custom"  // 可选：如果需要自定义导航栏
+		"navigationStyle": "custom"
 	  }
 	},
 	{
-	  "path": "pages/order/success",
+	  "path": "pages/inquiry/success",
 	  "style": {
 		"navigationBarTitleText": "提交成功",
 		"navigationStyle": "custom"
@@ -73,8 +73,8 @@
       {
         "pagePath": "pages/draft/index",
         "text": "需求单",
-        "iconPath": "static/tabbar/cart_unselected.png",
-        "selectedIconPath": "static/tabbar/cart_selected.png"
+        "iconPath": "static/tabbar/draft_unselected.png",
+        "selectedIconPath": "static/tabbar/draft_selected.png"
       },
       {
         "pagePath": "pages/user/index",
