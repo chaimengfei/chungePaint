@@ -22,23 +22,19 @@
         <text class="function-icon">📞</text>
         <text class="function-label">联系客服</text>
       </view>
-      <view class="function-item" @click="addEnterpriseWechat">
-        <text class="function-icon">🏢</text>
-        <text class="function-label">企业微信</text>
+      <view class="function-item" @tap.stop="addCustomerWechat">
+        <text class="function-icon">💬</text>
+        <text class="function-label">客服微信</text>
       </view>
     </view>
     
     <!-- 信息管理 -->
     <view class="menu-list">
-      <view class="menu-item" @click="goToProfile">
-        <text class="label">我的资料</text>
-        <uni-icons type="arrowright" size="16" color="#999"></uni-icons>
+      <view class="menu-item contact-info">
+        <text class="label">客服电话：13161621688</text>
       </view>
       <view class="menu-item contact-info">
-        <text class="label">客服电话：400-XXX-XXXX</text>
-      </view>
-      <view class="menu-item contact-info">
-        <text class="label">在线时间：工作日 8:30-17:30</text>
+        <text class="label">工作时间：7:30-20:00</text>
       </view>
     </view>
   </view>
@@ -140,24 +136,42 @@ export default {
       showContactService()
     },
     
-    // 添加企业微信
-    addEnterpriseWechat() {
-      // 这里可以跳转到企业微信添加页面或复制微信号
-      uni.showToast({
-        title: '请添加企业微信客服',
-        icon: 'none',
-        duration: 2000
+    // 添加客服微信
+    addCustomerWechat() {
+      console.log('点击客服微信按钮')
+      const wechatNumber = '13161621688'
+      uni.showModal({
+        title: '',
+        content: `请添加 ${wechatNumber}`,
+        showCancel: true,
+        cancelText: '取消',
+        confirmText: '复制',
+        success: (res) => {
+          console.log('showModal success:', res)
+          if (res.confirm) {
+            // 用户点击复制
+            uni.setClipboardData({
+              data: wechatNumber,
+              success: () => {
+                uni.showToast({
+                  title: '微信号已复制',
+                  icon: 'success'
+                })
+              },
+              fail: (err) => {
+                console.error('复制失败:', err)
+                uni.showToast({
+                  title: '复制失败',
+                  icon: 'none'
+                })
+              }
+            })
+          }
+        },
+        fail: (err) => {
+          console.error('showModal fail:', err)
+        }
       })
-      // 可以添加复制微信号到剪贴板的功能
-      // uni.setClipboardData({
-      //   data: '企业微信号',
-      //   success: () => {
-      //     uni.showToast({
-      //       title: '微信号已复制',
-      //       icon: 'success'
-      //     })
-      //   }
-      // })
     },
     
     // 我的资料
@@ -489,6 +503,7 @@ export default {
   flex-direction: column;
   align-items: center;
   flex: 1;
+  cursor: pointer;
 }
 
 .function-icon {

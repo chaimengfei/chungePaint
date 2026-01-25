@@ -1,9 +1,5 @@
 <template>
   <view class="container">
-    <view class="header">
-      <text class="title">我的询价</text>
-    </view>
-    
     <!-- 询价列表 -->
     <scroll-view class="order-list" scroll-y>
       <view v-if="orders.length > 0">
@@ -15,10 +11,6 @@
         >
           <view class="order-header">
             <text class="order-no">{{ order.inquiry_no }}</text>
-          </view>
-          
-          <view class="inquiry-time">
-            <text class="time-label">提交时间：</text>
             <text class="time-value">{{ formatTime(order.created_at) }}</text>
           </view>
           
@@ -284,16 +276,6 @@ export default {
   flex-direction: column;
 }
 
-.header {
-  padding: 20rpx 0;
-  text-align: center;
-}
-
-.title {
-  font-size: 36rpx;
-  font-weight: bold;
-}
-
 .order-list {
   flex: 1;
   overflow: hidden;
@@ -308,9 +290,6 @@ export default {
 }
 
 .order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding-bottom: 15rpx;
   border-bottom: 1rpx solid #f5f5f5;
 }
@@ -318,21 +297,14 @@ export default {
 .order-no {
   font-size: 26rpx;
   color: #666;
-}
-
-.inquiry-time {
-  padding: 15rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
-}
-
-.time-label {
-  font-size: 24rpx;
-  color: #999;
+  font-weight: bold;
+  margin-right: 10rpx;
 }
 
 .time-value {
   font-size: 24rpx;
   color: #666;
+  font-weight: normal;
 }
 
 .order-body {
