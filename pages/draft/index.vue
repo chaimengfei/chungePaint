@@ -423,7 +423,6 @@
 
 	.header {
 		padding: 20rpx;
-		border-bottom: 1rpx solid #eee;
 		background-color: #fff;
 	}
 
@@ -435,8 +434,13 @@
 
 	.subtitle {
 		font-size: 24rpx;
-		color: #999;
+		color: #333;
 		line-height: 1.5;
+		background-color: #fff3cd;
+		padding: 20rpx;
+		border-radius: 8rpx;
+		border-left: 4rpx solid #ffc107;
+		display: block;
 	}
 
 	.list-title {
