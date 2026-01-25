@@ -150,24 +150,19 @@ export function isServicePointIdExpired() {
  * @param {string} [phoneNumber='131-6162-1688'] 客服电话号码，默认为 '131-6162-1688'
  */
 export function showContactService(phoneNumber = '131-6162-1688') {
+  const phoneNumberWithoutDash = phoneNumber.replace(/-/g, '')
+  
+  // 使用 showActionSheet 显示操作选项，电话号码作为第一个选项（仅显示）
   uni.showActionSheet({
-    itemList: [phoneNumber, '呼叫'],
+    itemList: [phoneNumber, '呼叫手机号', '复制微信号'],
     success: (res) => {
       if (res.tapIndex === 0) {
-        // 点击电话号码，复制到剪贴板
-        uni.setClipboardData({
-          data: phoneNumber.replace(/-/g, ''),
-          success: () => {
-            uni.showToast({
-              title: '电话号码已复制',
-              icon: 'success'
-            })
-          }
-        })
+        // 点击电话号码，只关闭弹窗，不执行任何操作（仅用于显示）
+        return
       } else if (res.tapIndex === 1) {
-        // 点击呼叫，直接拨打电话
+        // 点击呼叫手机号，直接拨打电话
         uni.makePhoneCall({
-          phoneNumber: phoneNumber.replace(/-/g, ''),
+          phoneNumber: phoneNumberWithoutDash,
           success: () => {
             console.log('拨打电话成功')
           },
@@ -179,7 +174,27 @@ export function showContactService(phoneNumber = '131-6162-1688') {
             })
           }
         })
+      } else if (res.tapIndex === 2) {
+        // 点击复制微信号，复制电话号码到剪贴板
+        uni.setClipboardData({
+          data: phoneNumberWithoutDash,
+          success: () => {
+            uni.showToast({
+              title: '微信号已复制',
+              icon: 'success'
+            })
+          },
+          fail: () => {
+            uni.showToast({
+              title: '复制失败',
+              icon: 'none'
+            })
+          }
+        })
       }
+    },
+    fail: (err) => {
+      console.error('显示操作菜单失败:', err)
     }
   })
 }

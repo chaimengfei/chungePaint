@@ -77,10 +77,10 @@
             <text class="price-tip">（价格可能浮动）</text>
             <view class="product-actions">
               <button class="action-btn add-draft-btn" @tap.stop="addToDraft(product.id)">
-                📋 加入需求单
+                加入需求单
               </button>
               <button class="action-btn contact-btn" @tap.stop="contactService">
-                📞 联系客服
+                联系客服
               </button>
             </view>
           </view>
@@ -584,7 +584,17 @@ export default {
     
     // 联系客服
     contactService() {
-      showContactService()
+      console.log('点击联系客服按钮')
+      try {
+        const result = showContactService()
+        console.log('showContactService 调用结果:', result)
+      } catch (err) {
+        console.error('联系客服失败:', err)
+        uni.showToast({
+          title: '联系客服失败',
+          icon: 'none'
+        })
+      }
     },
     
     // 显示商品详情
@@ -1251,19 +1261,22 @@ export default {
 
 .product-actions {
   display: flex;
-  gap: 12rpx;
+  flex-direction: column;
+  gap: 10rpx;
   margin-top: 8rpx;
 }
 
 .action-btn {
-  flex: 1;
-  height: 60rpx;
-  line-height: 60rpx;
+  width: 100%;
+  height: 64rpx;
+  line-height: 64rpx;
   border-radius: 8rpx;
-  font-size: 24rpx;
+  font-size: 22rpx;
   border: none;
   padding: 0;
   margin: 0;
+  position: relative;
+  z-index: 10;
 }
 
 .add-draft-btn {

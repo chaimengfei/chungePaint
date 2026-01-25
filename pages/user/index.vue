@@ -22,10 +22,6 @@
         <text class="function-icon">📞</text>
         <text class="function-label">联系客服</text>
       </view>
-      <view class="function-item" @tap.stop="addCustomerWechat">
-        <text class="function-icon">💬</text>
-        <text class="function-label">客服微信</text>
-      </view>
     </view>
     
     <!-- 信息管理 -->
