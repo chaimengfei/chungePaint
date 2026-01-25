@@ -5,9 +5,10 @@
         class="avatar" 
         :src="isLogin && userInfo.avatar ? userInfo.avatar : '/static/images/default-avatar.png'"
         mode="aspectFill"
+        @click="handleAvatarClick"
       ></image>
-      <text class="username">{{ isLogin && userInfo.nickname ? userInfo.nickname : '微信用户' }}</text>
-      <text class="welcome-text">（欢迎，如需采购咨询请随时联系）</text>
+      <text class="username" @click="handleUsernameClick">{{ isLogin && userInfo.nickname ? userInfo.nickname : '微信用户' }}</text>
+      <text class="welcome-text">欢迎 如需采购请随时联系</text>
       <button v-if="!isLogin" class="login-btn" @click="goLogin">登录/注册</button>
     </view>
     
@@ -45,6 +46,7 @@
 
 <script>
 import { showContactService } from '@/api/common.js'
+import { updateUserInfo } from '@/api/user.js'
 
 export default {
   data() {
@@ -174,6 +176,167 @@ export default {
         title: '个人资料功能开发中',
         icon: 'none'
       })
+    },
+    
+    // 点击头像
+    handleAvatarClick() {
+      if (!this.isLogin) {
+        uni.showToast({
+          title: '请先登录',
+          icon: 'none'
+        })
+        return
+      }
+      
+      uni.showActionSheet({
+        itemList: ['获取微信头像', '从相册选择'],
+        success: (res) => {
+          if (res.tapIndex === 0) {
+            // 获取微信头像
+            this.getWechatAvatar()
+          } else if (res.tapIndex === 1) {
+            // 从相册选择
+            this.chooseImageFromAlbum()
+          }
+        }
+      })
+    },
+    
+    // 获取微信头像
+    getWechatAvatar() {
+      uni.getUserProfile({
+        desc: '用于完善用户资料',
+        success: (res) => {
+          console.log('获取微信头像成功:', res)
+          const avatarUrl = res.userInfo.avatarUrl
+          if (avatarUrl) {
+            this.updateUserAvatar(avatarUrl)
+          }
+        },
+        fail: (err) => {
+          console.error('获取微信头像失败:', err)
+          uni.showToast({
+            title: '获取微信头像失败',
+            icon: 'none'
+          })
+        }
+      })
+    },
+    
+    // 从相册选择图片
+    chooseImageFromAlbum() {
+      uni.chooseImage({
+        count: 1,
+        sizeType: ['compressed'],
+        sourceType: ['album'],
+        success: (res) => {
+          const tempFilePath = res.tempFilePaths[0]
+          console.log('选择的图片:', tempFilePath)
+          // 这里可以选择上传到服务器或直接使用本地路径
+          // 如果后端需要上传，可以调用上传接口
+          this.updateUserAvatar(tempFilePath)
+        },
+        fail: (err) => {
+          console.error('选择图片失败:', err)
+          uni.showToast({
+            title: '选择图片失败',
+            icon: 'none'
+          })
+        }
+      })
+    },
+    
+    // 更新用户头像
+    async updateUserAvatar(avatarUrl) {
+      try {
+        uni.showLoading({ title: '更新中...' })
+        
+        const res = await updateUserInfo({
+          avatar: avatarUrl
+        })
+        
+        if (res.code === 0) {
+          // 更新本地用户信息
+          this.userInfo.avatar = avatarUrl
+          uni.setStorageSync('userInfo', this.userInfo)
+          
+          uni.hideLoading()
+          uni.showToast({
+            title: '头像更新成功',
+            icon: 'success'
+          })
+        } else {
+          throw new Error(res.message || '更新失败')
+        }
+      } catch (err) {
+        console.error('更新头像失败:', err)
+        uni.hideLoading()
+        uni.showToast({
+          title: err.message || '更新头像失败',
+          icon: 'none'
+        })
+      }
+    },
+    
+    // 点击用户名
+    handleUsernameClick() {
+      if (!this.isLogin) {
+        uni.showToast({
+          title: '请先登录',
+          icon: 'none'
+        })
+        return
+      }
+      
+      uni.getUserProfile({
+        desc: '用于完善用户资料',
+        success: (res) => {
+          console.log('获取微信账户名成功:', res)
+          const nickname = res.userInfo.nickName
+          if (nickname) {
+            this.updateUserNickname(nickname)
+          }
+        },
+        fail: (err) => {
+          console.error('获取微信账户名失败:', err)
+          uni.showToast({
+            title: '获取微信账户名失败',
+            icon: 'none'
+          })
+        }
+      })
+    },
+    
+    // 更新用户昵称
+    async updateUserNickname(nickname) {
+      try {
+        uni.showLoading({ title: '更新中...' })
+        
+        const res = await updateUserInfo({
+          nickname: nickname
+        })
+        
+        if (res.code === 0) {
+          // 更新本地用户信息
+          this.userInfo.nickname = nickname
+          uni.setStorageSync('userInfo', this.userInfo)
+          
+          uni.hideLoading()
+          uni.showToast({
+            title: '昵称更新成功',
+            icon: 'success'
+          })
+        } else {
+          throw new Error(res.message || '更新失败')
+        }
+      } catch (err) {
+        console.error('更新昵称失败:', err)
+        uni.hideLoading()
+        uni.showToast({
+          title: err.message || '更新昵称失败',
+          icon: 'none'
+        })
+      }
     }
   }
 }
