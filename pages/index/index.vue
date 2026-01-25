@@ -54,25 +54,27 @@
         @scrolltolower="loadMore"
         :lower-threshold="100"
       >
-      <view v-if="currentProducts && currentProducts.length > 0">
+      <view v-if="currentProducts && currentProducts.length > 0" class="product-grid">
         <view 
           v-for="product in currentProducts" 
           :key="product.id"
           class="product-item"
+          @click="handleProductClick(product)"
         >
-          <image class="product-image" :src="product.image" mode="aspectFill" />
+          <view class="product-image-wrapper">
+            <image class="product-image" :src="product.image" mode="aspectFill" />
+          </view>
           <view class="product-info">
-            <text class="product-name">{{ product.name }}</text>
+            <view class="product-name-wrapper">
+              <text class="product-name">{{ product.name }}</text>
+              <text v-if="product.specification" class="product-specification">{{ product.specification }}</text>
+            </view>
             <view class="price-info">
               <text class="price-label">参考价：</text>
               <text class="product-price">¥{{ product.reference_price }}</text>
               <text class="product-unit">/ {{ product.unit }}</text>
             </view>
-            <text class="price-tip">（具体价格因采购量及规格可能浮动）</text>
-            <view class="action-buttons">
-              <button class="add-requirement-btn" @click="addToCart(product.id)">📋 加入需求单</button>
-              <button class="inquiry-btn" @click="goToInquiry(product)">📞 立即询价</button>
-            </view>
+            <text class="price-tip">（价格可能浮动）</text>
           </view>
         </view>
         <!-- 加载更多提示 -->
@@ -549,6 +551,41 @@ export default {
     // 立即询价 - 显示联系客服弹窗
     goToInquiry(product) {
       showContactService()
+    },
+    
+    // 处理商品点击
+    handleProductClick(product) {
+      uni.showActionSheet({
+        itemList: ['查看详情', '联系客服'],
+        success: (res) => {
+          if (res.tapIndex === 0) {
+            // 查看详情 - 显示商品详细信息
+            this.showProductDetail(product)
+          } else if (res.tapIndex === 1) {
+            // 联系客服
+            showContactService()
+          }
+        }
+      })
+    },
+    
+    // 显示商品详情
+    showProductDetail(product) {
+      // 显示商品详细信息弹窗
+      const productName = product.specification ? `${product.name} ${product.specification}` : product.name
+      const content = `商品名称：${productName}\n参考价：¥${product.reference_price} / ${product.unit}\n\n如需了解更多信息或询价，请联系客服。`
+      uni.showModal({
+        title: '商品详情',
+        content: content,
+        showCancel: true,
+        cancelText: '关闭',
+        confirmText: '联系客服',
+        success: (res) => {
+          if (res.confirm) {
+            showContactService()
+          }
+        }
+      })
     },
     
     // 拨打电话
@@ -1067,32 +1104,75 @@ export default {
 
 .product-list {
   width: 75%;
-  padding: 10rpx;
+  padding: 0;
   height: 100%;
+  background-color: #f5f5f5;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  padding: 20rpx;
 }
 
 .product-item {
-  display: flex;
-  padding: 20rpx;
-  border-bottom: 1px solid #eee;
-}
-
-.product-image {
-  width: 180rpx;
-  height: 180rpx;
-  border-radius: 8rpx;
-}
-
-.product-info {
-  flex: 1;
-  padding-left: 20rpx;
+  background-color: #fff;
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
   display: flex;
   flex-direction: column;
 }
 
+.product-item:active {
+  transform: scale(0.98);
+  box-shadow: 0 1rpx 6rpx rgba(0, 0, 0, 0.12);
+}
+
+.product-image-wrapper {
+  width: 100%;
+  height: 320rpx;
+  background-color: #f5f5f5;
+  overflow: hidden;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.product-info {
+  padding: 20rpx;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.product-name-wrapper {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 12rpx;
+  line-height: 1.4;
+}
+
 .product-name {
   font-size: 28rpx;
-  margin-bottom: 10rpx;
+  font-weight: 600;
+  color: #333;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.product-specification {
+  font-size: 22rpx;
+  color: #999;
+  margin-left: 8rpx;
+  font-weight: normal;
 }
 
 /* 公告栏样式 */
@@ -1122,61 +1202,32 @@ export default {
 .price-info {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   margin-bottom: 8rpx;
 }
 
 .price-label {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #666;
   margin-right: 4rpx;
 }
 
 .product-price {
   color: #e93b3d;
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: bold;
   margin-right: 4rpx;
 }
 
 .product-unit {
   color: #999;
-  font-size: 24rpx;
+  font-size: 22rpx;
 }
 
 .price-tip {
-  font-size: 22rpx;
+  font-size: 20rpx;
   color: #999;
-  margin-bottom: 10rpx;
-  margin-bottom: 15rpx;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: space-between;
-  gap: 20rpx;
-}
-
-.add-requirement-btn, .inquiry-btn {
-  height: 64rpx;
-  line-height: 64rpx;
-  font-size: 26rpx;
-  padding: 0 20rpx;
-  flex: 1;
-  text-align: center;
-  white-space: nowrap;
-  min-width: 120rpx;
-  border-radius: 8rpx;
-  border: none;
-}
-
-.add-requirement-btn {
-  background-color: #4169E1;
-  color: #fff;
-}
-
-.inquiry-btn {
-  background-color: #ff9500;
-  color: #fff;
+  line-height: 1.4;
 }
 
 .empty {
