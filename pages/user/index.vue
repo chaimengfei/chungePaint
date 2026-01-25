@@ -46,7 +46,7 @@
 
 <script>
 import { showContactService } from '@/api/common.js'
-import { updateUserInfo } from '@/api/user.js'
+import { updateUserInfo, uploadAvatar } from '@/api/user.js'
 
 export default {
   data() {
@@ -232,9 +232,8 @@ export default {
         success: (res) => {
           const tempFilePath = res.tempFilePaths[0]
           console.log('选择的图片:', tempFilePath)
-          // 这里可以选择上传到服务器或直接使用本地路径
-          // 如果后端需要上传，可以调用上传接口
-          this.updateUserAvatar(tempFilePath)
+          // 先上传图片，然后更新用户信息
+          this.uploadAndUpdateAvatar(tempFilePath)
         },
         fail: (err) => {
           console.error('选择图片失败:', err)
@@ -246,7 +245,28 @@ export default {
       })
     },
     
-    // 更新用户头像
+    // 上传并更新头像（用于本地图片）
+    async uploadAndUpdateAvatar(filePath) {
+      try {
+        uni.showLoading({ title: '上传中...' })
+        
+        // 先上传图片
+        const avatarUrl = await uploadAvatar(filePath)
+        console.log('头像上传成功，URL:', avatarUrl)
+        
+        // 上传成功后，更新用户信息
+        await this.updateUserAvatar(avatarUrl)
+      } catch (err) {
+        console.error('上传头像失败:', err)
+        uni.hideLoading()
+        uni.showToast({
+          title: err.message || '上传头像失败',
+          icon: 'none'
+        })
+      }
+    },
+    
+    // 更新用户头像（用于微信头像URL或已上传的URL）
     async updateUserAvatar(avatarUrl) {
       try {
         uni.showLoading({ title: '更新中...' })
@@ -255,18 +275,23 @@ export default {
           avatar: avatarUrl
         })
         
-        if (res.code === 0) {
+        // res 是 uni.request 的完整响应对象，数据在 res.data 中
+        const responseData = res.data || {}
+        
+        if (responseData.code === 0) {
           // 更新本地用户信息
-          this.userInfo.avatar = avatarUrl
+          // 如果后端返回了新的头像URL，使用返回的；否则使用传入的
+          const newAvatarUrl = responseData.data?.avatar || avatarUrl
+          this.userInfo.avatar = newAvatarUrl
           uni.setStorageSync('userInfo', this.userInfo)
           
           uni.hideLoading()
           uni.showToast({
-            title: '头像更新成功',
+            title: responseData.data?.message || responseData.message || '头像更新成功',
             icon: 'success'
           })
         } else {
-          throw new Error(res.message || '更新失败')
+          throw new Error(responseData.data?.message || responseData.message || '更新失败')
         }
       } catch (err) {
         console.error('更新头像失败:', err)
@@ -288,13 +313,51 @@ export default {
         return
       }
       
+      uni.showActionSheet({
+        itemList: ['获取微信昵称', '自定义昵称'],
+        success: (res) => {
+          if (res.tapIndex === 0) {
+            // 获取微信昵称
+            this.getWechatNickname()
+          } else if (res.tapIndex === 1) {
+            // 自定义昵称
+            this.setCustomNickname()
+          }
+        }
+      })
+    },
+    
+    // 获取微信昵称
+    getWechatNickname() {
       uni.getUserProfile({
         desc: '用于完善用户资料',
         success: (res) => {
           console.log('获取微信账户名成功:', res)
           const nickname = res.userInfo.nickName
           if (nickname) {
-            this.updateUserNickname(nickname)
+            // 显示确认对话框，让用户查看并确认微信昵称
+            uni.showModal({
+              title: '微信昵称',
+              content: nickname,
+              editable: true,
+              placeholderText: nickname,
+              confirmText: '使用',
+              cancelText: '取消',
+              success: (modalRes) => {
+                if (modalRes.confirm) {
+                  // 用户确认使用，可以使用编辑后的昵称或原昵称
+                  const finalNickname = modalRes.content?.trim() || nickname
+                  if (finalNickname.length > 20) {
+                    uni.showToast({
+                      title: '昵称不能超过20个字符',
+                      icon: 'none'
+                    })
+                    return
+                  }
+                  this.updateUserNickname(finalNickname)
+                }
+              }
+            })
           }
         },
         fail: (err) => {
@@ -303,6 +366,35 @@ export default {
             title: '获取微信账户名失败',
             icon: 'none'
           })
+        }
+      })
+    },
+    
+    // 自定义昵称
+    setCustomNickname() {
+      uni.showModal({
+        title: '自定义昵称',
+        editable: true,
+        placeholderText: '请输入昵称',
+        success: (res) => {
+          if (res.confirm) {
+            const nickname = res.content?.trim()
+            if (!nickname) {
+              uni.showToast({
+                title: '昵称不能为空',
+                icon: 'none'
+              })
+              return
+            }
+            if (nickname.length > 20) {
+              uni.showToast({
+                title: '昵称不能超过20个字符',
+                icon: 'none'
+              })
+              return
+            }
+            this.updateUserNickname(nickname)
+          }
         }
       })
     },
@@ -316,18 +408,23 @@ export default {
           nickname: nickname
         })
         
-        if (res.code === 0) {
+        // res 是 uni.request 的完整响应对象，数据在 res.data 中
+        const responseData = res.data || {}
+        
+        if (responseData.code === 0) {
           // 更新本地用户信息
-          this.userInfo.nickname = nickname
+          // 如果后端返回了新的昵称，使用返回的；否则使用传入的
+          const newNickname = responseData.data?.nickname || nickname
+          this.userInfo.nickname = newNickname
           uni.setStorageSync('userInfo', this.userInfo)
           
           uni.hideLoading()
           uni.showToast({
-            title: '昵称更新成功',
+            title: responseData.data?.message || responseData.message || '昵称更新成功',
             icon: 'success'
           })
         } else {
-          throw new Error(res.message || '更新失败')
+          throw new Error(responseData.data?.message || responseData.message || '更新失败')
         }
       } catch (err) {
         console.error('更新昵称失败:', err)
