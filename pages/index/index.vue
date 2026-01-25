@@ -75,6 +75,14 @@
               <text class="product-unit">/ {{ product.unit }}</text>
             </view>
             <text class="price-tip">（价格可能浮动）</text>
+            <view class="product-actions">
+              <button class="action-btn add-draft-btn" @tap.stop="addToDraft(product.id)">
+                📋 加入需求单
+              </button>
+              <button class="action-btn contact-btn" @tap.stop="contactService">
+                📞 联系客服
+              </button>
+            </view>
           </view>
         </view>
         <!-- 加载更多提示 -->
@@ -567,6 +575,16 @@ export default {
           }
         }
       })
+    },
+    
+    // 添加到需求单
+    async addToDraft(productId) {
+      await this.addToCart(productId)
+    },
+    
+    // 联系客服
+    contactService() {
+      showContactService()
     },
     
     // 显示商品详情
@@ -1228,6 +1246,42 @@ export default {
   font-size: 20rpx;
   color: #999;
   line-height: 1.4;
+  margin-bottom: 16rpx;
+}
+
+.product-actions {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+
+.action-btn {
+  flex: 1;
+  height: 60rpx;
+  line-height: 60rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.add-draft-btn {
+  background-color: #4169E1;
+  color: #fff;
+}
+
+.add-draft-btn:active {
+  background-color: #3151B8;
+}
+
+.contact-btn {
+  background-color: #ff9500;
+  color: #fff;
+}
+
+.contact-btn:active {
+  background-color: #e6850e;
 }
 
 .empty {
