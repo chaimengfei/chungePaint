@@ -381,16 +381,16 @@ export default {
   overflow: hidden;
   flex: 1;
   min-width: 0;
-  padding-right: 20rpx;
+  padding-right: 120rpx;
 }
 
 .price-quantity {
   display: flex;
   align-items: baseline;
-  gap: 6rpx;
+  gap: 12rpx;
   position: absolute;
   right: 0;
-  bottom: -8rpx;
+  bottom: -12rpx;
 }
 
 .product-price {

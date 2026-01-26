@@ -22,14 +22,13 @@
         <view v-for="item in order.items" :key="item.id" class="product-item">
           <image class="product-image" :src="item.product_image || '/static/images/empty-inquiry.png'" mode="aspectFill"/>
           <view class="product-info">
-            <view class="product-name-row">
+            <view class="product-name-wrapper">
               <text class="product-name">{{ item.product_name }}</text>
-              <text v-if="item.specification" class="product-spec">{{ item.specification }}</text>
-            </view>
-            <view class="price-line">
-              <text class="product-price">¥{{ item.unit_price }}</text>
-              <text v-if="item.unit" class="product-unit">/{{ item.unit }}</text>
-              <text class="product-quantity">×{{ item.quantity }}</text>
+              <view class="price-line">
+                <text class="product-price">¥{{ item.unit_price }}</text>
+                <text v-if="item.unit" class="product-unit">/{{ item.unit }}</text>
+                <text class="product-quantity">×{{ item.quantity }}</text>
+              </view>
             </view>
             <view class="total-price">
               <text class="total-price-text">参考小计: ¥{{ item.total_price }}</text>
@@ -287,9 +286,10 @@ const contactService = () => {
   flex-direction: column;
   justify-content: space-between;
 }
-.product-name-row {
+.product-name-wrapper {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
+  position: relative;
   margin-bottom: 8rpx;
   line-height: 1.4;
 }
@@ -303,13 +303,16 @@ const contactService = () => {
   overflow: hidden;
   flex: 1;
   min-width: 0;
+  padding-right: 120rpx;
 }
 
 .price-line {
   display: flex;
   align-items: baseline;
-  gap: 6rpx;
-  margin-bottom: 8rpx;
+  gap: 12rpx;
+  position: absolute;
+  right: 0;
+  bottom: 0;
 }
 
 .product-price {
