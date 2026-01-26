@@ -18,12 +18,12 @@
         "navigationBarTitleText": "需求单"
       }
     },
-    {
+	{
       "path": "pages/inquiry/index",
-      "style": {
+	  "style": {
         "navigationBarTitleText": "我的询价"
-      }
-    },
+	  }
+	},
 	{
 	  "path": "pages/inquiry/detail",
 	  "style": {

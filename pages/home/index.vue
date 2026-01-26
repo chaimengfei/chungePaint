@@ -8,26 +8,6 @@
       </view>
     </view>
 
-    <!-- 视频号入口横幅 -->
-    <view class="video-channel-banner" @click="openVideoChannel">
-      <view class="video-channel-left">
-        <image 
-          class="video-channel-avatar" 
-          :src="videoChannelInfo.avatar" 
-          mode="aspectFill"
-          @error="handleAvatarError"
-        />
-        <view class="video-channel-info">
-          <text class="video-channel-name">{{ videoChannelInfo.name }}</text>
-          <text class="video-channel-count">{{ videoChannelInfo.videoCount }}条原创内容</text>
-        </view>
-      </view>
-      <view class="video-channel-right">
-        <text class="video-channel-icon">▶</text>
-        <text class="video-channel-text">进入视频号</text>
-      </view>
-    </view>
-
     <view class="faq-section">
       <view class="faq-title-wrapper">
         <view class="faq-title-bar"></view>
@@ -121,6 +101,17 @@
         </swiper-item>
       </swiper>
     </view>
+
+    <!-- 视频号悬浮按钮 -->
+    <view class="video-channel-float-btn" @click="openVideoChannel">
+      <image 
+        class="video-channel-float-avatar" 
+        :src="videoChannelInfo.avatar" 
+        mode="aspectFill"
+        @error="handleAvatarError"
+      />
+      <view class="video-channel-float-badge">{{ videoChannelInfo.videoCount }}</view>
+    </view>
   </view>
 </template>
 
@@ -133,7 +124,7 @@ export default {
           name: '燕郊永旺',
           completionTime: '2023-06',
           scene: '户外',
-          description: '商业综合体外墙涂装，采用高品质外墙涂料，确保长期耐候性和美观度',
+          description: '商业综合体外墙涂装，采用高品质外墙涂料，确保长期耐候性和美观度。贸彩漆在身边，第一站：燕郊永旺！',
           image: '/static/images/cases/yongwang.jpg'
         },
         {
@@ -142,13 +133,6 @@ export default {
           scene: '户外',
           description: '传统建筑翻新涂装，保持古建筑风格的同时提升建筑保护性能',
           image: '/static/images/cases/quanjude.jpg'
-        },
-        {
-          name: 'xxxx项目',
-          completionTime: '2024-03',
-          scene: '室内',
-          description: '室内墙面涂装项目，提供专业的室内涂料解决方案',
-          image: '/static/images/cases/case3.jpg'
         }
       ],
       marqueeItems: [
@@ -271,7 +255,7 @@ export default {
 /* 企业信息区域 */
 .company-info {
   padding: 40rpx 30rpx;
-  background-color: #fff;
+  background-color: #fff3cd; /* 与产品展示页顶部公告栏背景色一致 */
   margin-bottom: 20rpx;
 }
 
@@ -281,9 +265,8 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 60rpx 40rpx;
-  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+  background-color: #fff; /* 白色背景 */
   border-radius: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .company-title {
@@ -301,79 +284,49 @@ export default {
   text-align: center;
 }
 
-/* 视频号入口横幅 */
-.video-channel-banner {
-  margin: 20rpx 30rpx;
-  padding: 24rpx 30rpx;
-  background-color: #fff;
-  border-radius: 16rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+/* 视频号悬浮按钮 */
+.video-channel-float-btn {
+  position: fixed;
+  right: 30rpx;
+  bottom: 120rpx; /* 距离底部120rpx，避免被tabbar遮挡 */
+  width: 100rpx;
+  height: 100rpx;
+  z-index: 999;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  transition: transform 0.2s, box-shadow 0.2s;
+  justify-content: center;
+  transition: transform 0.2s;
 }
 
-.video-channel-banner:active {
-  transform: scale(0.98);
-  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
+.video-channel-float-btn:active {
+  transform: scale(0.9);
 }
 
-.video-channel-left {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-}
-
-.video-channel-avatar {
-  width: 80rpx;
-  height: 80rpx;
+.video-channel-float-avatar {
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 50%;
-  margin-right: 20rpx;
-  flex-shrink: 0;
-  background-color: #f0f0f0;
+  background-color: #fff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+  border: 3rpx solid #ff9500;
 }
 
-.video-channel-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.video-channel-name {
-  font-size: 30rpx;
+.video-channel-float-badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  padding: 0 8rpx;
+  background-color: #ff3b30;
+  color: #fff;
+  font-size: 20rpx;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 8rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.video-channel-count {
-  font-size: 24rpx;
-  color: #999;
-}
-
-.video-channel-right {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  margin-left: 20rpx;
-}
-
-.video-channel-icon {
-  font-size: 24rpx;
-  color: #ff9500;
-  margin-right: 8rpx;
-}
-
-.video-channel-text {
-  font-size: 26rpx;
-  color: #ff9500;
-  font-weight: 500;
+  border-radius: 18rpx;
+  text-align: center;
+  border: 2rpx solid #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
 }
 
 .faq-section {

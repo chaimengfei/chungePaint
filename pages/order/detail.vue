@@ -169,7 +169,7 @@ const statusText = computed(() => {
 const navigateBack = () => {
   const pages = getCurrentPages()
   if (pages.length > 1) {
-    uni.navigateBack()
+  uni.navigateBack()
   } else {
     // 如果没有上一页，跳转到看看页面
     uni.switchTab({

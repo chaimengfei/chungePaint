@@ -361,7 +361,7 @@ export default {
                     uni.showToast({
                       title: '昵称不能超过20个字符',
                       icon: 'none'
-                    })
+      })
                     return
                   }
                   this.updateUserNickname(finalNickname)

@@ -28,8 +28,8 @@
               <!-- 只显示前2个商品 -->
               <view v-for="item in getDisplayItems(order.items)" :key="item.id" class="order-product">
                 <image class="product-image" :src="item.product_image || '/static/images/empty-cart.png'" mode="aspectFill" />
-                <view class="product-info">
-                  <text class="product-name">{{ item.product_name }}</text>
+              <view class="product-info">
+                <text class="product-name">{{ item.product_name }}</text>
                   <view class="price-quantity">
                     <text class="product-price">¥{{ item.unit_price }}</text>
                     <text class="product-quantity">×{{ item.quantity }}</text>
