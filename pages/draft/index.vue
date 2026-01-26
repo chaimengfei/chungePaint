@@ -199,12 +199,12 @@
 					const uniqueItemCount = this.draftItems.length
 					if (uniqueItemCount > 0) {
 						uni.setTabBarBadge({
-							index: 1,
+							index: 2, // 需求单tab的索引是2
 							text: uniqueItemCount.toString()
 						})
 					} else {
 						uni.removeTabBarBadge({
-							index: 1
+							index: 2 // 需求单tab的索引是2
 						})
 					}
 				} catch (error) {

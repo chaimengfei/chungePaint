@@ -78,13 +78,22 @@
     <!-- 企业案例展示区域 -->
     <view class="cases-section">
       <view class="section-title">企业案例</view>
-      <scroll-view class="cases-scroll" scroll-y="true">
-        <view class="cases-grid">
-          <view 
-            v-for="(caseItem, index) in cases" 
-            :key="index" 
-            class="case-item"
-          >
+      <swiper 
+        class="cases-swiper" 
+        :current="currentCaseIndex"
+        @change="onCaseChange"
+        :indicator-dots="true"
+        :indicator-color="'rgba(0, 0, 0, 0.3)'"
+        :indicator-active-color="'#ff9500'"
+        :autoplay="false"
+        :circular="true"
+        :duration="300"
+      >
+        <swiper-item 
+          v-for="(caseItem, index) in cases" 
+          :key="index"
+        >
+          <view class="case-item">
             <image 
               class="case-image" 
               :src="caseItem.image" 
@@ -109,8 +118,8 @@
               </view>
             </view>
           </view>
-        </view>
-      </scroll-view>
+        </swiper-item>
+      </swiper>
     </view>
   </view>
 </template>
@@ -154,6 +163,7 @@ export default {
       ],
       animationDuration: '20s',
       likedItems: {}, // 存储点赞状态，格式：{ 'rowIndex-itemIndex': true }
+      currentCaseIndex: 0, // 当前显示的案例索引
       videoChannelInfo: {
         name: '贸彩漆业-汽车漆-氟碳漆-工业漆',
         videoCount: 3,
@@ -181,6 +191,10 @@ export default {
     handleImageError(index) {
       // 图片加载失败时使用默认图片
       this.cases[index].image = '/static/images/maocai-logo.png'
+    },
+    onCaseChange(e) {
+      // swiper切换时更新当前索引
+      this.currentCaseIndex = e.detail.current
     },
     calculateAnimationDuration() {
       // 根据内容数量计算动画持续时间
@@ -496,28 +510,36 @@ export default {
   padding-left: 10rpx;
 }
 
-.cases-scroll {
-  max-height: 1200rpx; /* 限制最大高度，超出可滚动 */
+.cases-swiper {
+  width: 100%;
+  height: 800rpx; /* 固定高度，适应案例内容 */
+  margin-bottom: 20rpx;
 }
 
-.cases-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 30rpx;
-  padding-bottom: 20rpx;
+/* 自定义指示点样式 */
+.cases-swiper ::v-deep .wx-swiper-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  margin: 0 8rpx;
+}
+
+.cases-swiper ::v-deep .wx-swiper-dot.wx-swiper-dot-active {
+  width: 32rpx;
+  border-radius: 8rpx;
 }
 
 .case-item {
+  width: 100%;
+  height: 100%;
   background-color: #fff;
   border-radius: 16rpx;
   overflow: hidden;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
 }
 
-.case-item:active {
-  transform: scale(0.98);
-}
 
 .case-image {
   width: 100%;
@@ -530,6 +552,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 16rpx;
+  flex: 1;
 }
 
 .case-header {
