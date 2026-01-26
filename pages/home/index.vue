@@ -8,6 +8,25 @@
       </view>
     </view>
 
+    <!-- 视频号入口横幅 -->
+    <view class="video-channel-banner" @click="openVideoChannel">
+      <view class="video-channel-left">
+        <image 
+          class="video-channel-avatar" 
+          :src="videoChannelInfo.avatar" 
+          mode="aspectFill"
+          @error="handleAvatarError"
+        />
+        <view class="video-channel-info">
+          <text class="video-channel-name">{{ videoChannelInfo.name }}</text>
+          <text class="video-channel-count">{{ videoChannelInfo.videoCount }}条原创内容</text>
+        </view>
+      </view>
+      <view class="video-channel-right">
+        <text class="video-channel-icon">▶</text>
+        <text class="video-channel-text">进入视频号</text>
+      </view>
+    </view>
 
     <view class="faq-section">
       <view class="faq-title-wrapper">
@@ -134,7 +153,13 @@ export default {
         '漆膜厚度如何控制？'
       ],
       animationDuration: '20s',
-      likedItems: {} // 存储点赞状态，格式：{ 'rowIndex-itemIndex': true }
+      likedItems: {}, // 存储点赞状态，格式：{ 'rowIndex-itemIndex': true }
+      videoChannelInfo: {
+        name: '贸彩漆业-汽车漆-氟碳漆-工业漆',
+        videoCount: 3,
+        avatar: '/static/images/maocai-logo.png', // 视频号头像，可以使用logo
+        finderUsername: '' // 视频号finderUsername，需要配置
+      }
     }
   },
   computed: {
@@ -179,6 +204,44 @@ export default {
     toggleLike(rowIndex, itemIndex) {
       const key = `${rowIndex}-${itemIndex}`
       this.$set(this.likedItems, key, !this.likedItems[key])
+    },
+    handleAvatarError() {
+      // 头像加载失败时使用默认logo
+      this.videoChannelInfo.avatar = '/static/images/maocai-logo.png'
+    },
+    openVideoChannel() {
+      // 跳转到微信视频号
+      // 方式1: 使用 wx.openChannelsUserProfile (需要视频号的finderUsername)
+      // #ifdef MP-WEIXIN
+      if (this.videoChannelInfo.finderUsername) {
+        wx.openChannelsUserProfile({
+          finderUsername: this.videoChannelInfo.finderUsername,
+          success: (res) => {
+            console.log('打开视频号成功', res)
+          },
+          fail: (err) => {
+            console.error('打开视频号失败', err)
+            uni.showToast({
+              title: '打开视频号失败',
+              icon: 'none'
+            })
+          }
+        })
+      } else {
+        // 如果没有配置finderUsername，提示用户
+        uni.showToast({
+          title: '视频号功能暂未配置',
+          icon: 'none'
+        })
+      }
+      // #endif
+      
+      // #ifndef MP-WEIXIN
+      uni.showToast({
+        title: '请在微信中打开',
+        icon: 'none'
+      })
+      // #endif
     }
   }
 }
@@ -224,6 +287,80 @@ export default {
   text-align: center;
 }
 
+/* 视频号入口横幅 */
+.video-channel-banner {
+  margin: 20rpx 30rpx;
+  padding: 24rpx 30rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.video-channel-banner:active {
+  transform: scale(0.98);
+  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.video-channel-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.video-channel-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  background-color: #f0f0f0;
+}
+
+.video-channel-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.video-channel-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.video-channel-count {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.video-channel-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 20rpx;
+}
+
+.video-channel-icon {
+  font-size: 24rpx;
+  color: #ff9500;
+  margin-right: 8rpx;
+}
+
+.video-channel-text {
+  font-size: 26rpx;
+  color: #ff9500;
+  font-weight: 500;
+}
 
 .faq-section {
   margin: 20rpx 30rpx;
