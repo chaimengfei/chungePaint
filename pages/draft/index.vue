@@ -1,7 +1,7 @@
 <template>
 	<view class="container">
 	<view class="header">
-		<text class="subtitle">您可以在此整理意向商品，提交后客服将为您统一报价</text>
+		<text class="subtitle">您可以在此整理意向商品，提交后客服为您统一报价</text>
 	</view>
 
 		<!-- 清单商品 -->

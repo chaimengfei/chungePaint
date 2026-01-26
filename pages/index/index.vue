@@ -3,7 +3,7 @@
     <!-- 公告栏 -->
     <view class="notice-bar">
       <text class="notice-icon">📢</text>
-      <text class="notice-text">本平台为产品展示询价中心，如需采购请联系客服(微信同号)</text>
+      <text class="notice-text">本平台为产品展示中心，如需采购请联系\n 13161621688（微信同号）</text>
     </view>
     
     <!-- 搜索框 -->
@@ -134,29 +134,32 @@ export default {
     this.initPage()
   },
   onShow() {
-    // 首页显示时不再自动更新购物车徽标
-    // 购物车徽标只在用户点击购物车图标时更新
+    // 每次显示页面时，检查登录状态并确保加载商品数据
     const token = uni.getStorageSync('token')
     const userInfo = uni.getStorageSync('userInfo')
     
-    if (!token || !userInfo) {
-      // 如果本地没有 token 或 userInfo，但页面状态显示已登录，则更新状态
+    if (token && userInfo) {
+      // 用户已登录
+      const wasLogin = this.isLogin
+      this.isLogin = true
+      this.userInfo = userInfo
+      
+      // 如果之前未登录，或者商品列表为空，则加载商品数据
+      if (!wasLogin || !this.currentProducts || this.currentProducts.length === 0) {
+        console.log('检测到用户已登录，加载商品数据')
+        // 已登录用户不需要传shopId，使用热销分类
+        this.fetchData(null, 100, 1)
+      }
+    } else {
+      // 用户未登录
       if (this.isLogin) {
         this.isLogin = false
         this.userInfo = {}
       }
-    } else {
-      // 如果有 token 和 userInfo，说明用户已登录
-      // 如果之前是未登录状态，说明用户刚刚登录成功，需要重新加载商品数据
-      if (!this.isLogin) {
-        console.log('检测到用户刚刚登录成功，重新加载商品数据')
-        this.isLogin = true
-        this.userInfo = userInfo
-        // 重新加载商品数据（已登录用户不需要传shopId）
-        this.fetchData(null, 100, 1)
-      } else {
-        // 如果之前已经登录，只需要更新用户信息（可能用户信息有变化）
-        this.userInfo = userInfo
+      // 未登录时，如果商品列表为空，尝试加载（使用默认店铺）
+      if (!this.currentProducts || this.currentProducts.length === 0) {
+        console.log('用户未登录，使用默认店铺加载商品数据')
+        this.fetchData(1, 100, 1) // 使用默认店铺ID
       }
     }
   },
@@ -190,7 +193,8 @@ export default {
           this.isLogin = true
           this.userInfo = userInfo
           console.log('用户已登录，直接加载商品数据')
-          await this.fetchData()
+          // 已登录用户不需要传shopId，使用热销分类（category_id=100）
+          await this.fetchData(null, 100, 1)
         } else {
           // 未登录，需要获取位置信息并计算店铺
           console.log('未登录，检查店铺ID缓存')
@@ -229,7 +233,15 @@ export default {
       } catch (error) {
         console.error('页面初始化失败:', error)
         // 即使获取位置失败，也尝试加载商品数据
-        await this.fetchData()
+        // 检查是否有token，如果有则按已登录处理，否则使用默认店铺
+        const fallbackToken = uni.getStorageSync('token')
+        if (fallbackToken) {
+          this.isLogin = true
+          this.userInfo = uni.getStorageSync('userInfo') || {}
+          await this.fetchData(null, 100, 1)
+        } else {
+          await this.fetchData(1, 100, 1)
+        }
       }
     },
     
