@@ -3,7 +3,7 @@
     <!-- 公告栏 -->
     <view class="notice-bar">
       <text class="notice-icon">📢</text>
-      <text class="notice-text">本平台为产品展示中心，如需采购请联系\n 13161621688（微信同号）</text>
+      <text class="notice-text">本平台为产品展示中心,如需采购请联系13161621688(同微信)</text>
     </view>
     
     <!-- 搜索框 -->

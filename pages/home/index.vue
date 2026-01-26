@@ -59,24 +59,39 @@
     <!-- 企业案例展示区域 -->
     <view class="cases-section">
       <view class="section-title">企业案例</view>
-      <view class="cases-grid">
-        <view 
-          v-for="(caseItem, index) in cases" 
-          :key="index" 
-          class="case-item"
-        >
-          <image 
-            class="case-image" 
-            :src="caseItem.image" 
-            mode="aspectFill"
-            @error="handleImageError(index)"
-          />
-          <view class="case-info">
-            <text class="case-name">{{ caseItem.name }}</text>
-            <text class="case-desc">{{ caseItem.description }}</text>
+      <scroll-view class="cases-scroll" scroll-y="true">
+        <view class="cases-grid">
+          <view 
+            v-for="(caseItem, index) in cases" 
+            :key="index" 
+            class="case-item"
+          >
+            <image 
+              class="case-image" 
+              :src="caseItem.image" 
+              mode="aspectFill"
+              @error="handleImageError(index)"
+            />
+            <view class="case-info">
+              <view class="case-header">
+                <text class="case-name">项目名：{{ caseItem.name }}</text>
+              </view>
+              <view class="case-detail-row">
+                <text class="case-label">完工时间：</text>
+                <text class="case-value">{{ caseItem.completionTime }}</text>
+              </view>
+              <view class="case-detail-row">
+                <text class="case-label">场景：</text>
+                <text class="case-value scene-tag" :class="caseItem.scene === '户外' ? 'scene-outdoor' : 'scene-indoor'">{{ caseItem.scene }}</text>
+              </view>
+              <view class="case-detail-row">
+                <text class="case-label">说明：</text>
+                <text class="case-value case-description">{{ caseItem.description }}</text>
+              </view>
+            </view>
           </view>
         </view>
-      </view>
+      </scroll-view>
     </view>
   </view>
 </template>
@@ -88,17 +103,23 @@ export default {
       cases: [
         {
           name: '燕郊永旺',
-          description: '商业综合体外墙涂装',
+          completionTime: '2023-06',
+          scene: '户外',
+          description: '商业综合体外墙涂装，采用高品质外墙涂料，确保长期耐候性和美观度',
           image: '/static/images/cases/yongwang.jpg'
         },
         {
           name: '北京全聚德烤鸭',
-          description: '传统建筑翻新涂装',
+          completionTime: '2023-09',
+          scene: '户外',
+          description: '传统建筑翻新涂装，保持古建筑风格的同时提升建筑保护性能',
           image: '/static/images/cases/quanjude.jpg'
         },
         {
-          name: 'xxxx',
-          description: '项目案例描述',
+          name: 'xxxx项目',
+          completionTime: '2024-03',
+          scene: '室内',
+          description: '室内墙面涂装项目，提供专业的室内涂料解决方案',
           image: '/static/images/cases/case3.jpg'
         }
       ],
@@ -327,6 +348,7 @@ export default {
 /* 案例展示区域 */
 .cases-section {
   padding: 0 30rpx;
+  margin-bottom: 40rpx;
 }
 
 .section-title {
@@ -337,17 +359,22 @@ export default {
   padding-left: 10rpx;
 }
 
+.cases-scroll {
+  max-height: 1200rpx; /* 限制最大高度，超出可滚动 */
+}
+
 .cases-grid {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 30rpx;
+  padding-bottom: 20rpx;
 }
 
 .case-item {
   background-color: #fff;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
 }
 
@@ -357,31 +384,66 @@ export default {
 
 .case-image {
   width: 100%;
-  height: 240rpx;
+  height: 400rpx;
   background-color: #f0f0f0;
 }
 
 .case-info {
-  padding: 20rpx;
+  padding: 30rpx;
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: 16rpx;
+}
+
+.case-header {
+  margin-bottom: 8rpx;
 }
 
 .case-name {
-  font-size: 28rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: #333;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
-.case-desc {
+.case-detail-row {
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+
+.case-label {
+  font-size: 26rpx;
+  color: #666;
+  min-width: 140rpx;
+  flex-shrink: 0;
+}
+
+.case-value {
+  font-size: 26rpx;
+  color: #333;
+  flex: 1;
+}
+
+.scene-tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
   font-size: 24rpx;
-  color: #999;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+}
+
+.scene-outdoor {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.scene-indoor {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.case-description {
+  line-height: 1.8;
+  color: #666;
 }
 </style>

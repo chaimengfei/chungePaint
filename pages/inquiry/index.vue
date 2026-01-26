@@ -19,10 +19,12 @@
               <view v-for="item in getDisplayItems(order.items)" :key="item.id" class="order-product">
                 <image class="product-image" :src="item.product_image || '/static/images/empty-draft.png'" mode="aspectFill" />
                 <view class="product-info">
-                  <text class="product-name">{{ item.product_name }}</text>
-                  <view class="price-quantity">
-                    <text class="product-price">¥{{ item.unit_price }}</text>
-                    <text class="product-quantity">×{{ item.quantity }}</text>
+                  <view class="product-name-wrapper">
+                    <text class="product-name">{{ item.product_name }}</text>
+                    <view class="price-quantity">
+                      <text class="product-price">¥{{ item.unit_price }}</text>
+                      <text class="product-quantity">×{{ item.quantity }}</text>
+                    </view>
                   </view>
                 </view>
               </view>
@@ -346,33 +348,49 @@ export default {
 }
 
 .product-image {
-  width: 120rpx;
-  height: 120rpx;
+  width: 280rpx;
+  height: 240rpx;
   border-radius: 8rpx;
-  margin-right: 20rpx;
+  margin-right: 30rpx;
+  flex-shrink: 0;
 }
 
 .product-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  margin-left: 30rpx;
+}
+
+.product-name-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 20rpx;
+  position: relative;
 }
 
 .product-name {
-  font-size: 28rpx;
+  font-size: 32rpx;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  padding-top: 0;
 }
 
 .price-quantity {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10rpx;
+  align-items: baseline;
+  gap: 6rpx;
+  flex-shrink: 0;
+  position: absolute;
+  right: 0;
+  top: 40rpx;
 }
 
 .product-price {
@@ -383,7 +401,8 @@ export default {
 
 .product-quantity {
   font-size: 24rpx;
-  color: #999;
+  color: #666;
+  margin-left: 4rpx;
 }
 
 .order-footer {

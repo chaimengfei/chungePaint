@@ -73,8 +73,8 @@
       {
         "pagePath": "pages/home/index",
         "text": "首页",
-        "iconPath": "static/tabbar/user_unselected.png",
-        "selectedIconPath": "static/tabbar/user_selected.png"
+        "iconPath": "static/tabbar/first_unselected.png",
+        "selectedIconPath": "static/tabbar/first_selected.png"
       },
       {
         "pagePath": "pages/index/index",

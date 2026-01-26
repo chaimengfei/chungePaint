@@ -63,8 +63,8 @@
 				</view>
 				<button 
 					class="submit-requirement-btn" 
-					@click.stop="handleClick"
-					@tap.stop="handleClick"
+					@click="handleClick"
+					@tap="handleClick"
 					type="button"
 				>
 					提交需求，联系客服
@@ -216,10 +216,11 @@
 		handleClick(e) {
 			console.log('========== handleClick 被调用 ==========')
 			console.log('事件对象:', e)
-			e.stopPropagation()
-			e.preventDefault()
+			if (e) {
+				e.stopPropagation && e.stopPropagation()
+				e.preventDefault && e.preventDefault()
+			}
 			this.submitRequirement()
-			return false
 		},
 		
 		// 提交需求，联系客服 - 直接调用接口，不跳转
@@ -483,15 +484,15 @@
 	}
 
 	.product-image {
-		width: 150rpx;
-		height: 150rpx;
-		margin-left: 20rpx;
+		width: 200rpx;
+		height: 200rpx;
+		margin-left: 30rpx;
 		border-radius: 8rpx;
 	}
 
 	.item-right {
 		flex: 1;
-		margin-left: 20rpx;
+		margin-left: 30rpx;
 		display: flex;
 		flex-direction: column;
 	}
@@ -673,6 +674,20 @@
 		position: relative;
 		z-index: 999;
 		pointer-events: auto !important;
+		overflow: hidden;
+	}
+	
+	.submit-requirement-btn::before,
+	.submit-requirement-btn::after {
+		display: none !important;
+		content: '' !important;
+	}
+	
+	/* 确保按钮内没有额外的数字显示 */
+	.submit-requirement-btn text,
+	.submit-requirement-btn view {
+		position: relative;
+		z-index: 1;
 	}
 
 	.submit-requirement-btn.disabled {
