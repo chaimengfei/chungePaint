@@ -21,16 +21,20 @@
           class="faq-row"
           scroll-x="true"
           show-scrollbar="false"
-          :style="{ animationDelay: `${rowIndex * 0.3}s` }"
+          :style="{ animationDelay: `${rowIndex * 0.5}s` }"
         >
-          <view class="faq-tags" :style="{ animationDuration: animationDuration }">
+          <view class="faq-tags" :style="{ animationDuration: getRowAnimationDuration(rowIndex) }">
             <view 
               v-for="(item, index) in row" 
               :key="index" 
               class="faq-tag"
               :style="{ animationDelay: `${index * 0.1}s` }"
             >
-              <text class="faq-tag-icon">♡</text>
+              <text 
+                class="faq-tag-icon"
+                :class="{ 'faq-tag-icon-filled': isLiked(rowIndex, index) }"
+                @click.stop="toggleLike(rowIndex, index)"
+              >{{ isLiked(rowIndex, index) ? '♥' : '♡' }}</text>
               <text class="faq-tag-text">{{ item }}</text>
             </view>
             <!-- 复制一份用于无缝循环 -->
@@ -40,7 +44,11 @@
               class="faq-tag"
               :style="{ animationDelay: `${(index + row.length) * 0.1}s` }"
             >
-              <text class="faq-tag-icon">♡</text>
+              <text 
+                class="faq-tag-icon"
+                :class="{ 'faq-tag-icon-filled': isLiked(rowIndex, index) }"
+                @click.stop="toggleLike(rowIndex, index)"
+              >{{ isLiked(rowIndex, index) ? '♥' : '♡' }}</text>
               <text class="faq-tag-text">{{ item }}</text>
             </view>
           </view>
@@ -96,7 +104,7 @@ export default {
       ],
       marqueeItems: [
         '2K漆能加固化剂吗？',
-        '固化剂的配比多少？',
+        '固化剂配比多少？',
         '拉丝效果怎么做？',
         '工业漆的干燥时间？',
         '如何选择合适的稀释剂？',
@@ -104,7 +112,8 @@ export default {
         '如何防止漆面起泡？',
         '漆膜厚度如何控制？'
       ],
-      animationDuration: '20s'
+      animationDuration: '20s',
+      likedItems: {} // 存储点赞状态，格式：{ 'rowIndex-itemIndex': true }
     }
   },
   computed: {
@@ -132,6 +141,23 @@ export default {
       // 每个标签宽度约200rpx，8个标签约1600rpx，滚动速度约每秒200rpx
       const totalWidth = this.marqueeItems.length * 220 // 每个标签约220rpx（包括gap）
       this.animationDuration = `${totalWidth / 200 * 2}s` // 滚动速度调整
+    },
+    getRowAnimationDuration(rowIndex) {
+      // 前2行（rowIndex 0和1）滚动慢一点，第3行保持原速度
+      if (rowIndex < 2) {
+        // 前2行速度减半
+        const baseDuration = parseInt(this.animationDuration)
+        return `${baseDuration * 2}s`
+      }
+      return this.animationDuration
+    },
+    isLiked(rowIndex, itemIndex) {
+      const key = `${rowIndex}-${itemIndex}`
+      return this.likedItems[key] || false
+    },
+    toggleLike(rowIndex, itemIndex) {
+      const key = `${rowIndex}-${itemIndex}`
+      this.$set(this.likedItems, key, !this.likedItems[key])
     }
   }
 }
@@ -215,7 +241,7 @@ export default {
 .faq-row {
   width: 100%;
   white-space: nowrap;
-  animation: fadeInRow 0.8s ease-out both;
+  animation: fadeInRow 1s ease-out both;
 }
 
 .faq-tags {
@@ -243,6 +269,18 @@ export default {
   font-size: 28rpx;
   margin-right: 12rpx;
   flex-shrink: 0;
+  color: #e93b3d;
+  transform: scaleY(0.85);
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.faq-tag-icon:active {
+  transform: scaleY(0.85) scale(1.1);
+}
+
+.faq-tag-icon-filled {
   color: #e93b3d;
 }
 
