@@ -183,6 +183,7 @@ export default {
               product_id: item.product_id,
               product_name: item.product_name,
               product_image: item.product_image,
+              product_specification: item.product_specification || item.specification || null,
               unit_price: item.reference_unit_price || 0,
               quantity: item.quantity,
               unit: item.unit
@@ -366,9 +367,9 @@ export default {
 .product-name-wrapper {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
-  gap: 20rpx;
   position: relative;
+  margin-bottom: 8rpx;
+  line-height: 1.4;
 }
 
 .product-name {
@@ -380,17 +381,16 @@ export default {
   overflow: hidden;
   flex: 1;
   min-width: 0;
-  padding-top: 0;
+  padding-right: 20rpx;
 }
 
 .price-quantity {
   display: flex;
   align-items: baseline;
   gap: 6rpx;
-  flex-shrink: 0;
   position: absolute;
   right: 0;
-  top: 40rpx;
+  bottom: -8rpx;
 }
 
 .product-price {

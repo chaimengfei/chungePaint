@@ -17,14 +17,14 @@
 					<image class="product-image" :src="item.product_image" mode="aspectFill" />
 				</view>
 				<view class="item-right">
-					<text class="product-name">{{ item.product_name }}</text>
-					<view class="spec-info">
-						<text class="spec-label">规格：</text>
-						<text class="spec-value">{{ item.product_unit }}</text>
+					<view class="product-name-wrapper">
+						<text class="product-name">{{ item.product_name }}</text>
+						<text v-if="item.product_specification" class="product-specification">{{ item.product_specification }}</text>
 					</view>
 					<view class="price-container">
 						<text class="price-label">参考单价：</text>
 						<text class="product-price">¥{{ item.product_reference_price }}</text>
+						<text class="product-unit">/ {{ item.product_unit }}</text>
 					</view>
 					
 					<!-- 不可购买商品的提示信息 -->
@@ -166,12 +166,19 @@
 						if (res.data.data === null) {
 							this.draftItems = [] // 设置为空数组
 						} else {
-							this.draftItems = res.data.data.map(item => ({
-								...item,
-								selected: item.selected === true || item.selected === 1,
-								// 根据 product_availability 判断是否可以购买（0表示可用）
-								can_purchase: item.product_availability === 0 || item.can_purchase !== false
-							}))
+							this.draftItems = res.data.data.map(item => {
+								console.log('需求单商品项:', item)
+								// 尝试多种可能的规格字段名
+								const spec = item.product_specification || item.specification || item.spec || null
+								console.log('规格值:', spec)
+								return {
+									...item,
+									product_specification: spec, // 确保规格字段存在
+									selected: item.selected === true || item.selected === 1,
+									// 根据 product_availability 判断是否可以购买（0表示可用）
+									can_purchase: item.product_availability === 0 || item.can_purchase !== false
+								}
+							})
 						}
 
 						// 更新底部需求单徽标
@@ -497,9 +504,22 @@
 		flex-direction: column;
 	}
 
+	.product-name-wrapper {
+		display: flex;
+		align-items: baseline;
+		margin-bottom: 10rpx;
+		line-height: 1.4;
+	}
+
 	.product-name {
 		font-size: 28rpx;
-		margin-bottom: 10rpx;
+	}
+
+	.product-specification {
+		font-size: 22rpx;
+		color: #999;
+		margin-left: 8rpx;
+		font-weight: normal;
 	}
 
 	.price-container {
@@ -510,12 +530,12 @@
 
 	.product-price {
 		font-size: 32rpx;
-		color: #4169E1;
+		color: #e93b3d;
 		font-weight: bold;
 	}
 
 	.product-unit {
-		font-size: 24rpx;
+		font-size: 22rpx;
 		color: #333;
 		margin-left: 0;
 	}
@@ -581,22 +601,6 @@
 		line-height: 50rpx;
 		font-size: 24rpx;
 		border-radius: 25rpx;
-	}
-
-	.spec-info {
-		display: flex;
-		align-items: center;
-		margin-bottom: 8rpx;
-		font-size: 24rpx;
-	}
-
-	.spec-label {
-		color: #666;
-		margin-right: 4rpx;
-	}
-
-	.spec-value {
-		color: #333;
 	}
 
 	.price-label {

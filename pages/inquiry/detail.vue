@@ -2,7 +2,7 @@
   <view class="order-detail-container">
     <!-- 自定义导航栏 -->
     <view class="nav-bar">
-      <view class="nav-back" @click="navigateBack">
+      <view class="nav-back" @click.stop="navigateBack" @tap.stop="navigateBack">
         <image src="/static/images/back.png" mode="aspectFit" class="back-icon"/>
       </view>
       <text class="nav-title">询价详情</text>
@@ -22,16 +22,18 @@
         <view v-for="item in order.items" :key="item.id" class="product-item">
           <image class="product-image" :src="item.product_image || '/static/images/empty-inquiry.png'" mode="aspectFill"/>
           <view class="product-info">
-            <text class="product-name">{{ item.product_name }}</text>
-            <text v-if="item.specification" class="product-spec">{{ item.specification }}</text>
+            <view class="product-name-row">
+              <text class="product-name">{{ item.product_name }}</text>
+              <text v-if="item.specification" class="product-spec">{{ item.specification }}</text>
+            </view>
             <view class="price-line">
               <text class="product-price">¥{{ item.unit_price }}</text>
+              <text v-if="item.unit" class="product-unit">/{{ item.unit }}</text>
               <text class="product-quantity">×{{ item.quantity }}</text>
             </view>
             <view class="total-price">
               <text class="total-price-text">参考小计: ¥{{ item.total_price }}</text>
             </view>
-            <text v-if="item.unit" class="product-unit">{{ item.unit }}</text>
           </view>
         </view>
       </view>
@@ -89,19 +91,27 @@ const loadInquiryData = async (inquiryNo) => {
     const res = await getInquiryDetail(inquiryNo)
     if (res.code === 0) {
       const inquiryData = res.data
+      console.log('询价详情数据:', inquiryData)
+      console.log('商品项数据:', inquiryData.items)
       order.value = {
-        items: inquiryData.items.map(item => ({
-          id: item.id,
-          product_id: item.product_id,
-          product_name: item.product_name,
-          product_image: item.product_image,
-          specification: item.specification || item.unit,
-          unit_price: item.reference_unit_price || 0,
-          total_price: item.reference_total || 0,
-          quantity: item.quantity,
-          unit: item.unit,
-          remark: item.remark
-        })),
+        items: inquiryData.items.map(item => {
+          console.log('处理商品项:', item)
+          // 尝试多种可能的规格字段名
+          const spec = item.product_specification || item.specification || item.spec || null
+          console.log('规格值:', spec)
+          return {
+            id: item.id,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            product_image: item.product_image,
+            specification: spec,
+            unit_price: item.reference_unit_price || 0,
+            total_price: item.reference_total || 0,
+            quantity: item.quantity,
+            unit: item.unit,
+            remark: item.remark
+          }
+        }),
         inquiry_no: inquiryData.inquiry_no,
         total_amount: inquiryData.estimated_total || 0,
         created_at: inquiryData.created_at,
@@ -180,22 +190,36 @@ const contactService = () => {
 
 .nav-bar {
   height: 88rpx;
+  min-height: 88rpx;
   display: flex;
   align-items: center;
   padding: 0 30rpx;
+  padding-top: calc(env(safe-area-inset-top) + 20rpx);
+  padding-bottom: 20rpx;
   background-color: #fff;
   position: relative;
   border-bottom: 1rpx solid #f1f1f1;
+  z-index: 999;
 }
 .nav-back {
-  width: 60rpx;
-  height: 100%;
+  width: 80rpx;
+  height: 80rpx;
+  min-width: 80rpx;
+  min-height: 80rpx;
   display: flex;
   align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1000;
+  padding: 20rpx;
+  margin-left: -20rpx;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .back-icon {
   width: 40rpx;
   height: 40rpx;
+  pointer-events: none;
 }
 .nav-title {
   position: absolute;
@@ -263,6 +287,13 @@ const contactService = () => {
   flex-direction: column;
   justify-content: space-between;
 }
+.product-name-row {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 8rpx;
+  line-height: 1.4;
+}
+
 .product-name {
   font-size: 28rpx;
   line-height: 1.4;
@@ -270,24 +301,36 @@ const contactService = () => {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+  flex: 1;
+  min-width: 0;
 }
+
 .price-line {
   display: flex;
-  justify-content: space-between;
+  align-items: baseline;
+  gap: 6rpx;
+  margin-bottom: 8rpx;
 }
+
 .product-price {
   color: #e93b3d;
   font-size: 30rpx;
   font-weight: bold;
 }
+
 .product-quantity {
   color: #999;
-}
-.product-spec {
   font-size: 24rpx;
-  color: #999;
-  margin: 8rpx 0;
 }
+
+.product-spec {
+  font-size: 22rpx;
+  color: #999;
+  margin-left: 8rpx;
+  font-weight: normal;
+  flex-shrink: 0;
+}
+
 .product-unit {
   color: #999;
   font-size: 24rpx;
