@@ -166,7 +166,7 @@ export default {
   onShareAppMessage() {
     // 分享给微信好友
     return {
-      title: '贸彩漆业 - 汽车漆、工业漆、雕塑&广告牌漆供应',
+      title: '贸彩漆业 - 汽车漆、工业漆、雕塑漆、广告牌漆供应',
       desc: '联系人 李增春-13161621688',
       path: '/pages/index/index',
       imageUrl: '/static/images/share-logo.png' // 可以设置分享图片
@@ -175,7 +175,7 @@ export default {
   onShareTimeline() {
     // 分享到朋友圈
     return {
-      title: '贸彩漆业 - 汽车漆、工业漆、雕塑&广告牌漆供应',
+      title: '贸彩漆业 -汽车漆、工业漆、雕塑漆、广告牌漆供应',
       query: '',
       imageUrl: '/static/images/share-logo.png' // 可以设置分享图片
     }
@@ -654,8 +654,8 @@ export default {
         provider: 'weixin',
         scene: 'WXSceneSession',
         type: 5,
-        title: '贸彩漆业 - 专业涂料供应商',
-        summary: '汽车漆、工业漆、雕塑&广告牌漆供应',
+        title: '贸彩漆业',
+        summary: '汽车漆、工业漆、雕塑漆、广告牌漆供应',
         href: '/pages/index/index',
         imageUrl: '/static/images/share-logo.png',
         success: function (res) {

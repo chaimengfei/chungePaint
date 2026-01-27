@@ -4,7 +4,15 @@
     <view class="company-info">
       <view class="company-card">
         <text class="company-title">贸彩漆业</text>
-        <text class="company-desc">汽车漆、工业漆、雕塑&广告牌漆、各种辅料</text>
+        <text class="company-desc">汽车漆、工业漆、雕塑漆、广告牌漆的供应\n固态灰、喷枪、遮蔽膜等各种辅料\n500平厂房至少覆盖燕郊50%的工业客户</text>
+        <!-- 联系方式 -->
+        <view class="company-contact">
+          <text class="contact-label">李赠春-13161621688</text>
+        </view>
+        <!-- 视频号入口 -->
+        <view class="video-channel-entry" @click="openVideoChannel">
+          <text class="video-channel-btn">进入视频号</text>
+        </view>
       </view>
     </view>
 
@@ -102,16 +110,6 @@
       </swiper>
     </view>
 
-    <!-- 视频号悬浮按钮 -->
-    <view class="video-channel-float-btn" @click="openVideoChannel">
-      <image 
-        class="video-channel-float-avatar" 
-        :src="videoChannelInfo.avatar" 
-        mode="aspectFill"
-        @error="handleAvatarError"
-      />
-      <view class="video-channel-float-badge">{{ videoChannelInfo.videoCount }}</view>
-    </view>
   </view>
 </template>
 
@@ -149,9 +147,9 @@ export default {
       likedItems: {}, // 存储点赞状态，格式：{ 'rowIndex-itemIndex': true }
       currentCaseIndex: 0, // 当前显示的案例索引
       videoChannelInfo: {
-        name: '贸彩漆业-汽车漆-氟碳漆-工业漆',
+        name: '贸彩漆业',
         videoCount: 3,
-        avatar: '/static/images/maocai-logo.png', // 视频号头像，可以使用logo
+        avatar: '/static/images/share-logo.png', // 视频号头像，可以使用logo
         finderUsername: '' // 视频号finderUsername，需要配置
       }
     }
@@ -174,7 +172,7 @@ export default {
   methods: {
     handleImageError(index) {
       // 图片加载失败时使用默认图片
-      this.cases[index].image = '/static/images/maocai-logo.png'
+      this.cases[index].image = '/static/images/share-logo.png'
     },
     onCaseChange(e) {
       // swiper切换时更新当前索引
@@ -205,7 +203,7 @@ export default {
     },
     handleAvatarError() {
       // 头像加载失败时使用默认logo
-      this.videoChannelInfo.avatar = '/static/images/maocai-logo.png'
+      this.videoChannelInfo.avatar = '/static/images/share-logo.png'
     },
     openVideoChannel() {
       // 跳转到微信视频号
@@ -278,55 +276,53 @@ export default {
 }
 
 .company-desc {
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: #666;
-  line-height: 1.6;
-  text-align: center;
+  line-height: 1.5;
+  text-align: left;
+  margin-bottom: 20rpx;
+  white-space: pre-line; /* 支持换行符 */
 }
 
-/* 视频号悬浮按钮 */
-.video-channel-float-btn {
-  position: fixed;
-  right: 30rpx;
-  bottom: 120rpx; /* 距离底部120rpx，避免被tabbar遮挡 */
-  width: 100rpx;
-  height: 100rpx;
-  z-index: 999;
+/* 联系方式 */
+.company-contact {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s;
+  padding: 20rpx;
+  margin-top: 20rpx;
+  border-radius: 8rpx;
+  gap: 8rpx;
+  font-size: 30rpx;
 }
 
-.video-channel-float-btn:active {
-  transform: scale(0.9);
-}
 
-.video-channel-float-avatar {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 50%;
-  background-color: #fff;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
-  border: 3rpx solid #ff9500;
-}
-
-.video-channel-float-badge {
-  position: absolute;
-  top: -8rpx;
-  right: -8rpx;
-  min-width: 36rpx;
-  height: 36rpx;
-  line-height: 36rpx;
-  padding: 0 8rpx;
-  background-color: #ff3b30;
-  color: #fff;
-  font-size: 20rpx;
+.contact-info {
+  font-size: 32rpx;
+  color: #333;
   font-weight: 600;
-  border-radius: 18rpx;
-  text-align: center;
-  border: 2rpx solid #fff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+}
+
+/* 视频号入口 */
+.video-channel-entry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 30rpx;
+  margin-top: 20rpx;
+  border-top: 1rpx solid #f0f0f0;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.video-channel-entry:active {
+  opacity: 0.7;
+}
+
+.video-channel-btn {
+  font-size: 28rpx;
+  color: #ff9500;
+  font-weight: 500;
 }
 
 .faq-section {
