@@ -8,7 +8,7 @@
         @click="handleAvatarClick"
       ></image>
       <text class="username" @click="handleUsernameClick">{{ isLogin && userInfo.nickname ? userInfo.nickname : '微信用户' }}</text>
-      <text class="welcome-text">欢迎 如需采购请随时联系</text>
+      <text class="welcome-text">欢迎 如需采购请联系客服</text>
       <button v-if="!isLogin" class="login-btn" @click="goLogin">登录/注册</button>
     </view>
     

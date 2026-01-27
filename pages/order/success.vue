@@ -109,7 +109,7 @@ export default {
   width: 160rpx;
   height: 160rpx;
   border-radius: 50%;
-  background-color: #e93b3d;
+  background-color: #4169E1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -216,9 +216,13 @@ export default {
   line-height: 88rpx;
   border-radius: 44rpx;
   font-size: 32rpx;
-  background-color: #e93b3d;
+  background-color: #4169E1;
   color: #fff;
   border: none;
+}
+
+.view-detail-btn:active {
+  background-color: #3151B8;
 }
 
 .contact-service-btn {

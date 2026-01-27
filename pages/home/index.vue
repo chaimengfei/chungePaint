@@ -4,10 +4,10 @@
     <view class="company-info">
       <view class="company-card">
         <text class="company-title">贸彩漆业</text>
-        <text class="company-desc">汽车漆、工业漆、雕塑漆、广告牌漆的供应\n固态灰、喷枪、遮蔽膜等各种辅料\n500平厂房至少覆盖燕郊50%的工业客户</text>
+        <text class="company-desc">供应：汽车漆、工业漆、雕塑漆、广告牌漆\n辅料：固态灰、喷枪、遮蔽膜等\n 目前覆盖了燕郊50%的工业客户</text>
         <!-- 联系方式 -->
         <view class="company-contact">
-          <text class="contact-label">李赠春-13161621688</text>
+          <text class="contact-label">李增春-13161621688</text>
         </view>
         <!-- 视频号入口 -->
         <view class="video-channel-entry" @click="openVideoChannel">
@@ -85,25 +85,14 @@
             <image 
               class="case-image" 
               :src="caseItem.image" 
-              mode="aspectFill"
+              mode="aspectFit"
               @error="handleImageError(index)"
             />
             <view class="case-info">
-              <view class="case-header">
-                <text class="case-name">项目名：{{ caseItem.name }}</text>
-              </view>
-              <view class="case-detail-row">
-                <text class="case-label">完工时间：</text>
-                <text class="case-value">{{ caseItem.completionTime }}</text>
-              </view>
-              <view class="case-detail-row">
-                <text class="case-label">场景：</text>
-                <text class="case-value scene-tag" :class="caseItem.scene === '户外' ? 'scene-outdoor' : 'scene-indoor'">{{ caseItem.scene }}</text>
-              </view>
-              <view class="case-detail-row">
-                <text class="case-label">说明：</text>
-                <text class="case-value case-description">{{ caseItem.description }}</text>
-              </view>
+              <text class="case-name">{{ caseItem.name }}</text>
+              <text class="case-value">{{ caseItem.completionTime }}</text>
+              <text class="case-value scene-tag" :class="caseItem.scene === '户外' ? 'scene-outdoor' : 'scene-indoor'">{{ caseItem.scene }}</text>
+              <text class="case-value case-description">{{ caseItem.description }}</text>
             </view>
           </view>
         </swiper-item>
@@ -280,7 +269,7 @@ export default {
   color: #666;
   line-height: 1.5;
   text-align: left;
-  margin-bottom: 20rpx;
+  margin-bottom: 10rpx;
   white-space: pre-line; /* 支持换行符 */
 }
 
@@ -289,8 +278,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20rpx;
-  margin-top: 20rpx;
+  padding: 10rpx;
+  margin-top: 10rpx;
   border-radius: 8rpx;
   gap: 8rpx;
   font-size: 30rpx;
@@ -308,9 +297,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20rpx 30rpx;
-  margin-top: 20rpx;
-  border-top: 1rpx solid #f0f0f0;
+  padding: 10rpx 30rpx;
+  margin-top: 10rpx;
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -448,7 +436,7 @@ export default {
 /* 案例展示区域 */
 .cases-section {
   padding: 0 30rpx;
-  margin-bottom: 40rpx;
+  margin-bottom: 20rpx;
 }
 
 .section-title {
@@ -461,8 +449,8 @@ export default {
 
 .cases-swiper {
   width: 100%;
-  height: 800rpx; /* 固定高度，适应案例内容 */
-  margin-bottom: 20rpx;
+  height: 450rpx; /* 根据左右布局调整，减少留白 */
+  margin-bottom: 0;
 }
 
 /* 自定义指示点样式 */
@@ -480,58 +468,46 @@ export default {
 
 .case-item {
   width: 100%;
-  height: 100%;
   background-color: #fff;
   border-radius: 16rpx;
   overflow: hidden;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 20rpx;
+  gap: 20rpx;
 }
 
-
 .case-image {
-  width: 100%;
-  height: 400rpx;
+  width: 300rpx;
+  flex-shrink: 0;
+  height: 410rpx; /* 适应swiper高度，减少留白 */
   background-color: #f0f0f0;
+  border-radius: 8rpx;
+  object-fit: contain; /* 确保图片完整显示 */
 }
 
 .case-info {
-  padding: 30rpx;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
-  flex: 1;
-}
-
-.case-header {
-  margin-bottom: 8rpx;
+  gap: 8rpx;
+  padding: 0;
 }
 
 .case-name {
   font-size: 32rpx;
   font-weight: 600;
   color: #333;
-  line-height: 1.5;
-}
-
-.case-detail-row {
-  display: flex;
-  align-items: flex-start;
-  line-height: 1.6;
-}
-
-.case-label {
-  font-size: 26rpx;
-  color: #666;
-  min-width: 140rpx;
-  flex-shrink: 0;
+  line-height: 1.4;
+  margin-bottom: 4rpx;
 }
 
 .case-value {
   font-size: 26rpx;
   color: #333;
-  flex: 1;
+  line-height: 1.4;
 }
 
 .scene-tag {
