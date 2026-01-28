@@ -49,12 +49,6 @@
 	  "style": {
 	    "navigationBarTitleText": "登陆"
 	  }
-	},
-	{
-	  "path": "pages/webview/index",
-	  "style": {
-	    "navigationBarTitleText": "视频号"
-	  }
 	}
   ],
   "globalStyle": {
