@@ -139,7 +139,7 @@ export default {
         name: '贸彩漆业',
         videoCount: 3,
         avatar: '/static/images/share-logo.png', // 视频号头像，可以使用logo
-        finderUsername: '' // 视频号finderUsername，需要配置
+        finderUserName: 'sphMv5ZIs8oa9Hg', // 视频号ID
       }
     }
   },
@@ -196,24 +196,78 @@ export default {
     },
     openVideoChannel() {
       // 跳转到微信视频号
-      // 方式1: 使用 wx.openChannelsUserProfile (需要视频号的finderUsername)
       // #ifdef MP-WEIXIN
-      if (this.videoChannelInfo.finderUsername) {
+      if (this.videoChannelInfo.finderUserName) {
+        const finderUserName = String(this.videoChannelInfo.finderUserName).trim()
+        
+        if (!finderUserName) {
+          uni.showToast({
+            title: '视频号ID配置错误',
+            icon: 'none'
+          })
+          return
+        }
+        
+        // 检测是否在开发者工具中
+        const systemInfo = uni.getSystemInfoSync()
+        const isDevTool = systemInfo.platform === 'devtools'
+        
+        if (isDevTool) {
+          uni.showModal({
+            title: '提示',
+            content: '视频号功能需要在真机上测试\n\n开发者工具可能不支持此功能，请在真机上测试',
+            showCancel: false
+          })
+          return
+        }
+        
+        console.log('准备打开视频号主页，视频号ID:', finderUserName)
+        
+        // 使用 wx.openChannelsUserProfile 打开视频号主页
+        // 从基础库 2.21.2 开始支持
+        // 根据官方文档：finderUserName 代表视频号ID
+        // 查看路径：微信客户端->我tab->视频号->右上角->视频号名字-视频号ID
         wx.openChannelsUserProfile({
-          finderUsername: this.videoChannelInfo.finderUsername,
+          finderUserName: finderUserName, // 视频号ID（必填）
           success: (res) => {
-            console.log('打开视频号成功', res)
+            console.log('打开视频号主页成功', res)
           },
           fail: (err) => {
-            console.error('打开视频号失败', err)
-            uni.showToast({
-              title: '打开视频号失败',
-              icon: 'none'
+            console.error('打开视频号主页失败', err)
+            
+            // 如果打开失败，提供备用方案：复制链接
+            const videoChannelUrl = `https://channels.weixin.qq.com/${finderUserName}`
+            
+            // 检查错误类型
+            let errorMsg = err.errMsg || '打开视频号主页失败'
+            if (err.errMsg && err.errMsg.includes('invalid args')) {
+              errorMsg = '参数错误\n\n请确认视频号ID是否正确\n\n视频号ID：' + finderUserName + '\n\n查看路径：微信客户端->我tab->视频号->右上角->视频号名字-视频号ID'
+            } else if (err.errMsg && err.errMsg.includes('not found') || err.errMsg.includes('不存在')) {
+              errorMsg = '视频号不存在\n\n请确认视频号ID是否正确\n\n视频号ID：' + finderUserName
+            }
+            
+            // 提供备用方案：复制链接
+            uni.setClipboardData({
+              data: videoChannelUrl,
+              success: () => {
+                uni.showModal({
+                  title: '提示',
+                  content: errorMsg + '\n\n已复制视频号链接到剪贴板\n\n请在微信中粘贴链接打开',
+                  showCancel: false,
+                  confirmText: '知道了'
+                })
+              },
+              fail: () => {
+                uni.showModal({
+                  title: '提示',
+                  content: errorMsg + '\n\n请手动访问：\n' + videoChannelUrl,
+                  showCancel: false
+                })
+              }
             })
           }
         })
       } else {
-        // 如果没有配置finderUsername，提示用户
         uni.showToast({
           title: '视频号功能暂未配置',
           icon: 'none'
