@@ -27,13 +27,14 @@
     <view class="product-container">
       <!-- 左侧分类栏 -->
       <scroll-view class="category-list" scroll-y>
-        <!-- 热销分类（固定显示在最前面） -->
+        <!-- 推荐分类（固定显示在最前面） -->
         <view 
           class="category-item"
           :class="{ active: activeCategory === 100 }"
           @click="changeCategory(100)"
         >
-          热销
+          <text>推荐</text>
+          <text class="star-icon">⭐</text>
         </view>
         <!-- 其他分类 -->
         <view 
@@ -1134,12 +1135,21 @@ export default {
   padding: 20rpx;
   text-align: center;
   border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
 }
 
 .category-item.active {
   background-color: #fff;
   color: #4169E1;
   font-weight: bold;
+}
+
+.star-icon {
+  font-size: 28rpx;
+  line-height: 1;
 }
 
 .product-list {

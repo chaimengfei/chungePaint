@@ -85,15 +85,10 @@
             <image 
               class="case-image" 
               :src="caseItem.image" 
-              mode="aspectFit"
+              mode="aspectFill"
               @error="handleImageError(index)"
             />
-            <view class="case-info">
-              <text class="case-name">{{ caseItem.name }}</text>
-              <text class="case-value">{{ caseItem.completionTime }}</text>
-              <text class="case-value scene-tag" :class="caseItem.scene === '户外' ? 'scene-outdoor' : 'scene-indoor'">{{ caseItem.scene }}</text>
-              <text class="case-value case-description">{{ caseItem.description }}</text>
-            </view>
+            <view class="case-name">{{ caseItem.name }}</view>
           </view>
         </swiper-item>
       </swiper>
@@ -109,28 +104,24 @@ export default {
       cases: [
         {
           name: '燕郊永旺',
-          completionTime: '2023-06',
-          scene: '户外',
-          description: '商业综合体外墙涂装，采用高品质外墙涂料，确保长期耐候性和美观度。贸彩漆在身边，第一站：燕郊永旺！',
           image: '/static/images/cases/yongwang.jpg'
         },
         {
-          name: '北京全聚德烤鸭',
-          completionTime: '2023-09',
-          scene: '户外',
-          description: '传统建筑翻新涂装，保持古建筑风格的同时提升建筑保护性能',
+          name: '全聚德门口的招财鸭',
           image: '/static/images/cases/quanjude.jpg'
         }
       ],
       marqueeItems: [
-        '2K漆能加固化剂吗？',
-        '固化剂配比多少？',
         '拉丝效果怎么做？',
-        '工业漆的干燥时间？',
-        '如何选择合适的稀释剂？',
-        '底漆和面漆的区别？',
-        '如何防止漆面起泡？',
-        '漆膜厚度如何控制？'
+        '不锈钢怎么打好底？',
+        '评估工程用料量',
+        '面漆附着力不够怎么办？',
+        '咬合怎么处理？',
+        '如何做亮面效果,最上层喷亮油吗？',
+        '接缝处掉漆怎么补？',
+        '亚克力板喷漆前要打磨吗？',
+        '固化剂加多少？',
+        '能调怀旧风的漆吗？有没有啥方式可以做旧'
       ],
       animationDuration: '20s',
       likedItems: {}, // 存储点赞状态，格式：{ 'rowIndex-itemIndex': true }
@@ -503,7 +494,7 @@ export default {
 
 .cases-swiper {
   width: 100%;
-  height: 450rpx; /* 根据左右布局调整，减少留白 */
+  height: 700rpx;
   margin-bottom: 0;
 }
 
@@ -522,67 +513,25 @@ export default {
 
 .case-item {
   width: 100%;
-  background-color: #fff;
-  border-radius: 16rpx;
-  overflow: hidden;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  padding: 20rpx;
-  gap: 20rpx;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .case-image {
-  width: 300rpx;
-  flex-shrink: 0;
-  height: 410rpx; /* 适应swiper高度，减少留白 */
+  width: 100%;
+  height: 600rpx;
   background-color: #f0f0f0;
-  border-radius: 8rpx;
-  object-fit: contain; /* 确保图片完整显示 */
-}
-
-.case-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-  padding: 0;
+  border-radius: 16rpx;
+  object-fit: cover;
 }
 
 .case-name {
-  font-size: 32rpx;
-  font-weight: 600;
+  font-size: 28rpx;
+  font-weight: 500;
   color: #333;
-  line-height: 1.4;
-  margin-bottom: 4rpx;
-}
-
-.case-value {
-  font-size: 26rpx;
-  color: #333;
-  line-height: 1.4;
-}
-
-.scene-tag {
-  display: inline-block;
-  padding: 4rpx 16rpx;
-  border-radius: 8rpx;
-  font-size: 24rpx;
-}
-
-.scene-outdoor {
-  background-color: #e3f2fd;
-  color: #1976d2;
-}
-
-.scene-indoor {
-  background-color: #fff3e0;
-  color: #f57c00;
-}
-
-.case-description {
-  line-height: 1.8;
-  color: #666;
+  margin-top: 20rpx;
+  text-align: center;
 }
 </style>
