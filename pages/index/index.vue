@@ -3,7 +3,7 @@
     <!-- 公告栏 -->
     <view class="notice-bar">
       <text class="notice-icon">📢</text>
-      <text class="notice-text">本平台为产品展示中心，如需采购请首页联系客服</text>
+      <text class="notice-text">本平台为产品展示中心，如需采购联系 李增春13161621688</text>
     </view>
     
     <!-- 搜索框 -->
@@ -76,12 +76,12 @@
               <text class="product-unit">/ {{ product.unit }}</text>
             </view>
             <text class="price-tip">（价格可能浮动）</text>
-            <view class="product-actions">
-              <button class="action-btn add-draft-btn" @tap.stop="addToDraft(product.id)">
-                加入需求单
-              </button>
-              <button class="action-btn contact-btn" @tap.stop="contactService">
+            <view class="product-actions" @click.stop @tap.stop>
+              <button class="action-btn contact-btn" @click.stop="contactService" @tap.stop="contactService">
                 联系客服
+              </button>
+              <button class="action-btn add-draft-btn" @click.stop="addToDraft(product.id)" @tap.stop="addToDraft(product.id)">
+                加入需求单
               </button>
             </view>
           </view>
@@ -1302,12 +1302,12 @@ export default {
 }
 
 .add-draft-btn {
-  background-color: #4169E1;
-  color: #fff;
+  background-color: #e8e8e8;
+  color: #888;
 }
 
 .add-draft-btn:active {
-  background-color: #3151B8;
+  background-color: #d8d8d8;
 }
 
 .contact-btn {
