@@ -63,36 +63,6 @@
       </view>
     </view>
 
-    <!-- 企业案例展示区域 -->
-    <view class="cases-section">
-      <view class="section-title">企业案例</view>
-      <swiper 
-        class="cases-swiper" 
-        :current="currentCaseIndex"
-        @change="onCaseChange"
-        :indicator-dots="true"
-        :indicator-color="'rgba(0, 0, 0, 0.3)'"
-        :indicator-active-color="'#ff9500'"
-        :autoplay="false"
-        :circular="true"
-        :duration="300"
-      >
-        <swiper-item 
-          v-for="(caseItem, index) in cases" 
-          :key="index"
-        >
-          <view class="case-item">
-            <image 
-              class="case-image" 
-              :src="caseItem.image" 
-              mode="aspectFill"
-              @error="handleImageError(index)"
-            />
-            <view class="case-name">{{ caseItem.name }}</view>
-          </view>
-        </swiper-item>
-      </swiper>
-    </view>
 
   </view>
 </template>
@@ -101,16 +71,6 @@
 export default {
   data() {
     return {
-      cases: [
-        {
-          name: '燕郊永旺',
-          image: '/static/images/cases/yongwang.jpg'
-        },
-        {
-          name: '全聚德门口的招财鸭',
-          image: '/static/images/cases/quanjude.jpg'
-        }
-      ],
       marqueeItems: [
         '拉丝效果怎么做？',
         '不锈钢怎么打好底？',
@@ -118,14 +78,12 @@ export default {
         '面漆附着力不够怎么办？',
         '咬合怎么处理？',
         '如何做亮面效果,最上层喷亮油吗？',
-        '接缝处掉漆怎么补？',
         '亚克力板喷漆前要打磨吗？',
         '固化剂加多少？',
         '能调怀旧风的漆吗？有没有啥方式可以做旧'
       ],
       animationDuration: '20s',
       likedItems: {}, // 存储点赞状态，格式：{ 'rowIndex-itemIndex': true }
-      currentCaseIndex: 0, // 当前显示的案例索引
       videoChannelInfo: {
         name: '贸彩漆业',
         videoCount: 3,
@@ -150,14 +108,6 @@ export default {
     this.calculateAnimationDuration()
   },
   methods: {
-    handleImageError(index) {
-      // 图片加载失败时使用默认图片
-      this.cases[index].image = '/static/images/share-logo.png'
-    },
-    onCaseChange(e) {
-      // swiper切换时更新当前索引
-      this.currentCaseIndex = e.detail.current
-    },
     calculateAnimationDuration() {
       // 根据内容数量计算动画持续时间
       // 每个标签宽度约200rpx，8个标签约1600rpx，滚动速度约每秒200rpx
@@ -226,6 +176,12 @@ export default {
           fail: (err) => {
             console.error('打开视频号主页失败', err)
             
+            // 如果用户点击了取消，直接返回，不显示错误提示
+            if (err.errMsg && (err.errMsg.includes('cancel') || err.errMsg.includes('取消'))) {
+              console.log('用户取消了打开视频号')
+              return
+            }
+            
             // 如果打开失败，提供备用方案：复制链接
             const videoChannelUrl = `https://channels.weixin.qq.com/${finderUserName}`
             
@@ -281,14 +237,15 @@ export default {
 .container {
   min-height: 100vh;
   background-color: #f5f5f5;
-  padding-bottom: 20rpx;
+  padding-bottom: 10rpx; /* 减少底部留白为原来的一半 */
+  position: relative;
 }
 
 /* 企业信息区域 */
 .company-info {
   padding: 40rpx 30rpx;
   background-color: #fff3cd; /* 与产品展示页顶部公告栏背景色一致 */
-  margin-bottom: 20rpx;
+  margin-bottom: 10rpx; /* 减少与下方区域的间距为原来的一半 */
 }
 
 .company-card {
@@ -343,7 +300,7 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 10rpx 30rpx;
-  margin-top: 10rpx;
+  margin-top: 20rpx;
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -353,23 +310,23 @@ export default {
 }
 
 .video-channel-btn {
-  font-size: 28rpx;
+  font-size: 32rpx;
   color: #ff9500;
   font-weight: 500;
 }
 
 .faq-section {
-  margin: 20rpx 30rpx;
+  margin: 10rpx 30rpx; /* 减少上下边距为原来的一半 */
   background-color: #fff;
   border-radius: 12rpx;
-  padding: 30rpx 20rpx;
+  padding: 40rpx 20rpx; /* 增加内边距，让内容往下扩展 */
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .faq-title-wrapper {
   display: flex;
   align-items: center;
-  margin-bottom: 30rpx;
+  margin-bottom: 25rpx; /* 稍微减少标题下方间距，保持协调 */
 }
 
 .faq-title-bar {
@@ -389,7 +346,7 @@ export default {
 .faq-container {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 18rpx; /* 稍微减少行间距，保持协调 */
 }
 
 .faq-row {
@@ -478,60 +435,4 @@ export default {
   }
 }
 
-/* 案例展示区域 */
-.cases-section {
-  padding: 0 30rpx;
-  margin-bottom: 20rpx;
-}
-
-.section-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 30rpx;
-  padding-left: 10rpx;
-}
-
-.cases-swiper {
-  width: 100%;
-  height: 700rpx;
-  margin-bottom: 0;
-}
-
-/* 自定义指示点样式 */
-.cases-swiper ::v-deep .wx-swiper-dot {
-  width: 16rpx;
-  height: 16rpx;
-  border-radius: 50%;
-  margin: 0 8rpx;
-}
-
-.cases-swiper ::v-deep .wx-swiper-dot.wx-swiper-dot-active {
-  width: 32rpx;
-  border-radius: 8rpx;
-}
-
-.case-item {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.case-image {
-  width: 100%;
-  height: 600rpx;
-  background-color: #f0f0f0;
-  border-radius: 16rpx;
-  object-fit: cover;
-}
-
-.case-name {
-  font-size: 28rpx;
-  font-weight: 500;
-  color: #333;
-  margin-top: 20rpx;
-  text-align: center;
-}
 </style>

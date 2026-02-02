@@ -193,7 +193,7 @@ const contactService = () => {
   display: flex;
   align-items: center;
   padding: 0 30rpx;
-  padding-top: calc(env(safe-area-inset-top) + 20rpx);
+  padding-top: calc(env(safe-area-inset-top) + 30rpx);
   padding-bottom: 20rpx;
   background-color: #fff;
   position: relative;
@@ -201,23 +201,25 @@ const contactService = () => {
   z-index: 999;
 }
 .nav-back {
-  width: 80rpx;
-  height: 80rpx;
-  min-width: 80rpx;
-  min-height: 80rpx;
+  width: 100rpx;
+  height: 100rpx;
+  min-width: 100rpx;
+  min-height: 100rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   z-index: 1000;
-  padding: 20rpx;
-  margin-left: -20rpx;
+  padding: 25rpx;
+  margin-left: -25rpx;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  background-color: #f5f5f5;
+  border-radius: 50%;
 }
 .back-icon {
-  width: 40rpx;
-  height: 40rpx;
+  width: 50rpx;
+  height: 50rpx;
   pointer-events: none;
 }
 .nav-title {

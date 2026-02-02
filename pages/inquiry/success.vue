@@ -1,5 +1,11 @@
 <template>
   <view class="success-container">
+    <!-- 自定义导航栏 -->
+    <view class="nav-bar">
+      <view class="nav-back" @click.stop="navigateBack" @tap.stop="navigateBack">
+        <image src="/static/images/back.png" mode="aspectFit" class="back-icon"/>
+      </view>
+    </view>
     <view class="success-header">
       <view class="success-icon">
         <view class="icon-circle">
@@ -52,6 +58,17 @@ export default {
     }
   },
   methods: {
+    navigateBack() {
+      const pages = getCurrentPages()
+      if (pages.length > 1) {
+        uni.navigateBack()
+      } else {
+        // 如果没有上一页，跳转到首页
+        uni.switchTab({
+          url: '/pages/index/index'
+        })
+      }
+    },
     viewOrderDetail() {
       if (this.orderNo) {
         uni.redirectTo({
@@ -76,6 +93,51 @@ export default {
   background-color: #f5f5f5;
   display: flex;
   flex-direction: column;
+  padding-top: calc(env(safe-area-inset-top) + 108rpx);
+}
+
+/* 自定义导航栏 */
+.nav-bar {
+  height: 88rpx;
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 30rpx;
+  padding-top: calc(env(safe-area-inset-top) + 30rpx);
+  padding-bottom: 20rpx;
+  background-color: #fff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border-bottom: 1rpx solid #f1f1f1;
+  z-index: 999;
+  box-sizing: border-box;
+}
+
+.nav-back {
+  width: 100rpx;
+  height: 100rpx;
+  min-width: 100rpx;
+  min-height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1000;
+  padding: 25rpx;
+  margin-left: -25rpx;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+}
+
+.back-icon {
+  width: 50rpx;
+  height: 50rpx;
+  pointer-events: none;
 }
 
 .success-header {

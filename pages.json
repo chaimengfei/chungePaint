@@ -38,6 +38,13 @@
 		"navigationStyle": "custom"
 	  }
 	},
+	{
+	  "path": "pages/order/success",
+	  "style": {
+		"navigationBarTitleText": "提交成功",
+		"navigationStyle": "custom"
+	  }
+	},
     {
       "path": "pages/user/index",
       "style": {
