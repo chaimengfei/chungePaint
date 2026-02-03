@@ -5,25 +5,12 @@
       <text class="loading-tip">正在登录...</text>
     </view>
     
-    <!-- 首次登录：分步授权 -->
+    <!-- 首次登录：授权手机号 -->
     <view v-else class="auth-container">
-      <!-- 第一步：授权微信信息 -->
-      <view v-if="authStep === 'userInfo'" class="auth-step">
-        <text class="step-title">授权微信信息</text>
-        <button 
-          class="auth-btn" 
-          type="primary"
-          open-type="getUserInfo"
-          @getuserinfo="getUserInfoAuth"
-        >
-          授权微信头像和昵称
-        </button>
-      </view>
-      
-      <!-- 第二步：授权手机号 -->
-      <view v-else-if="authStep === 'phone'" class="auth-step">
-        <text class="step-title">授权手机号</text>
-        <text class="step-desc">用于接收订单通知和售后服务</text>
+      <!-- 授权手机号 -->
+      <view class="auth-step">
+        <text class="required-tip">首次登录需绑定手机号</text>
+		<text class="required-tip"></text>
         <button 
           class="auth-btn" 
           type="primary" 
@@ -32,7 +19,6 @@
         >
           授权手机号登录
         </button>
-        <text class="required-tip">首次登录需要绑定手机号</text>
       </view>
     </view>
   </view>
@@ -45,8 +31,6 @@
 	  data() {
 		return {
 		  isFirstLoginComplete: false,
-		  authStep: 'userInfo',  // 'userInfo' | 'phone'
-		  userInfo: null,  // 存储用户信息授权结果
 		  phoneAuth: null  // 存储手机号授权结果
 		}
 	  },
@@ -62,21 +46,6 @@
 	  },
 	  methods: {
 		// ========== 首次登录授权流程 ==========
-		
-		// 获取用户信息授权（微信头像和昵称）
-		getUserInfoAuth(e) {
-		  const { userInfo } = e.detail || {}
-		  if (userInfo) {
-			this.userInfo = userInfo
-			console.log('获取用户信息成功:', userInfo)
-		  } else {
-			console.warn('用户未授权用户信息，使用默认值')
-			// 即使未授权也继续，使用默认值
-			this.userInfo = null
-		  }
-		  // 进入下一步：授权手机号
-		  this.authStep = 'phone'
-		},
 		
 		// 获取手机号授权（微信原生授权）
 		getPhoneAuth(e) {
@@ -135,20 +104,9 @@
 			  console.warn('登录时未找到服务网点ID缓存，使用默认服务网点')
 			}
 
-			// 处理用户信息
-			let nickname = '微信用户'
-			let avatar = '/static/images/default-avatar.png'
-			
-			if (this.userInfo) {
-			  nickname = this.userInfo.nickName || nickname
-			  avatar = this.userInfo.avatarUrl || avatar
-			}
-			
-			// 验证和处理头像URL
-			let finalAvatar = avatar
-			if (!avatar || !avatar.startsWith('http')) {
-			  finalAvatar = '/static/images/default-avatar.png'
-			}
+			// 使用默认用户信息（头像和昵称在"我的"页面手动修改）
+			const nickname = '微信用户'
+			const finalAvatar = '/static/images/default-avatar.png'
 
 			// 构建登录数据（使用service_point_id替代latitude和longitude）
 			const loginData = {
@@ -324,14 +282,6 @@
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
-.step-title {
-  display: block;
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 20rpx;
-  text-align: center;
-}
 
 .step-desc {
   display: block;
