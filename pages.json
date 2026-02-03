@@ -45,6 +45,13 @@
 		"navigationStyle": "custom"
 	  }
 	},
+	{
+	  "path": "pages/product/detail",
+	  "style": {
+		"navigationBarTitleText": "产品详情",
+		"navigationStyle": "custom"
+	  }
+	},
     {
       "path": "pages/user/index",
       "style": {
@@ -85,7 +92,7 @@
       },
       {
         "pagePath": "pages/index/index",
-        "text": "看看",
+        "text": "产品",
         "iconPath": "static/tabbar/product_unselected.png",
         "selectedIconPath": "static/tabbar/product_selected.png"
       },

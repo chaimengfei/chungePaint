@@ -576,17 +576,17 @@ export default {
     
     // 处理商品点击
     handleProductClick(product) {
-      uni.showActionSheet({
-        itemList: ['查看详情', '联系客服'],
-        success: (res) => {
-          if (res.tapIndex === 0) {
-            // 查看详情 - 显示商品详细信息
-            this.showProductDetail(product)
-          } else if (res.tapIndex === 1) {
-            // 联系客服
-            showContactService()
-          }
-        }
+      // 跳转到商品详情页
+      const productData = encodeURIComponent(JSON.stringify({
+        id: product.id,
+        name: product.name,
+        image: product.image,
+        specification: product.specification || '',
+        reference_price: product.reference_price,
+        unit: product.unit
+      }))
+      uni.navigateTo({
+        url: `/pages/product/detail?product=${productData}`
       })
     },
     
