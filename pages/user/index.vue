@@ -1,13 +1,37 @@
 <template>
   <view class="content">
     <view class="user-header">
+      <!-- 使用微信官方 chooseAvatar 组件获取头像 -->
+      <button 
+        v-if="isLogin" 
+        class="avatar-button" 
+        open-type="chooseAvatar"
+        @chooseavatar="onChooseAvatar"
+      >
+        <image 
+          class="avatar" 
+          :src="userInfo.avatar ? userInfo.avatar : '/static/images/default-avatar.png'"
+          mode="aspectFill"
+        ></image>
+      </button>
       <image 
+        v-else
         class="avatar" 
-        :src="isLogin && userInfo.avatar ? userInfo.avatar : '/static/images/default-avatar.png'"
+        src="/static/images/default-avatar.png"
         mode="aspectFill"
         @click="handleAvatarClick"
       ></image>
-      <text class="username" @click="handleUsernameClick">{{ isLogin && userInfo.nickname ? userInfo.nickname : '微信用户' }}</text>
+      <!-- 使用微信官方 nickname 组件获取昵称 -->
+      <input 
+        v-if="isLogin"
+        class="username-input"
+        type="nickname"
+        :value="userInfo.nickname || '微信用户'"
+        placeholder="微信用户"
+        @blur="onNicknameBlur"
+        @confirm="onNicknameConfirm"
+      />
+      <text v-else class="username" @click="handleUsernameClick">{{ '微信用户' }}</text>
       <text class="welcome-text">欢迎 如需采购请联系客服</text>
       <button v-if="!isLogin" class="login-btn" @click="goLogin">登录/注册</button>
     </view>
@@ -188,7 +212,7 @@ export default {
       })
     },
     
-    // 点击头像
+    // 点击头像（未登录时）
     handleAvatarClick() {
       if (!this.isLogin) {
         uni.showToast({
@@ -197,40 +221,16 @@ export default {
         })
         return
       }
-      
-      uni.showActionSheet({
-        itemList: ['获取微信头像', '从相册选择'],
-        success: (res) => {
-          if (res.tapIndex === 0) {
-            // 获取微信头像
-            this.getWechatAvatar()
-          } else if (res.tapIndex === 1) {
-            // 从相册选择
-            this.chooseImageFromAlbum()
-          }
-        }
-      })
     },
     
-    // 获取微信头像
-    getWechatAvatar() {
-      uni.getUserProfile({
-        desc: '用于完善用户资料',
-        success: (res) => {
-          console.log('获取微信头像成功:', res)
-          const avatarUrl = res.userInfo.avatarUrl
-          if (avatarUrl) {
-            this.updateUserAvatar(avatarUrl)
-          }
-        },
-        fail: (err) => {
-          console.error('获取微信头像失败:', err)
-          uni.showToast({
-            title: '获取微信头像失败',
-            icon: 'none'
-          })
-        }
-      })
+    // 微信官方 chooseAvatar 事件处理
+    onChooseAvatar(e) {
+      console.log('选择头像成功:', e)
+      const avatarUrl = e.detail.avatarUrl
+      if (avatarUrl) {
+        // 直接使用微信返回的头像URL，调用后端接口更新
+        this.updateUserAvatar(avatarUrl)
+      }
     },
     
     // 从相册选择图片
@@ -313,7 +313,7 @@ export default {
       }
     },
     
-    // 点击用户名
+    // 点击用户名（未登录时）
     handleUsernameClick() {
       if (!this.isLogin) {
         uni.showToast({
@@ -322,91 +322,41 @@ export default {
         })
         return
       }
-      
-      uni.showActionSheet({
-        itemList: ['获取微信昵称', '自定义昵称'],
-        success: (res) => {
-          if (res.tapIndex === 0) {
-            // 获取微信昵称
-            this.getWechatNickname()
-          } else if (res.tapIndex === 1) {
-            // 自定义昵称
-            this.setCustomNickname()
-          }
-        }
-      })
     },
     
-    // 获取微信昵称
-    getWechatNickname() {
-      uni.getUserProfile({
-        desc: '用于完善用户资料',
-        success: (res) => {
-          console.log('获取微信账户名成功:', res)
-          const nickname = res.userInfo.nickName
-          if (nickname) {
-            // 显示确认对话框，让用户查看并确认微信昵称
-            uni.showModal({
-              title: '微信昵称',
-              content: nickname,
-              editable: true,
-              placeholderText: nickname,
-              confirmText: '使用',
-              cancelText: '取消',
-              success: (modalRes) => {
-                if (modalRes.confirm) {
-                  // 用户确认使用，可以使用编辑后的昵称或原昵称
-                  const finalNickname = modalRes.content?.trim() || nickname
-                  if (finalNickname.length > 20) {
-                    uni.showToast({
-                      title: '昵称不能超过20个字符',
-                      icon: 'none'
-      })
-                    return
-                  }
-                  this.updateUserNickname(finalNickname)
-                }
-              }
-            })
-          }
-        },
-        fail: (err) => {
-          console.error('获取微信账户名失败:', err)
-          uni.showToast({
-            title: '获取微信账户名失败',
-            icon: 'none'
-          })
-        }
-      })
+    // 微信官方 nickname 输入框失去焦点事件
+    onNicknameBlur(e) {
+      const nickname = e.detail.value?.trim()
+      if (nickname && nickname !== this.userInfo.nickname) {
+        this.validateAndUpdateNickname(nickname)
+      }
     },
     
-    // 自定义昵称
-    setCustomNickname() {
-      uni.showModal({
-        title: '自定义昵称',
-        editable: true,
-        placeholderText: '请输入昵称',
-        success: (res) => {
-          if (res.confirm) {
-            const nickname = res.content?.trim()
-            if (!nickname) {
-              uni.showToast({
-                title: '昵称不能为空',
-                icon: 'none'
-              })
-              return
-            }
-            if (nickname.length > 20) {
-              uni.showToast({
-                title: '昵称不能超过20个字符',
-                icon: 'none'
-              })
-              return
-            }
-            this.updateUserNickname(nickname)
-          }
-        }
-      })
+    // 微信官方 nickname 输入框确认事件
+    onNicknameConfirm(e) {
+      const nickname = e.detail.value?.trim()
+      if (nickname && nickname !== this.userInfo.nickname) {
+        this.validateAndUpdateNickname(nickname)
+      }
+    },
+    
+    // 验证并更新昵称
+    validateAndUpdateNickname(nickname) {
+      if (!nickname) {
+        uni.showToast({
+          title: '昵称不能为空',
+          icon: 'none'
+        })
+        return
+      }
+      if (nickname.length > 20) {
+        uni.showToast({
+          title: '昵称不能超过20个字符',
+          icon: 'none'
+        })
+        return
+      }
+      this.updateUserNickname(nickname)
     },
     
     // 更新用户昵称
@@ -464,12 +414,26 @@ export default {
   color: white;
 }
 
+.avatar-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  display: inline-block;
+}
+
+.avatar-button::after {
+  border: none;
+}
+
 .avatar {
   width: 120rpx;
   height: 120rpx;
   border-radius: 50%;
   border: 4rpx solid rgba(255,255,255,0.3);
   margin-right: 30rpx;
+  display: block;
 }
 
 .username {
@@ -477,6 +441,24 @@ export default {
   font-weight: bold;
   margin-top: 20rpx;
   margin-bottom: 10rpx;
+}
+
+.username-input {
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-top: 20rpx;
+  margin-bottom: 10rpx;
+  color: white;
+  text-align: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: auto;
+  min-width: 200rpx;
+}
+
+.username-input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .welcome-text {
