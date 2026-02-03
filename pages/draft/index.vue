@@ -11,7 +11,7 @@
 		
 		<!-- 需求单列表 -->
 		<view v-if="draftItems.length > 0">
-			<view v-for="item in draftItems" :key="item.id" class="cart-item" :class="{ 'disabled-item': !item.can_purchase }">
+			<view v-for="item in draftItems" :key="item.id" class="draft-item" :class="{ 'disabled-item': !item.can_purchase }">
 				<view class="item-left">
 					<checkbox :checked="item.selected" @click="toggleSelect(item)" :disabled="!item.can_purchase" />
 					<image class="product-image" :src="item.product_image" mode="aspectFill" />
@@ -181,8 +181,8 @@
 							})
 						}
 
-						// 更新底部需求单徽标
-						this.updateCartBadge()
+					// 更新底部需求单徽标
+					this.updateDraftBadge()
 					}
 				} catch (err) {
 					uni.showToast({
@@ -193,7 +193,7 @@
 			},
 
 			// 更新需求单徽标
-			updateCartBadge() {
+			updateDraftBadge() {
 				try {
 					// 显示需求单中不同商品的数量（商品种类数）
 					const uniqueItemCount = this.draftItems.length
@@ -363,7 +363,7 @@
 					console.log('更新需求单数量响应:', res.data)
 					if (res.data.code === 0) {
 						item.quantity = newQuantity
-						this.updateCartBadge()
+						this.updateDraftBadge()
 						console.log('需求单数量更新成功，当前数量:', item.quantity)
 					} else if (res.data.code === -1) {
 						// 显示业务错误信息，并恢复原值
@@ -406,7 +406,7 @@
 					const res = await deleteDraftItem(item.id)
 					if (res.data.code === 0) {
 						this.draftItems = this.draftItems.filter(draftItem => draftItem.id !== item.id)
-						this.updateCartBadge()
+						this.updateDraftBadge()
 						uni.showToast({
 							title: '删除成功',
 							icon: 'success'
@@ -460,7 +460,7 @@
 	}
 
 
-	.cart-item {
+	.draft-item {
 		display: flex;
 		padding: 20rpx;
 		margin: 20rpx;

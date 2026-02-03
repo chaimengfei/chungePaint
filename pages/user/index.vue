@@ -30,7 +30,7 @@
         <text class="label">客服电话：13161621688</text>
       </view>
       <view class="menu-item contact-info">
-        <text class="label">工作时间：7:30-20:00</text>
+        <text class="label">营业时间：7:30-20:00</text>
       </view>
     </view>
   </view>

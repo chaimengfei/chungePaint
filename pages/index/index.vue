@@ -520,7 +520,7 @@ export default {
     },
     
     // 添加商品到需求单
-    async addToCart(productId) {
+    async addToDraft(productId) {
       try {
         console.log('首页 - 开始添加商品到需求单，商品ID:', productId)
         
@@ -545,7 +545,7 @@ export default {
           })
           
           // 更新底部需求单徽标
-          this.updateCartBadge()
+          this.updateDraftBadge()
           
           // 延迟跳转到需求单页面，让用户看到提示
           setTimeout(() => {
@@ -588,11 +588,6 @@ export default {
       uni.navigateTo({
         url: `/pages/product/detail?product=${productData}`
       })
-    },
-    
-    // 添加到需求单
-    async addToDraft(productId) {
-      await this.addToCart(productId)
     },
     
     // 联系客服
@@ -669,7 +664,7 @@ export default {
     },
     
     // 更新需求单徽标
-    async updateCartBadge() {
+    async updateDraftBadge() {
       // 只有在已登录状态下才更新需求单徽标
       if (!this.isLogin) {
         console.log('用户未登录，跳过需求单徽标更新')

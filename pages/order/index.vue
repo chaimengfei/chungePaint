@@ -27,7 +27,7 @@
             <view v-if="order.items && order.items.length > 0">
               <!-- 只显示前2个商品 -->
               <view v-for="item in getDisplayItems(order.items)" :key="item.id" class="order-product">
-                <image class="product-image" :src="item.product_image || '/static/images/empty-cart.png'" mode="aspectFill" />
+                <image class="product-image" :src="item.product_image || '/static/images/empty-inquiry.png'" mode="aspectFill" />
               <view class="product-info">
                 <text class="product-name">{{ item.product_name }}</text>
                   <view class="price-quantity">

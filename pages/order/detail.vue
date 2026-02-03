@@ -21,7 +21,7 @@
       <view class="product-list">
         <view class="section-title">商品信息</view>
         <view v-for="item in order.items" :key="item.id" class="product-item">
-          <image class="product-image" :src="item.product_image || '/static/images/empty-cart.png'" mode="aspectFill"/>
+          <image class="product-image" :src="item.product_image || '/static/images/empty-inquiry.png'" mode="aspectFill"/>
           <view class="product-info">
             <text class="product-name">{{ item.product_name }}</text>
             <text v-if="item.specification" class="product-spec">{{ item.specification }}</text>
