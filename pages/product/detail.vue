@@ -233,7 +233,7 @@ export default {
 }
 
 .product-name {
-  font-size: 36rpx;
+  font-size: 48rpx;
   font-weight: bold;
   color: #333;
   line-height: 1.5;

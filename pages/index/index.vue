@@ -1209,7 +1209,7 @@ export default {
 }
 
 .product-name {
-  font-size: 28rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: #333;
   display: -webkit-box;
@@ -1219,7 +1219,7 @@ export default {
 }
 
 .product-specification {
-  font-size: 22rpx;
+  font-size: 26rpx;
   color: #999;
   margin-left: 8rpx;
   font-weight: normal;
@@ -1257,14 +1257,14 @@ export default {
 }
 
 .price-label {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #666;
   margin-right: 4rpx;
 }
 
 .product-price {
   color: #e93b3d;
-  font-size: 28rpx;
+  font-size: 32rpx;
   font-weight: bold;
   margin-right: 4rpx;
 }
