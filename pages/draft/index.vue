@@ -11,9 +11,9 @@
 		
 		<!-- 需求单列表 -->
 		<view v-if="draftItems.length > 0">
-			<view v-for="item in draftItems" :key="item.id" class="draft-item" :class="{ 'disabled-item': !item.can_purchase }">
+			<view v-for="item in draftItems" :key="item.id" class="draft-item">
 				<view class="item-left">
-					<checkbox :checked="item.selected" @click="toggleSelect(item)" :disabled="!item.can_purchase" />
+					<checkbox :checked="item.selected" @click="toggleSelect(item)" />
 					<image class="product-image" :src="item.product_image" mode="aspectFill" />
 				</view>
 				<view class="item-right">
@@ -27,22 +27,16 @@
 						<text class="product-unit">/ {{ item.product_unit }}</text>
 					</view>
 					
-					<!-- 不可购买商品的提示信息 -->
-					<view v-if="!item.can_purchase && item.message" class="product-message">
-						<text class="message-text">{{ item.message }}</text>
-					</view>
-					
 					<view class="quantity-control">
-						<button class="btn-minus" @click="changeQuantity(item, -1)" :disabled="!item.can_purchase">-</button>
+						<button class="btn-minus" @click="changeQuantity(item, -1)">-</button>
 						<input 
 							class="quantity-input" 
 							type="number" 
 							:value="item.quantity" 
 							@blur="onQuantityInputBlur(item, $event)"
 							@input="onQuantityInput(item, $event)"
-							:disabled="!item.can_purchase"
 						/>
-						<button class="btn-plus" @click="changeQuantity(item, 1)" :disabled="!item.can_purchase">+</button>
+						<button class="btn-plus" @click="changeQuantity(item, 1)">+</button>
 					</view>
 					<button class="delete-btn" @click="deleteItem(item)">删除</button>
 				</view>
@@ -123,37 +117,32 @@
 			this.loadDraftData()
 		},
 		computed: {
-			// 可购买的商品列表
-			purchasableItems() {
-				return this.draftItems.filter(item => item.can_purchase)
-			},
-			// 是否全选（只考虑可购买的商品）
+			// 是否全选
 			isAllSelected() {
-				return this.purchasableItems.length > 0 && this.purchasableItems.every(item => item.selected)
+				return this.draftItems.length > 0 && this.draftItems.every(item => item.selected)
 			},
 			// 选中商品总价
 			totalPrice() {
 				return this.draftItems
-					.filter(item => item.selected && item.can_purchase)
+					.filter(item => item.selected)
 					.reduce((total, item) => total + (item.product_reference_price || 0) * item.quantity, 0)
 					.toFixed(2)
 			},
 			// 选中商品数量
 			selectedCount() {
-				const count = this.draftItems.filter(item => item.selected && item.can_purchase).length
+				const count = this.draftItems.filter(item => item.selected).length
 				console.log('[需求单页面] selectedCount 计算 - draftItems:', this.draftItems.length, '选中数量:', count)
-				console.log('[需求单页面] selectedCount 计算 - 选中的商品:', this.draftItems.filter(item => item.selected && item.can_purchase).map(item => ({
+				console.log('[需求单页面] selectedCount 计算 - 选中的商品:', this.draftItems.filter(item => item.selected).map(item => ({
 					id: item.id,
 					name: item.product_name,
-					selected: item.selected,
-					can_purchase: item.can_purchase
+					selected: item.selected
 				})))
 				return count
 			},
 			// 选中的需求单ID数组
 			selectedDraftIds() {
 				return this.draftItems
-					.filter(item => item.selected && item.can_purchase)
+					.filter(item => item.selected)
 					.map(item => item.id)
 			}
 		},
@@ -174,9 +163,7 @@
 								return {
 									...item,
 									product_specification: spec, // 确保规格字段存在
-									selected: item.selected === true || item.selected === 1,
-									// 根据 product_availability 判断是否可以购买（0表示可用）
-									can_purchase: item.product_availability === 0 || item.can_purchase !== false
+									selected: item.selected === true || item.selected === 1
 								}
 							})
 						}
@@ -281,14 +268,6 @@
 
 			// 切换商品选中状态
 			toggleSelect(item) {
-				// 如果商品不可购买，禁止选中
-				if (!item.can_purchase) {
-					uni.showToast({
-						title: item.message || '该商品暂时不可购买',
-						icon: 'none'
-					})
-					return
-				}
 				item.selected = !item.selected
 			},
 
@@ -296,24 +275,12 @@
 			toggleSelectAll() {
 				const newSelectStatus = !this.isAllSelected
 				this.draftItems.forEach(item => {
-					// 只对可购买的商品进行选中操作
-					if (item.can_purchase) {
-						item.selected = newSelectStatus
-					}
+					item.selected = newSelectStatus
 				})
 			},
 
 			// 修改商品数量（通过按钮）
 			async changeQuantity(item, change) {
-				// 如果商品不可购买，禁止修改数量
-				if (!item.can_purchase) {
-					uni.showToast({
-						title: item.message || '该商品暂时不可购买',
-						icon: 'none'
-					})
-					return
-				}
-				
 				const newQuantity = item.quantity + change
 				if (newQuantity < 1) return
 
@@ -332,13 +299,6 @@
 
 			// 输入框失去焦点事件（提交到后端）
 			async onQuantityInputBlur(item, event) {
-				// 如果商品不可购买，禁止修改数量
-				if (!item.can_purchase) {
-					// 重新加载需求单数据以恢复正确的数量
-					this.loadDraftData()
-					return
-				}
-
 				let newQuantity = parseFloat(event.detail.value) || 1
 				// 确保数量至少为1
 				if (newQuantity < 1) {
@@ -469,22 +429,6 @@
 		box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 	}
 
-	/* 不可购买商品的置灰样式 */
-	.disabled-item {
-		opacity: 0.6;
-		background-color: #f5f5f5;
-	}
-
-	.disabled-item .product-name,
-	.disabled-item .product-price,
-	.disabled-item .product-unit {
-		color: #999;
-	}
-
-	.disabled-item .product-image {
-		filter: grayscale(100%);
-	}
-
 	.item-left {
 		display: flex;
 		align-items: center;
@@ -538,21 +482,6 @@
 		font-size: 22rpx;
 		color: #333;
 		margin-left: 0;
-	}
-
-	/* 商品提示信息样式 */
-	.product-message {
-		margin-bottom: 15rpx;
-		padding: 8rpx 12rpx;
-		background-color: #fff2e8;
-		border-radius: 6rpx;
-		border-left: 4rpx solid #ff6b35;
-	}
-
-	.message-text {
-		font-size: 24rpx;
-		color: #ff6b35;
-		line-height: 1.4;
 	}
 
 	.quantity-control {
