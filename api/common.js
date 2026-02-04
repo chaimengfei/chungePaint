@@ -19,7 +19,7 @@ const ENV_CONFIG = {
 }
 
 // 当前环境设置 (dev/test/prod)
-const CURRENT_ENV = 'dev' // 修改这里来切换环境
+const CURRENT_ENV = 'test' // 修改这里来切换环境
 
 // 获取当前环境配置
 const currentConfig = ENV_CONFIG[CURRENT_ENV]

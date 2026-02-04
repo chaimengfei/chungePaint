@@ -34,8 +34,49 @@ export default {
         uni.removeStorageSync('env') // 清除旧的环境标识
         console.log('环境已切换，已清除登录相关缓存，需要重新登录')
       } else if (!storedEnv) {
-        // 首次运行，没有存储环境标识，这是正常的
-        console.log('首次运行，未检测到环境标识')
+        // 检查是否有旧版本的 token（有 token 但没有环境标识）
+        const token = uni.getStorageSync('token')
+        if (token) {
+          // 检测到旧版本登录（有 token 但没有环境标识）
+          console.warn('检测到旧版本 token（无环境标识），清除登录数据')
+          
+          // 先检查是否之前登录过（在清除之前检查）
+          const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
+          
+          // 清除登录数据
+          uni.removeStorageSync('token')
+          uni.removeStorageSync('userInfo')
+          uni.removeStorageSync('hasStoredUserInfo')
+          
+          // 提示用户重新登录
+          uni.showModal({
+            title: hasStoredUserInfo ? '登录已过期' : '提示',
+            content: hasStoredUserInfo 
+              ? '检测到旧版本登录信息，需要重新登录' 
+              : '检测到旧版本登录信息，需要重新登录',
+            confirmText: '去登录',
+            cancelText: '稍后',
+            showCancel: true,
+            success: (res) => {
+              if (res.confirm) {
+                // 用户确认，跳转到登录页
+                uni.navigateTo({
+                  url: '/pages/user/login'
+                })
+              } else {
+                // 用户取消，显示提示
+                uni.showToast({
+                  title: '部分功能需要登录后使用',
+                  icon: 'none',
+                  duration: 2000
+                })
+              }
+            }
+          })
+        } else {
+          // 真正的首次运行
+          console.log('首次运行，未检测到环境标识')
+        }
       } else {
         // 环境一致
         console.log('环境一致，无需清除缓存')
