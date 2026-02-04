@@ -8,7 +8,7 @@ const ENV_CONFIG = {
   },
   // 测试环境 - 微信云托管
   test: {
-    BASE_URL: 'https://paint-proj-test-191125-4-1363297976.sh.run.tcloudbase.com',
+    BASE_URL: 'https://paint-mini-test-223759-8-1401997820.sh.run.tcloudbase.com',
     name: '测试环境'
   },
   // 生产环境 - 正式环境

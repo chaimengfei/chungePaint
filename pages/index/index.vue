@@ -106,7 +106,7 @@
 import { getProductList } from '@/api/product.js'
 import { addToDraft as addToDraftApi, getDraftList } from '@/api/draft.js'
 import { goLogin } from '@/api/user.js'
-import { getNearestShop, isServicePointIdExpired, showContactService } from '@/api/common.js'
+import { getNearestShop, isServicePointIdExpired, showContactService, ENV_INFO } from '@/api/common.js'
 
 export default {
   data() {
@@ -362,6 +362,8 @@ export default {
           uni.setStorageSync('token', token)
           uni.setStorageSync('userInfo', user_info)
           uni.setStorageSync('hasStoredUserInfo', true)
+          // 存储当前环境标识
+          uni.setStorageSync('env', ENV_INFO.env)
           
           // 登录成功后，清除servicePointIdCache（因为后端已经有了用户的服务网点信息）
           // 以后登录只需要传code，不需要传shop_id

@@ -150,7 +150,7 @@ onShareAppMessage(() => {
   return {
     title: `询价详情 - ${order.value.order_no || ''}`,
     desc: `询价单号：${order.value.order_no || ''}`,
-    path: `/pages/order/detail?inquiry_no=${order.value.order_no || ''}`,
+    path: `/pages/inquiry/detail?inquiry_no=${order.value.order_no || ''}`,
     imageUrl: '' // 可选：分享卡片图片
   }
 })

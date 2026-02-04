@@ -81,12 +81,12 @@ export default {
       if (this.orderNo) {
         // 跳转到询价详情页
         uni.redirectTo({
-          url: `/pages/order/detail?inquiry_no=${this.orderNo}`
+          url: `/pages/inquiry/detail?inquiry_no=${this.orderNo}`
         })
       } else {
         // 如果没有询价单号，跳转到询价列表
         uni.navigateTo({
-          url: '/pages/order/index'
+          url: '/pages/inquiry/index'
         })
       }
     },
