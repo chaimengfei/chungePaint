@@ -464,6 +464,7 @@ export default {
 .welcome-text {
   font-size: 24rpx;
   opacity: 0.9;
+  margin-top: 20rpx;
   margin-bottom: 20rpx;
 }
 
