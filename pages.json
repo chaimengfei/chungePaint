@@ -39,13 +39,6 @@
 	  }
 	},
 	{
-	  "path": "pages/order/success",
-	  "style": {
-		"navigationBarTitleText": "提交成功",
-		"navigationStyle": "custom"
-	  }
-	},
-	{
 	  "path": "pages/product/detail",
 	  "style": {
 		"navigationBarTitleText": "产品详情",
