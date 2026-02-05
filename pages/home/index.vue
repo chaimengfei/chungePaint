@@ -162,23 +162,15 @@ export default {
           return
         }
         
-        console.log('准备打开视频号主页，视频号ID:', finderUserName)
-        
         // 使用 wx.openChannelsUserProfile 打开视频号主页
         // 从基础库 2.21.2 开始支持
         // 根据官方文档：finderUserName 代表视频号ID
         // 查看路径：微信客户端->我tab->视频号->右上角->视频号名字-视频号ID
         wx.openChannelsUserProfile({
           finderUserName: finderUserName, // 视频号ID（必填）
-          success: (res) => {
-            console.log('打开视频号主页成功', res)
-          },
           fail: (err) => {
-            console.error('打开视频号主页失败', err)
-            
             // 如果用户点击了取消，直接返回，不显示错误提示
             if (err.errMsg && (err.errMsg.includes('cancel') || err.errMsg.includes('取消'))) {
-              console.log('用户取消了打开视频号')
               return
             }
             

@@ -146,8 +146,6 @@ export default {
       if (this.loading || !this.hasMore) return
       
       this.loading = true
-      const startTime = Date.now()
-      console.log(`[询价列表] 开始加载 - 页码: ${this.page}`)
       
       try {
         const params = {
@@ -155,16 +153,9 @@ export default {
           page_size: this.pageSize
         }
         
-        const requestStartTime = Date.now()
         const res = await getInquiryList(params)
-        const requestEndTime = Date.now()
-        const requestDuration = requestEndTime - requestStartTime
-        
-        console.log(`[询价列表] API请求耗时: ${requestDuration}ms`)
-        console.log(`[询价列表] API返回数据量: ${res.data?.list?.length || 0} 条`)
         
         if (res.code === 0) {
-          const processStartTime = Date.now()
           const newInquirys = res.data.list || []
           
           const mappedInquirys = newInquirys.map(inquiry => ({
@@ -197,12 +188,6 @@ export default {
           }
           this.hasMore = newInquirys.length >= this.pageSize
           this.page++
-          const processEndTime = Date.now()
-          const processDuration = processEndTime - processStartTime
-          
-          const totalDuration = Date.now() - startTime
-          console.log(`[询价列表] 数据处理耗时: ${processDuration}ms`)
-          console.log(`[询价列表] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
         } else {
           uni.showToast({
             title: res.message || '获取询价列表失败',
@@ -210,8 +195,6 @@ export default {
           })
         }
       } catch (err) {
-        const totalDuration = Date.now() - startTime
-        console.error(`[询价列表] 获取询价失败 (总耗时: ${totalDuration}ms):`, err)
         uni.showToast({
           title: err.message || '获取询价列表失败',
           icon: 'none'

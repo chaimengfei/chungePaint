@@ -15,7 +15,6 @@ function parseProductListResponse(res, isLoggedIn) {
   // 只针对 401 状态码进行特殊处理（引导重新登录）
   if (res.statusCode === 401) {
     // 清除本地存储
-    console.log('[商品列表] 401状态码，清除本地token')
     uni.removeStorageSync('token')
     uni.removeStorageSync('userInfo')
     
@@ -94,7 +93,6 @@ export const getProductList = (options = {}) => {
     params.page_size = pageSize
     
     // 统一使用get函数，后端根据Authorization自动判断（已登录用户）或使用默认逻辑（未登录用户）
-    console.log('[商品列表] 调用API（不传service_point_id，后端处理）')
     get('/api/product/list', params, isLoggedIn)
       .then(res => {
         try {
@@ -105,7 +103,6 @@ export const getProductList = (options = {}) => {
         }
       })
       .catch(err => {
-        console.error('[商品列表] API请求失败:', err)
         reject(err)
       })
   })

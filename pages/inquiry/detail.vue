@@ -90,14 +90,10 @@ const loadInquiryData = async (inquiryNo) => {
     const res = await getInquiryDetail(inquiryNo)
     if (res.code === 0) {
       const inquiryData = res.data
-      console.log('询价详情数据:', inquiryData)
-      console.log('商品项数据:', inquiryData.items)
       order.value = {
         items: inquiryData.items.map(item => {
-          console.log('处理商品项:', item)
           // 尝试多种可能的规格字段名
           const spec = item.product_specification || item.specification || item.spec || null
-          console.log('规格值:', spec)
           return {
             id: item.id,
             product_id: item.product_id,

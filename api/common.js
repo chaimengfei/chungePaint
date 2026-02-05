@@ -62,11 +62,7 @@ export function showContactService(phoneNumber = '131-6162-1688') {
         // 点击呼叫手机号，直接拨打电话
         uni.makePhoneCall({
           phoneNumber: phoneNumberWithoutDash,
-          success: () => {
-            console.log('拨打电话成功')
-          },
           fail: (err) => {
-            console.error('拨打电话失败:', err)
             uni.showToast({
               title: '拨打电话失败',
               icon: 'none'
@@ -91,9 +87,6 @@ export function showContactService(phoneNumber = '131-6162-1688') {
           }
         })
       }
-    },
-    fail: (err) => {
-      console.error('显示操作菜单失败:', err)
     }
   })
 }

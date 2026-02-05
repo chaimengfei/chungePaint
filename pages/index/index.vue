@@ -147,7 +147,6 @@ export default {
       
       // 如果之前未登录，或者商品列表为空，则加载商品数据
       if (!wasLogin || !this.currentProducts || this.currentProducts.length === 0) {
-        console.log('检测到用户已登录，加载商品数据')
         // 已登录用户，使用热销分类
         this.fetchData(100, 1)
       }
@@ -159,7 +158,6 @@ export default {
       }
       // 未登录时，如果商品列表为空，尝试加载
       if (!this.currentProducts || this.currentProducts.length === 0) {
-        console.log('用户未登录，加载商品数据')
         this.fetchData(100, 1)
       }
     }
@@ -193,16 +191,13 @@ export default {
           // 已登录，直接加载商品数据（后端根据Authorization自动返回对应店铺的商品）
           this.isLogin = true
           this.userInfo = userInfo
-          console.log('用户已登录，直接加载商品数据')
           // 已登录用户，使用热销分类（category_id=100）
           await this.fetchData(100, 1)
         } else {
           // 未登录，直接加载商品数据
-          console.log('用户未登录，加载商品数据')
           await this.fetchData(100, 1)
         }
       } catch (error) {
-        console.error('页面初始化失败:', error)
         // 即使获取位置失败，也尝试加载商品数据
         // 检查是否有token，如果有则按已登录处理
         const fallbackToken = uni.getStorageSync('token')
@@ -220,8 +215,6 @@ export default {
     // 自动登录（非首次登录时使用）
     async autoLogin() {
       try {
-        console.log('开始自动登录流程...')
-        
         // 1. 获取微信登录code
         const loginRes = await new Promise((resolve, reject) => {
           uni.login({
@@ -232,7 +225,6 @@ export default {
 
         const code = loginRes.code
         if (!code) {
-          console.error('无法获取微信登录code')
           return false
         }
 
@@ -241,7 +233,6 @@ export default {
           code: code
         }
 
-        console.log('调用登录接口，数据:', loginData)
         const loginApiRes = await goLogin(loginData)
         
         if (loginApiRes.data.code === 0) {
@@ -279,23 +270,16 @@ export default {
           this.isLogin = true
           this.userInfo = user_info
           
-          console.log('自动登录成功:', user_info)
-          
           return true
         } else {
-          console.error('登录接口返回错误:', loginApiRes.data?.message || '未知错误')
           return false
         }
       } catch (err) {
-        console.error('自动登录失败:', err)
         return false
       }
     },
     
     async fetchData(categoryId = null, page = 1) {
-      const startTime = Date.now()
-      console.log(`[商品列表] 开始加载 - 页码: ${page}, 分类ID: ${categoryId}`)
-      
       try {
         this.isLoading = true
         
@@ -303,7 +287,6 @@ export default {
         // 确定分类ID：优先使用传入的categoryId，否则使用当前选中的分类，默认使用热销分类(100)
         const finalCategoryId = categoryId !== null ? categoryId : (this.activeCategory || 100)
         
-        const requestStartTime = Date.now()
         const res = await getProductList({
           searchName: '',
           shopId: null, // 不传shopId，后端处理
@@ -311,13 +294,6 @@ export default {
           page: page,
           pageSize: this.pageSize
         })
-        const requestEndTime = Date.now()
-        const requestDuration = requestEndTime - requestStartTime
-        
-        console.log(`[商品列表] API请求耗时: ${requestDuration}ms`)
-        console.log(`[商品列表] API返回数据量: 分类${res.categories?.length || 0}个, 商品${res.products?.length || 0}条`)
-        
-        const processStartTime = Date.now()
         
         // 新接口返回结构: {categories: [], products: [], has_more, total, page, page_size, current_category}
         this.categories = res.categories || []
@@ -347,16 +323,7 @@ export default {
           this.activeCategory = 100 // 默认显示热销分类
         }
         
-        const processEndTime = Date.now()
-        const processDuration = processEndTime - processStartTime
-        const totalDuration = Date.now() - startTime
-        
-        console.log(`[商品列表] 数据处理耗时: ${processDuration}ms`)
-        console.log(`[商品列表] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
-        
       } catch (err) {
-        const totalDuration = Date.now() - startTime
-        console.error(`[商品列表] 加载商品数据失败 (总耗时: ${totalDuration}ms):`, err)
         
         // 获取错误信息
         const errorMessage = err.message || '数据加载失败'
@@ -420,21 +387,16 @@ export default {
     // 添加商品到需求单
     async addToDraft(productId) {
       try {
-        console.log('首页 - 开始添加商品到需求单，商品ID:', productId)
-        
         // 检查登录状态，如果未登录则跳转到登录页
         const token = uni.getStorageSync('token')
         if (!token) {
-          console.log('首页 - 用户未登录，跳转到登录页')
           uni.navigateTo({
             url: '/pages/user/login'
           })
           return
         }
         
-        console.log('首页 - 开始添加商品到需求单')
         const res = await addToDraftApi({ product_id: productId })
-        console.log('首页 - 需求单添加API返回:', res)
         
         if (res.data.code === 0) {
           uni.showToast({
@@ -452,14 +414,12 @@ export default {
             })
           }, 1000)
         } else {
-          console.error('首页 - 需求单添加失败:', res.data.message)
           uni.showToast({
             title: res.data.message || '添加需求单失败',
             icon: 'none'
           })
         }
       } catch (err) {
-        console.error('首页 - 需求单添加异常:', err)
         uni.showToast({
           title: '添加需求单失败',
           icon: 'none'
@@ -490,12 +450,9 @@ export default {
     
     // 联系客服
     contactService() {
-      console.log('点击联系客服按钮')
       try {
         const result = showContactService()
-        console.log('showContactService 调用结果:', result)
       } catch (err) {
-        console.error('联系客服失败:', err)
         uni.showToast({
           title: '联系客服失败',
           icon: 'none'
@@ -525,13 +482,7 @@ export default {
     // 拨打电话
     makeCall() {
       uni.makePhoneCall({
-        phoneNumber: '13161621688',
-        success: function () {
-          console.log('拨打电话成功')
-        },
-        fail: function (err) {
-          console.log('拨打电话失败:', err)
-        }
+        phoneNumber: '13161621688'
       })
     },
     
@@ -551,13 +502,7 @@ export default {
         title: '贸彩漆业',
         summary: '汽车漆、工业漆、雕塑漆、广告牌漆供应',
         href: '/pages/index/index',
-        imageUrl: '/static/images/share-logo.png',
-        success: function (res) {
-          console.log('分享成功')
-        },
-        fail: function (err) {
-          console.log('分享失败:', err)
-        }
+        imageUrl: '/static/images/share-logo.png'
       })
     },
     
@@ -565,18 +510,14 @@ export default {
     async updateDraftBadge() {
       // 只有在已登录状态下才更新需求单徽标
       if (!this.isLogin) {
-        console.log('用户未登录，跳过需求单徽标更新')
         return
       }
       
       try {
-        console.log('开始更新需求单徽标...')
         const res = await getDraftList()
         if (res.data.code === 0) {
           const draftItems = res.data.data || []
           const uniqueItemCount = draftItems.length
-          
-          console.log('需求单商品数量:', uniqueItemCount)
           
           if (uniqueItemCount > 0) {
             uni.setTabBarBadge({
@@ -588,14 +529,10 @@ export default {
               index: 2 // 需求单tab的索引是2
             })
           }
-        } else {
-          console.error('获取需求单列表失败:', res.data.message)
         }
       } catch (error) {
-        console.error('更新需求单徽标失败:', error)
         // 如果是401错误，说明token可能过期，可以尝试重新登录
         if (error.statusCode === 401) {
-          console.log('需求单接口返回401，可能需要重新登录')
         }
       }
     },
@@ -615,15 +552,11 @@ export default {
         return
       }
       
-      const startTime = Date.now()
-      console.log(`[商品搜索] 开始搜索 - 关键词: "${this.searchKeyword}"`)
-      
       this.isSearching = true
       
       try {
         // 已登录和未登录用户都不传shopId，后端处理
         
-        const requestStartTime = Date.now()
         // 调用后端API进行搜索（新接口支持搜索）
         const res = await getProductList({
           searchName: this.searchKeyword,
@@ -632,15 +565,6 @@ export default {
           page: 1,
           pageSize: this.pageSize
         })
-        const requestEndTime = Date.now()
-        const requestDuration = requestEndTime - requestStartTime
-        
-        console.log(`[商品搜索] API请求耗时: ${requestDuration}ms`)
-        console.log(`[商品搜索] API返回数据量: 分类${res.categories?.length || 0}个, 商品${res.products?.length || 0}条`)
-        console.log('搜索关键词:', this.searchKeyword)
-        console.log('搜索API返回数据:', res)
-        
-        const processStartTime = Date.now()
         
         // 检查API返回的数据结构
         if (res && typeof res === 'object') {
@@ -660,38 +584,13 @@ export default {
           
           // 清空当前选中的分类，因为显示的是搜索结果
           this.activeCategory = null
-          
-          // 根据搜索结果给出不同的提示
-          if (this.currentProducts.length === 0) {
-            console.log('搜索完成，未找到匹配的商品')
-            // 不显示错误提示，只是显示空结果
-          } else {
-            console.log('搜索成功，找到商品数量:', this.currentProducts.length, '总计:', this.total)
-          }
-          
-          const processEndTime = Date.now()
-          const processDuration = processEndTime - processStartTime
-          const totalDuration = Date.now() - startTime
-          
-          console.log(`[商品搜索] 数据处理耗时: ${processDuration}ms`)
-          console.log(`[商品搜索] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
         } else {
-          const processEndTime = Date.now()
-          const processDuration = processEndTime - processStartTime
-          const totalDuration = Date.now() - startTime
-          
-          console.log(`[商品搜索] 数据处理耗时: ${processDuration}ms`)
-          console.log(`[商品搜索] 总耗时: ${totalDuration}ms (API: ${requestDuration}ms, 处理: ${processDuration}ms)`)
-          
-          console.log('搜索失败，返回数据格式错误:', res)
           uni.showToast({
             title: '搜索失败，请重试',
             icon: 'none'
           })
         }
       } catch (error) {
-        const totalDuration = Date.now() - startTime
-        console.error(`[商品搜索] 搜索失败 (总耗时: ${totalDuration}ms):`, error)
         uni.showToast({
           title: '搜索失败，请重试',
           icon: 'none'
@@ -725,7 +624,6 @@ export default {
           this.activeCategory = 100 // 默认显示热销分类
           await this.fetchData(100, 1)
         } catch (error) {
-          console.error('重新加载数据失败:', error)
           uni.showToast({
             title: '重新加载失败',
             icon: 'none'
@@ -765,7 +663,6 @@ export default {
     
     // 处理 token 过期
     handleTokenExpired() {
-      console.warn('token 无效或已过期，清除登录状态')
       uni.removeStorageSync('token')
       uni.removeStorageSync('userInfo')
       this.isLogin = false

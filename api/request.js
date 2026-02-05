@@ -34,12 +34,7 @@ export const request = (options) => {
       const token = uni.getStorageSync('token')
       if (token) {
         requestHeader.Authorization = `Bearer ${token}`
-        console.log(`API请求 - ${method} ${url} - 已添加Authorization头`)
-      } else {
-        console.warn(`API请求 - ${method} ${url} - 需要认证但token为空`)
       }
-    } else {
-      console.log(`API请求 - ${method} ${url} - 无需认证`)
     }
     
     // 构建请求参数
@@ -60,15 +55,10 @@ export const request = (options) => {
       requestOptions.url += (queryString ? `?${queryString}` : '')
     }
     
-    console.log(`API请求 - ${method} ${fullUrl}`, requestOptions)
-    
     const requestStartTime = Date.now()
     uni.request({
       ...requestOptions,
       success: (res) => {
-        const requestDuration = Date.now() - requestStartTime
-        console.log(`API响应 - ${method} ${url} - 耗时: ${requestDuration}ms`, res)
-        
         // 检查响应头中是否有新的 token（自动刷新机制）
         // 注意：uni.request 的响应头在 res.header 中，需要兼容不同的大小写
         const headers = res.header || {}
@@ -82,7 +72,6 @@ export const request = (options) => {
         }
         
         if (newToken) {
-          console.log(`[Token自动刷新] 检测到新token，自动更新本地存储`)
           uni.setStorageSync('token', newToken)
         }
         
@@ -120,7 +109,6 @@ export const request = (options) => {
           uni.removeStorageSync('userInfo')
           uni.removeStorageSync('hasStoredUserInfo')
           uni.removeStorageSync('env')
-          console.warn(`API请求 - ${method} ${url} - 需要重新登录，已清除登录状态`)
           
           // 提示用户重新登录（直接内联逻辑，避免函数引用问题）
           const title = hasStoredUserInfo ? '登录已过期' : '需要登录'
@@ -154,8 +142,6 @@ export const request = (options) => {
         resolve(res)
       },
       fail: (err) => {
-        const requestDuration = Date.now() - requestStartTime
-        console.error(`API错误 - ${method} ${url} - 耗时: ${requestDuration}ms`, err)
         reject(err)
       }
     })

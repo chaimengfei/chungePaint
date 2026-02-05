@@ -39,7 +39,6 @@
 		const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
 		if (hasStoredUserInfo) {
 		  // 非首次登录，直接自动登录，无需授权步骤
-		  console.log('检测到非首次登录，自动登录中...')
 		  this.isFirstLoginComplete = true // 隐藏授权界面，显示加载提示
 		  this.autoLogin()
 		}
@@ -51,7 +50,6 @@
 		getPhoneAuth(e) {
 		  const { encryptedData, iv, code: phoneCode } = e.detail || {}
 		  if (!encryptedData || !iv) {
-			console.warn('用户未提供手机号加密数据')
 			uni.showToast({ 
 			  title: '首次登录需要授权手机号', 
 			  icon: 'none',
@@ -65,7 +63,6 @@
 			iv,
 			phoneCode
 		  }
-		  console.log('获取手机号授权成功')
 		  
 		  // 手机号授权完成，执行登录
 		  this.completeLogin()
@@ -105,8 +102,6 @@
 			if (this.phoneAuth.phoneCode) {
 			  loginData.phone_code = this.phoneAuth.phoneCode
 			}
-
-			console.log('首次登录，传递完整信息:', loginData)
 
 			// 调用登录接口
 			const loginApiRes = await goLogin(loginData)
@@ -150,7 +145,6 @@
 			}, 500)
 		  } catch (err) {
 			uni.hideLoading()
-			console.error('登录失败:', err)
 			uni.showToast({ title: '登录失败，请重试', icon: 'none' })
 		  }
 		},
@@ -177,7 +171,6 @@
 			const loginData = { 
 			  code: code
 			}
-			console.log('非首次登录，只传递code')
 
 			const loginApiRes = await goLogin(loginData)
 			
@@ -219,7 +212,6 @@
 			}, 500)
 		  } catch (err) {
 			uni.hideLoading()
-			console.error('自动登录失败:', err)
 			// 如果自动登录失败，清除登录标记，让用户重新进行首次登录
 			uni.removeStorageSync('hasStoredUserInfo')
 			uni.removeStorageSync('token')

@@ -52,12 +52,10 @@ export const uploadAvatar = (filePath) => {
 						reject(new Error(data.message || '上传失败'))
 					}
 				} catch (err) {
-					console.error('解析上传响应失败:', err)
 					reject(new Error('解析响应失败'))
 				}
 			},
 			fail: (err) => {
-				console.error('上传头像失败:', err)
 				reject(new Error(err.errMsg || '上传失败'))
 			}
 		})

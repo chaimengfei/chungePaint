@@ -63,7 +63,6 @@ export default {
       try {
         this.product = JSON.parse(decodeURIComponent(options.product))
       } catch (e) {
-        console.error('解析商品数据失败:', e)
         uni.showToast({
           title: '商品数据错误',
           icon: 'none'
@@ -125,7 +124,6 @@ export default {
           })
         }
       } catch (err) {
-        console.error('加入需求单失败:', err)
         uni.showToast({
           title: err.message || '加入失败',
           icon: 'none'

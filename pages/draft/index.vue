@@ -131,12 +131,6 @@
 			// 选中商品数量
 			selectedCount() {
 				const count = this.draftItems.filter(item => item.selected).length
-				console.log('[需求单页面] selectedCount 计算 - draftItems:', this.draftItems.length, '选中数量:', count)
-				console.log('[需求单页面] selectedCount 计算 - 选中的商品:', this.draftItems.filter(item => item.selected).map(item => ({
-					id: item.id,
-					name: item.product_name,
-					selected: item.selected
-				})))
 				return count
 			},
 			// 选中的需求单ID数组
@@ -156,10 +150,8 @@
 							this.draftItems = [] // 设置为空数组
 						} else {
 							this.draftItems = res.data.data.map(item => {
-								console.log('需求单商品项:', item)
 								// 尝试多种可能的规格字段名
 								const spec = item.product_specification || item.specification || item.spec || null
-								console.log('规格值:', spec)
 								return {
 									...item,
 									product_specification: spec, // 确保规格字段存在
@@ -195,7 +187,6 @@
 						})
 					}
 				} catch (error) {
-					console.error('更新需求单徽标失败:', error)
 				}
 			},
 
@@ -208,8 +199,6 @@
 
 		// 处理按钮点击
 		handleClick(e) {
-			console.log('========== handleClick 被调用 ==========')
-			console.log('事件对象:', e)
 			if (e) {
 				e.stopPropagation && e.stopPropagation()
 				e.preventDefault && e.preventDefault()
@@ -219,11 +208,8 @@
 		
 		// 提交需求，联系客服 - 直接调用接口，不跳转
 		submitRequirement() {
-			console.log('========== submitRequirement 被调用 ==========')
-			
 			// 获取选中的需求单ID
 			const selectedIds = this.selectedDraftIds
-			console.log('选中的ID:', selectedIds)
 			
 			if (!selectedIds || selectedIds.length === 0) {
 				uni.showToast({
@@ -234,16 +220,13 @@
 			}
 			
 			// 直接调用接口
-			console.log('开始调用 submitInquiry 接口')
 			uni.showLoading({ title: '提交中...', mask: true })
 			
 			submitInquiry({ draft_ids: selectedIds }).then(res => {
 				uni.hideLoading()
-				console.log('接口返回:', res)
 				
 				if (res.data && res.data.code === 0) {
 					const inquiryNo = res.data.data?.inquiry_no
-					console.log('提交成功，询价单号:', inquiryNo)
 					
 					// 跳转到成功页面
 					uni.redirectTo({
@@ -257,7 +240,6 @@
 				}
 			}).catch(err => {
 				uni.hideLoading()
-				console.error('提交失败:', err)
 				uni.showToast({
 					title: err.message || '提交失败，请重试',
 					icon: 'none'
@@ -314,17 +296,14 @@
 
 			// 更新商品数量到后端
 			async updateQuantity(item, newQuantity) {
-				console.log('更新需求单数量 - draft_id:', item.id, '新数量:', newQuantity, '当前数量:', item.quantity)
 				try {
 					const res = await updateDraftItem({
 						draft_id: item.id,
 						quantity: newQuantity
 					})
-					console.log('更新需求单数量响应:', res.data)
 					if (res.data.code === 0) {
 						item.quantity = newQuantity
 						this.updateDraftBadge()
-						console.log('需求单数量更新成功，当前数量:', item.quantity)
 					} else if (res.data.code === -1) {
 						// 显示业务错误信息，并恢复原值
 						uni.showToast({

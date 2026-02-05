@@ -102,7 +102,6 @@ export default {
       // 已登录，更新用户信息
       this.isLogin = true
       this.userInfo = user || {}
-      console.log('我的页面 - 用户信息已更新:', this.userInfo)
     },
     
     // 检查登录状态（用于tab切换时）
@@ -158,7 +157,6 @@ export default {
     
     // 添加客服微信
     addCustomerWechat() {
-      console.log('点击客服微信按钮')
       const wechatNumber = '13161621688'
       uni.showModal({
         title: '',
@@ -167,7 +165,6 @@ export default {
         cancelText: '取消',
         confirmText: '复制',
         success: (res) => {
-          console.log('showModal success:', res)
           if (res.confirm) {
             // 用户点击复制
             uni.setClipboardData({
@@ -179,7 +176,6 @@ export default {
                 })
               },
               fail: (err) => {
-                console.error('复制失败:', err)
                 uni.showToast({
                   title: '复制失败',
                   icon: 'none'
@@ -187,9 +183,6 @@ export default {
               }
             })
           }
-        },
-        fail: (err) => {
-          console.error('showModal fail:', err)
         }
       })
     },
@@ -225,7 +218,6 @@ export default {
     
     // 微信官方 chooseAvatar 事件处理
     onChooseAvatar(e) {
-      console.log('选择头像成功:', e)
       const avatarUrl = e.detail.avatarUrl
       if (avatarUrl) {
         // 直接使用微信返回的头像URL，调用后端接口更新
@@ -241,12 +233,10 @@ export default {
         sourceType: ['album'],
         success: (res) => {
           const tempFilePath = res.tempFilePaths[0]
-          console.log('选择的图片:', tempFilePath)
           // 先上传图片，然后更新用户信息
           this.uploadAndUpdateAvatar(tempFilePath)
         },
         fail: (err) => {
-          console.error('选择图片失败:', err)
           uni.showToast({
             title: '选择图片失败',
             icon: 'none'
@@ -262,12 +252,10 @@ export default {
         
         // 先上传图片
         const avatarUrl = await uploadAvatar(filePath)
-        console.log('头像上传成功，URL:', avatarUrl)
         
         // 上传成功后，更新用户信息
         await this.updateUserAvatar(avatarUrl)
       } catch (err) {
-        console.error('上传头像失败:', err)
         uni.hideLoading()
         uni.showToast({
           title: err.message || '上传头像失败',
@@ -304,7 +292,6 @@ export default {
           throw new Error(responseData.data?.message || responseData.message || '更新失败')
         }
       } catch (err) {
-        console.error('更新头像失败:', err)
         uni.hideLoading()
         uni.showToast({
           title: err.message || '更新头像失败',
@@ -387,7 +374,6 @@ export default {
           throw new Error(responseData.data?.message || responseData.message || '更新失败')
         }
       } catch (err) {
-        console.error('更新昵称失败:', err)
         uni.hideLoading()
         uni.showToast({
           title: err.message || '更新昵称失败',
