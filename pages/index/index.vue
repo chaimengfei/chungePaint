@@ -106,7 +106,7 @@
 import { getProductList } from '@/api/product.js'
 import { addToDraft as addToDraftApi, getDraftList } from '@/api/draft.js'
 import { goLogin } from '@/api/user.js'
-import { getNearestShop, isServicePointIdExpired, showContactService, ENV_INFO } from '@/api/common.js'
+import { showContactService, ENV_INFO } from '@/api/common.js'
 
 export default {
   data() {
@@ -148,8 +148,8 @@ export default {
       // 如果之前未登录，或者商品列表为空，则加载商品数据
       if (!wasLogin || !this.currentProducts || this.currentProducts.length === 0) {
         console.log('检测到用户已登录，加载商品数据')
-        // 已登录用户不需要传shopId，使用热销分类
-        this.fetchData(null, 100, 1)
+        // 已登录用户，使用热销分类
+        this.fetchData(100, 1)
       }
     } else {
       // 用户未登录
@@ -157,10 +157,10 @@ export default {
         this.isLogin = false
         this.userInfo = {}
       }
-      // 未登录时，如果商品列表为空，尝试加载（使用默认店铺）
+      // 未登录时，如果商品列表为空，尝试加载
       if (!this.currentProducts || this.currentProducts.length === 0) {
-        console.log('用户未登录，使用默认店铺加载商品数据')
-        this.fetchData(1, 100, 1) // 使用默认店铺ID
+        console.log('用户未登录，加载商品数据')
+        this.fetchData(100, 1)
       }
     }
   },
@@ -194,101 +194,26 @@ export default {
           this.isLogin = true
           this.userInfo = userInfo
           console.log('用户已登录，直接加载商品数据')
-          // 已登录用户不需要传shopId，使用热销分类（category_id=100）
-          await this.fetchData(null, 100, 1)
+          // 已登录用户，使用热销分类（category_id=100）
+          await this.fetchData(100, 1)
         } else {
-          // 未登录，需要获取位置信息并计算店铺
-          console.log('未登录，检查店铺ID缓存')
-          
-          let shopId = null
-          
-          // 检查店铺ID缓存是否过期
-          if (isServicePointIdExpired()) {
-            // 店铺ID缓存过期或不存在，需要重新获取位置并计算
-            console.log('店铺ID缓存已过期或不存在，重新获取位置并计算')
-            await this.getLocationOnly()
-            // 从缓存中获取计算好的店铺ID
-            const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
-            shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
-          } else {
-            // 店铺ID缓存仍然有效，直接使用
-            const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
-            shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
-            console.log('使用缓存的店铺ID:', shopId)
-          }
-          
-          // 如果还是没有shop_id，使用默认店铺
-          if (!shopId) {
-            shopId = 1 // 默认使用第一个店铺
-            // 存储默认店铺ID（带时间戳）
-            uni.setStorageSync('servicePointIdCache', {
-              servicePointId: shopId,
-              timestamp: Date.now()
-            })
-            console.warn('店铺ID无效，使用默认店铺ID:', shopId)
-          }
-          
-          // 加载商品数据，传递店铺ID（首次加载使用热销分类，category_id=100）
-          await this.fetchData(shopId, 100, 1)
+          // 未登录，直接加载商品数据
+          console.log('用户未登录，加载商品数据')
+          await this.fetchData(100, 1)
         }
       } catch (error) {
         console.error('页面初始化失败:', error)
         // 即使获取位置失败，也尝试加载商品数据
-        // 检查是否有token，如果有则按已登录处理，否则使用默认店铺
+        // 检查是否有token，如果有则按已登录处理
         const fallbackToken = uni.getStorageSync('token')
         if (fallbackToken) {
           this.isLogin = true
           this.userInfo = uni.getStorageSync('userInfo') || {}
-          await this.fetchData(null, 100, 1)
+          await this.fetchData(100, 1)
         } else {
-          await this.fetchData(1, 100, 1)
+          // 未登录
+          await this.fetchData(100, 1)
         }
-      }
-    },
-    
-    // 获取位置信息并计算店铺ID（不调用登录接口）
-    async getLocationOnly() {
-      try {
-        const locationRes = await new Promise((resolve, reject) => {
-          uni.getLocation({
-            type: 'gcj02',
-            success: resolve,
-            fail: (err) => {
-              console.warn('获取地理位置失败:', err)
-              // 获取位置失败，返回null，后续使用默认店铺ID
-              resolve(null)
-            }
-          })
-        })
-        
-        let shopId = null
-        
-        if (locationRes && locationRes.latitude && locationRes.longitude) {
-          // 成功获取位置，根据位置计算店铺ID
-          shopId = getNearestShop(locationRes.latitude, locationRes.longitude)
-          console.log('已获取位置信息并计算店铺ID:', {
-            location: locationRes,
-            shopId: shopId,
-            timestamp: new Date().toLocaleString()
-          })
-        } else {
-          // 获取位置失败，使用默认店铺ID
-          shopId = 1 // 默认使用第一个店铺
-          console.warn('获取位置信息失败，使用默认店铺ID:', shopId)
-        }
-        
-        // 存储服务网点ID和时间戳
-        uni.setStorageSync('servicePointIdCache', {
-          servicePointId: shopId,
-          timestamp: Date.now()
-        })
-      } catch (err) {
-        console.warn('获取位置信息异常:', err)
-        // 异常情况，使用默认服务网点ID
-        uni.setStorageSync('servicePointIdCache', {
-          servicePointId: 1, // 默认使用第一个服务网点
-          timestamp: Date.now()
-        })
       }
     },
     
@@ -311,24 +236,9 @@ export default {
           return false
         }
 
-        // 使用默认昵称与头像
-        const nickname = '微信用户'
-        const avatar = '/static/images/default-avatar.png'
-        
-        // 获取服务网点ID（从缓存中获取，如果没有则使用默认值）
-        const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
-        let shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
-        if (!shopId) {
-          // 如果没有服务网点ID，使用默认服务网点
-          shopId = 1 // 默认使用第一个服务网点
-          console.warn('登录时未找到服务网点ID缓存，使用默认服务网点')
-        }
-
+        // 非首次登录只传递code（后端已经知道用户的店铺信息）
         const loginData = {
-          code: code,
-          nickname: nickname,
-          avatar: avatar,
-          service_point_id: shopId
+          code: code
         }
 
         console.log('调用登录接口，数据:', loginData)
@@ -351,11 +261,11 @@ export default {
           // 从响应数据获取用户信息
           const { user_id, nickname: backendNickname, avatar: backendAvatar } = loginApiRes.data.data
           
-          // 使用后端返回的用户信息（nickname 和 avatar）
+          // 使用后端返回的用户信息（nickname 和 avatar 在 api/user/update 接口中单独调用）
           const user_info = {
             id: user_id,
-            nickname: backendNickname || nickname,  // 优先使用后端返回的，如果没有则使用前端传递的
-            avatar: backendAvatar || avatar           // 优先使用后端返回的，如果没有则使用前端传递的
+            nickname: backendNickname || '微信用户',  // 使用后端返回的，如果没有则使用默认值
+            avatar: backendAvatar || '/static/images/default-avatar.png'           // 使用后端返回的，如果没有则使用默认值
           }
 
           // 存储登录信息
@@ -364,10 +274,6 @@ export default {
           uni.setStorageSync('hasStoredUserInfo', true)
           // 存储当前环境标识
           uni.setStorageSync('env', ENV_INFO.env)
-          
-          // 登录成功后，清除servicePointIdCache（因为后端已经有了用户的服务网点信息）
-          // 以后登录只需要传code，不需要传shop_id
-          uni.removeStorageSync('servicePointIdCache')
 
           // 更新页面状态
           this.isLogin = true
@@ -386,15 +292,13 @@ export default {
       }
     },
     
-    async fetchData(shopId = null, categoryId = null, page = 1) {
+    async fetchData(categoryId = null, page = 1) {
       const startTime = Date.now()
-      console.log(`[商品列表] 开始加载 - 页码: ${page}, 分类ID: ${categoryId}, 店铺ID: ${shopId || '已登录用户'}`)
+      console.log(`[商品列表] 开始加载 - 页码: ${page}, 分类ID: ${categoryId}`)
       
       try {
         this.isLoading = true
         
-        // 如果传了shopId，说明是未登录用户
-        // 如果没传shopId，说明是已登录用户（后端根据Authorization判断）
         // 新接口支持分页和分类筛选
         // 确定分类ID：优先使用传入的categoryId，否则使用当前选中的分类，默认使用热销分类(100)
         const finalCategoryId = categoryId !== null ? categoryId : (this.activeCategory || 100)
@@ -402,7 +306,7 @@ export default {
         const requestStartTime = Date.now()
         const res = await getProductList({
           searchName: '',
-          shopId: shopId,
+          shopId: null, // 不传shopId，后端处理
           categoryId: finalCategoryId,
           page: page,
           pageSize: this.pageSize
@@ -509,16 +413,8 @@ export default {
       this.products = []
       this.currentProducts = []
       
-      // 获取当前店铺ID（未登录用户需要）
-      const token = uni.getStorageSync('token')
-      let shopId = null
-      if (!token) {
-        const shopIdCache = uni.getStorageSync('shopIdCache')
-        shopId = shopIdCache ? shopIdCache.shopId : null
-      }
-      
       // 重新加载该分类的商品
-      await this.fetchData(shopId, categoryId, 1)
+      await this.fetchData(categoryId, 1)
     },
     
     // 添加商品到需求单
@@ -725,27 +621,13 @@ export default {
       this.isSearching = true
       
       try {
-        // 确定店铺ID（未登录用户需要传shop_id）
-        const token = uni.getStorageSync('token')
-        let shopId = null
-        if (!token) {
-          // 未登录用户：从缓存获取服务网点ID
-          const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
-          shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
-          if (!shopId) {
-            // 如果缓存中没有shop_id，使用默认店铺
-            // （正常情况下，initPage中已经获取了位置和shop_id）
-            shopId = 1 // 默认使用第一个店铺
-            console.warn('搜索时未找到店铺ID，使用默认店铺')
-          }
-        }
-        // 已登录用户：不需要传shopId，后端根据Authorization自动判断
+        // 已登录和未登录用户都不传shopId，后端处理
         
         const requestStartTime = Date.now()
         // 调用后端API进行搜索（新接口支持搜索）
         const res = await getProductList({
           searchName: this.searchKeyword,
-          shopId: shopId,
+          shopId: null, // 不传shopId，后端处理
           categoryId: null, // 搜索时不限制分类
           page: 1,
           pageSize: this.pageSize
@@ -838,26 +720,10 @@ export default {
       } else {
         // 如果没有原始数据，重新加载
         try {
-          // 确定店铺ID（未登录用户需要传shop_id）
-          const token = uni.getStorageSync('token')
-          let shopId = null
-          if (!token) {
-            // 未登录用户：从缓存获取店铺ID
-            const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
-            shopId = servicePointIdCache ? servicePointIdCache.servicePointId : null
-            if (!shopId) {
-              // 如果缓存中没有shop_id，使用默认店铺
-              // （正常情况下，initPage中已经获取了位置和shop_id）
-              shopId = 1 // 默认使用第一个店铺
-              console.warn('清空搜索时未找到店铺ID，使用默认店铺')
-            }
-          }
-          // 已登录用户：不需要传shopId，后端根据Authorization自动判断
-          
           // 重新加载数据（使用热销分类，category_id=100）
           this.currentPage = 1
           this.activeCategory = 100 // 默认显示热销分类
-          await this.fetchData(shopId, 100, 1)
+          await this.fetchData(100, 1)
         } catch (error) {
           console.error('重新加载数据失败:', error)
           uni.showToast({
@@ -872,16 +738,10 @@ export default {
     async showCurrentCategoryProducts() {
       // 新接口返回的是数组，切换分类时需要重新请求
       if (this.activeCategory) {
-        const token = uni.getStorageSync('token')
-        let shopId = null
-        if (!token) {
-          const shopIdCache = uni.getStorageSync('shopIdCache')
-          shopId = shopIdCache ? shopIdCache.shopId : null
-        }
-        // 重新加载该分类的商品
+        // 重新加载该分类的商品（不传shopId，后端处理）
         this.currentPage = 1
         this.products = []
-        await this.fetchData(shopId, this.activeCategory, 1)
+        await this.fetchData(this.activeCategory, 1)
       } else {
         this.currentProducts = []
       }
@@ -896,17 +756,11 @@ export default {
       
       // 加载下一页
       const nextPage = this.currentPage + 1
-      const token = uni.getStorageSync('token')
-      let shopId = null
-      if (!token) {
-        const shopIdCache = uni.getStorageSync('shopIdCache')
-        shopId = shopIdCache ? shopIdCache.shopId : null
-      }
       
       // 获取当前分类ID（热销分类为100）
       const categoryId = this.activeCategory === 100 ? 100 : this.activeCategory
       
-      await this.fetchData(shopId, categoryId, nextPage)
+      await this.fetchData(categoryId, nextPage)
     },
     
     // 处理 token 过期

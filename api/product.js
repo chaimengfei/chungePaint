@@ -65,7 +65,6 @@ function parseProductListResponse(res, isLoggedIn) {
  * 获取商品列表
  * @param {Object} options 请求参数
  * @param {string} [options.searchName] 搜索关键词（可选）
- * @param {number} [options.shopId] 服务网点ID（可选，未登录用户需要传，已登录用户不需要）
  * @param {number} [options.categoryId] 分类ID（可选，100表示热销分类，其他值表示具体分类）
  * @param {number} [options.page=1] 页码（可选，默认1）
  * @param {number} [options.pageSize=20] 每页数量（可选，默认20）
@@ -75,7 +74,6 @@ export const getProductList = (options = {}) => {
   return new Promise((resolve, reject) => {
     // 解析参数
     const searchName = options.searchName || ''
-    const shopId = options.shopId || null
     const categoryId = options.categoryId !== undefined ? options.categoryId : null
     const page = options.page || 1
     const pageSize = options.pageSize || 20
@@ -95,66 +93,20 @@ export const getProductList = (options = {}) => {
     params.page = page
     params.page_size = pageSize
     
-    // 未登录用户需要传service_point_id，已登录用户不需要（后端根据Authorization判断）
-    if (!isLoggedIn && shopId) {
-      params.service_point_id = shopId
-    }
-    
-    // 已登录用户使用统一的get函数（会自动添加Authorization）
-    // 未登录用户使用uni.request（不传Authorization，但传shop_id）
-    if (isLoggedIn) {
-      // 已登录：使用统一的get函数，自动添加Authorization
-      console.log('[商品列表] 已登录用户，token存在，调用API（不传shop_id）')
-      get('/api/product/list', params, true)
-        .then(res => {
-          try {
-            const data = parseProductListResponse(res, isLoggedIn)
-            resolve(data)
-          } catch (err) {
-            reject(err)
-          }
-        })
-        .catch(err => {
-          console.error('[商品列表] API请求失败:', err)
+    // 统一使用get函数，后端根据Authorization自动判断（已登录用户）或使用默认逻辑（未登录用户）
+    console.log('[商品列表] 调用API（不传service_point_id，后端处理）')
+    get('/api/product/list', params, isLoggedIn)
+      .then(res => {
+        try {
+          const data = parseProductListResponse(res, isLoggedIn)
+          resolve(data)
+        } catch (err) {
           reject(err)
-        })
-    } else {
-      // 未登录：使用uni.request，不传Authorization，但传shop_id
-      let url = `${BASE_URL}/api/product/list`
-      const queryParams = []
-      
-      if (params.name) {
-        queryParams.push(`name=${encodeURIComponent(params.name)}`)
-      }
-      if (params.service_point_id) {
-        queryParams.push(`service_point_id=${params.service_point_id}`)
-      }
-      if (params.category_id !== undefined) {
-        queryParams.push(`category_id=${params.category_id}`)
-      }
-      queryParams.push(`page=${params.page}`)
-      queryParams.push(`page_size=${params.page_size}`)
-      
-      if (queryParams.length > 0) {
-        url += `?${queryParams.join('&')}`
-    }
-    
-    uni.request({
-      url: url,
-      method: 'GET',
-      success: (res) => {
-          try {
-            const data = parseProductListResponse(res, isLoggedIn)
-            resolve(data)
-          } catch (err) {
-            reject(err)
         }
-      },
-      fail: (err) => {
-          console.error('[商品列表] API请求失败:', err)
+      })
+      .catch(err => {
+        console.error('[商品列表] API请求失败:', err)
         reject(err)
-      }
-    })
-    }
+      })
   })
 }

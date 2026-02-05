@@ -26,7 +26,7 @@
 
 <script>
 	import { goLogin } from '@/api/user.js'
-	import { getNearestShop, ENV_INFO } from '@/api/common.js'
+	import { ENV_INFO } from '@/api/common.js'
 	export default {
 	  data() {
 		return {
@@ -95,27 +95,11 @@
 			const code = loginRes.code
 			if (!code) throw new Error("无法获取微信登录 code")
 
-			// 获取服务网点ID（从缓存中获取，如果没有则使用默认值）
-			const servicePointIdCache = uni.getStorageSync('servicePointIdCache')
-			let servicePointId = servicePointIdCache ? servicePointIdCache.servicePointId : null
-			if (!servicePointId) {
-			  // 如果没有服务网点ID，使用默认服务网点
-			  servicePointId = 1 // 默认使用第一个服务网点
-			  console.warn('登录时未找到服务网点ID缓存，使用默认服务网点')
-			}
-
-			// 使用默认用户信息（头像和昵称在"我的"页面手动修改）
-			const nickname = '微信用户'
-			const finalAvatar = '/static/images/default-avatar.png'
-
-			// 构建登录数据（使用service_point_id替代latitude和longitude）
+			// 构建登录数据（nickname 和 avatar 在 api/user/update 接口中单独调用）
 			const loginData = {
 			  code: code,
 			  encryptedData: this.phoneAuth.encryptedData,
-			  iv: this.phoneAuth.iv,
-			  nickname: nickname,
-			  avatar: finalAvatar,
-			  service_point_id: servicePointId
+			  iv: this.phoneAuth.iv
 			}
 			
 			if (this.phoneAuth.phoneCode) {
@@ -143,11 +127,11 @@
 			// 从响应数据获取用户信息
 			const { user_id, nickname: backendNickname, avatar: backendAvatar } = loginApiRes.data.data
 
-			// 使用后端返回的用户信息（nickname 和 avatar）
+			// 使用后端返回的用户信息（nickname 和 avatar 在 api/user/update 接口中单独调用）
 			const user_info = {
 				id: user_id,
-				nickname: backendNickname || nickname,  // 优先使用后端返回的，如果没有则使用前端传递的
-				avatar: backendAvatar || finalAvatar    // 优先使用后端返回的，如果没有则使用前端传递的
+				nickname: backendNickname || '微信用户',  // 使用后端返回的，如果没有则使用默认值
+				avatar: backendAvatar || '/static/images/default-avatar.png'    // 使用后端返回的，如果没有则使用默认值
 			}
 
 			// 存储登录信息
@@ -156,10 +140,6 @@
 			uni.setStorageSync('hasStoredUserInfo', true)
 			// 存储当前环境标识
 			uni.setStorageSync('env', ENV_INFO.env)
-			
-			// 登录成功后，清除servicePointIdCache（因为后端已经有了用户的服务网点信息）
-			// 以后登录只需要传code，不需要传service_point_id
-			uni.removeStorageSync('servicePointIdCache')
 
 			uni.hideLoading()
 			uni.showToast({ title: '注册成功', icon: 'success' })
@@ -229,10 +209,6 @@
 			uni.setStorageSync('userInfo', user_info)
 			// 存储当前环境标识
 			uni.setStorageSync('env', ENV_INFO.env)
-			
-			// 登录成功后，清除servicePointIdCache（因为后端已经有了用户的服务网点信息）
-			// 以后登录只需要传code，不需要传service_point_id
-			uni.removeStorageSync('servicePointIdCache')
 
 			uni.hideLoading()
 			uni.showToast({ title: '登录成功', icon: 'success' })
