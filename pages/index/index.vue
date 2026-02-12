@@ -832,7 +832,7 @@ export default {
 
 .search-icon {
   font-size: 32rpx;
-  color: #999;
+  color: #666;
   margin-right: 16rpx;
 }
 
@@ -846,7 +846,7 @@ export default {
 }
 
 .search-input::placeholder {
-  color: #999;
+  color: #666;
 }
 
 .clear-btn {
@@ -1018,13 +1018,13 @@ export default {
 }
 
 .product-unit {
-  color: #999;
+  color: #666;
   font-size: 22rpx;
 }
 
 .price-tip {
   font-size: 20rpx;
-  color: #999;
+  color: #666;
   line-height: 1.4;
   margin-bottom: 16rpx;
 }
@@ -1050,8 +1050,8 @@ export default {
 }
 
 .add-draft-btn {
-  background-color: #e8e8e8;
-  color: #888;
+  background-color: #e0e0e0;
+  color: #444;
 }
 
 .add-draft-btn:active {
@@ -1070,20 +1070,20 @@ export default {
 .empty {
   text-align: center;
   padding: 100rpx 0;
-  color: #999;
+  color: #666;
 }
 
 .loading-more {
   text-align: center;
   padding: 40rpx 0;
-  color: #999;
+  color: #666;
   font-size: 24rpx;
 }
 
 .no-more {
   text-align: center;
   padding: 40rpx 0;
-  color: #999;
+  color: #666;
   font-size: 24rpx;
 }
 </style>

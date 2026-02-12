@@ -320,20 +320,20 @@ const contactService = () => {
 }
 
 .product-quantity {
-  color: #999;
+  color: #666;
   font-size: 24rpx;
 }
 
 .product-spec {
   font-size: 22rpx;
-  color: #999;
+  color: #666;
   margin-left: 8rpx;
   font-weight: normal;
   flex-shrink: 0;
 }
 
 .product-unit {
-  color: #999;
+  color: #666;
   font-size: 24rpx;
 }
 .total-price {
@@ -341,7 +341,7 @@ const contactService = () => {
 }
 .total-price-text {
   font-size: 24rpx;
-  color: #999;
+  color: #666;
 }
 
 .order-info {
@@ -356,7 +356,7 @@ const contactService = () => {
 }
 .info-label {
   width: 160rpx;
-  color: #999;
+  color: #666;
 }
 .info-value {
   flex: 1;

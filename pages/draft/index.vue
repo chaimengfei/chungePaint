@@ -438,12 +438,12 @@
 		font-size: 28rpx;
 	}
 
-	.product-specification {
-		font-size: 22rpx;
-		color: #999;
-		margin-left: 8rpx;
-		font-weight: normal;
-	}
+.product-specification {
+  font-size: 22rpx;
+  color: #666;
+  margin-left: 8rpx;
+  font-weight: normal;
+}
 
 	.price-container {
 		display: flex;
@@ -480,11 +480,11 @@
 		border-radius: 4rpx;
 	}
 
-	.quantity-control button:disabled {
-		background-color: #e0e0e0;
-		color: #999;
-		opacity: 0.6;
-	}
+.quantity-control button:disabled {
+  background-color: #e0e0e0;
+  color: #666;
+  opacity: 0.6;
+}
 
 	.quantity-input {
 		margin: 0 20rpx;
@@ -497,10 +497,10 @@
 		background-color: #fff;
 	}
 
-	.quantity-input:disabled {
-		background-color: #f5f5f5;
-		color: #999;
-	}
+.quantity-input:disabled {
+  background-color: #f5f5f5;
+  color: #666;
+}
 
 	.delete-btn {
 		background-color: #f5f5f5;
@@ -566,11 +566,11 @@
 		color: #e93b3d;
 	}
 
-	.total-tip {
-		font-size: 22rpx;
-		color: #999;
-		line-height: 1.4;
-	}
+.total-tip {
+  font-size: 22rpx;
+  color: #666;
+  line-height: 1.4;
+}
 
 	.submit-requirement-btn {
 		background-color: #4169E1;
@@ -602,14 +602,14 @@
 		z-index: 1;
 	}
 
-	.submit-requirement-btn.disabled {
-		background-color: #cccccc;
-		color: #999999;
-		opacity: 0.6;
-		cursor: not-allowed;
-		/* 即使有 disabled 类，也允许点击 */
-		pointer-events: auto !important;
-	}
+.submit-requirement-btn.disabled {
+  background-color: #cccccc;
+  color: #555555;
+  opacity: 0.6;
+  cursor: not-allowed;
+  /* 即使有 disabled 类，也允许点击 */
+  pointer-events: auto !important;
+}
 
 	.empty-draft {
 		display: flex;
@@ -624,11 +624,11 @@
 		margin-bottom: 40rpx;
 	}
 
-	.tip {
-		font-size: 28rpx;
-		color: #999;
-		margin-bottom: 40rpx;
-	}
+.tip {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 40rpx;
+}
 
 	.btn {
 		background-color: #4169E1;
