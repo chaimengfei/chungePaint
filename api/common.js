@@ -13,7 +13,7 @@ const ENV_CONFIG = {
   },
   // 生产环境 - 正式环境
   prod: {
-    BASE_URL: 'http://paint-mini.maocai.shop', 
+    BASE_URL: 'https://paint-mini.maocai.shop', 
     name: '生产环境'
   }
 }
