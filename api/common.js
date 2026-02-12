@@ -13,13 +13,13 @@ const ENV_CONFIG = {
   },
   // 生产环境 - 正式环境
   prod: {
-    BASE_URL: 'https://your-prod-domain.com', // 请替换为您的生产环境域名
+    BASE_URL: 'http://paint-mini.maocai.shop', 
     name: '生产环境'
   }
 }
 
 // 当前环境设置 (dev/test/prod)
-const CURRENT_ENV = 'test' // 修改这里来切换环境
+const CURRENT_ENV = 'prod' // 修改这里来切换环境
 
 // 获取当前环境配置
 const currentConfig = ENV_CONFIG[CURRENT_ENV]

@@ -32,7 +32,7 @@
         @confirm="onNicknameConfirm"
       />
       <text v-else class="username" @click="handleUsernameClick">{{ '微信用户' }}</text>
-      <text class="welcome-text">欢迎 如需采购请联系客服</text>
+      <text class="welcome-text">欢迎 如需采购请联系 李增春-13161621688</text>
       <button v-if="!isLogin" class="login-btn" @click="goLogin">登录/注册</button>
     </view>
     
@@ -216,11 +216,25 @@ export default {
       }
     },
     
+    // 判断是否为本地临时路径（开发者工具或真机返回的 tmp 路径，不能直接传给后端）
+    isLocalTempAvatar(url) {
+      if (!url || typeof url !== 'string') return false
+      return (
+        url.startsWith('http://tmp/') ||
+        url.startsWith('https://tmp/') ||
+        url.includes('/tmp/') ||
+        url.startsWith('http://127.0.0.1')
+      )
+    },
+
     // 微信官方 chooseAvatar 事件处理
     onChooseAvatar(e) {
       const avatarUrl = e.detail.avatarUrl
-      if (avatarUrl) {
-        // 直接使用微信返回的头像URL，调用后端接口更新
+      if (!avatarUrl) return
+      // 若是本地临时路径，先上传再拿返回的 URL 更新；否则直接使用微信 CDN 地址（如 thirdwx.qlogo.cn）更新
+      if (this.isLocalTempAvatar(avatarUrl)) {
+        this.uploadAndUpdateAvatar(avatarUrl)
+      } else {
         this.updateUserAvatar(avatarUrl)
       }
     },
