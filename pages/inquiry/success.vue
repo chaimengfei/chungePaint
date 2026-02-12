@@ -32,7 +32,7 @@
     </view>
 
     <view class="action-buttons">
-      <button class="view-detail-btn" @click="viewOrderDetail">查看详情</button>
+      <button class="view-detail-btn" hover-class="view-detail-btn-hover" @click="viewOrderDetail">查看详情</button>
       <button class="contact-service-btn" @click="contactService">联系客服</button>
     </view>
   </view>
@@ -247,7 +247,7 @@ export default {
   border: none;
 }
 
-.view-detail-btn:active {
+.view-detail-btn-hover {
   background-color: #3151B8;
 }
 

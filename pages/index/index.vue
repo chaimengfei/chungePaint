@@ -77,7 +77,7 @@
             </view>
             <text class="price-tip">（价格可能浮动）</text>
             <view class="product-actions" @click.stop @tap.stop>
-              <button class="action-btn contact-btn" @click.stop="contactService" @tap.stop="contactService">
+              <button class="action-btn contact-btn" hover-class="contact-btn-hover" @click.stop="contactService" @tap.stop="contactService">
                 联系客服
               </button>
               <button class="action-btn add-draft-btn" @click.stop="addToDraft(product.id)" @tap.stop="addToDraft(product.id)">
@@ -1063,7 +1063,7 @@ export default {
   color: #fff;
 }
 
-.contact-btn:active {
+.contact-btn-hover {
   background-color: #e6850e;
 }
 

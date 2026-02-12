@@ -39,6 +39,7 @@
             >
               <text 
                 class="faq-tag-icon"
+                hover-class="faq-tag-icon-hover"
                 :class="{ 'faq-tag-icon-filled': isLiked(rowIndex, index) }"
                 @click.stop="toggleLike(rowIndex, index)"
               >{{ isLiked(rowIndex, index) ? '♥' : '♡' }}</text>
@@ -53,6 +54,7 @@
             >
               <text 
                 class="faq-tag-icon"
+                hover-class="faq-tag-icon-hover"
                 :class="{ 'faq-tag-icon-filled': isLiked(rowIndex, index) }"
                 @click.stop="toggleLike(rowIndex, index)"
               >{{ isLiked(rowIndex, index) ? '♥' : '♡' }}</text>
@@ -379,7 +381,7 @@ export default {
   transition: transform 0.2s;
 }
 
-.faq-tag-icon:active {
+.faq-tag-icon-hover {
   transform: scaleY(0.85) scale(1.1);
 }
 
