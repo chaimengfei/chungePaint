@@ -101,11 +101,19 @@ export default {
       }
 
       try {
-        // 检查登录状态
+        // 检查登录状态，未登录时与需求单页一致：先弹窗提示，用户确认后再跳转登录
         const token = uni.getStorageSync('token')
         if (!token) {
-          uni.navigateTo({
-            url: '/pages/user/login'
+          uni.showModal({
+            title: '提示',
+            content: '您还未登录，是否注册登录？',
+            success: (res) => {
+              if (res.confirm) {
+                uni.navigateTo({
+                  url: '/pages/user/login'
+                })
+              }
+            }
           })
           return
         }
