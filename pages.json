@@ -15,19 +15,19 @@
     {
       "path": "pages/draft/index",
       "style": {
-        "navigationBarTitleText": "需求单"
+        "navigationBarTitleText": "购物车"
       }
     },
 	{
       "path": "pages/inquiry/index",
 	  "style": {
-        "navigationBarTitleText": "我的报价"
+        "navigationBarTitleText": "我的单据"
 	  }
 	},
 	{
 	  "path": "pages/inquiry/detail",
 	  "style": {
-		"navigationBarTitleText": "询价详情",
+		"navigationBarTitleText": "单据详情",
 		"navigationStyle": "custom"
 	  }
 	},
@@ -91,7 +91,7 @@
       },
       {
         "pagePath": "pages/draft/index",
-        "text": "需求单",
+        "text": "购物车",
         "iconPath": "/static/tabbar/inquiry_unselected.png",
         "selectedIconPath": "/static/tabbar/inquiry_selected.png"
       },

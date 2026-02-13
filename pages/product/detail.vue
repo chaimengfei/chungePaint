@@ -35,7 +35,7 @@
     <!-- 底部操作栏 -->
     <view class="action-bar">
       <button class="action-btn contact-btn" @click="contactService">联系客服</button>
-      <button class="action-btn add-draft-btn" @click="addToDraft">加入需求单</button>
+      <button class="action-btn add-draft-btn" @click="addToDraft">加入购物车</button>
     </view>
   </view>
 </template>
@@ -122,7 +122,7 @@ export default {
         
         if (res.data.code === 0) {
           uni.showToast({
-            title: '已加入需求单',
+            title: '已加入购物车',
             icon: 'success'
           })
         } else {

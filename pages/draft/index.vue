@@ -1,7 +1,7 @@
 <template>
 	<view class="container">
 	<view class="header">
-		<text class="subtitle">您可以在此整理意向商品，提交后客服为您统一报价</text>
+		<text class="subtitle">提交商品信息后请联系 李增春-13161621688 处理</text>
 	</view>
 
 		<!-- 清单商品 -->
@@ -61,7 +61,7 @@
 					@tap="handleClick"
 					type="button"
 				>
-					提交需求，联系客服
+					提交商品，联系客服
 				</button>
 			</view>
 		</view>
@@ -69,7 +69,7 @@
 		<!-- 空需求单 -->
 		<view v-else class="empty-draft">
 			<image src="/static/images/empty-inquiry.png" mode="aspectFit"></image>
-			<text class="tip">需求单还是空的</text>
+			<text class="tip">购物车还是空的</text>
 			<button class="btn" @click="goToIndex">去逛逛</button>
 		</view>
 	</view>
@@ -206,7 +206,6 @@
 			this.submitRequirement()
 		},
 		
-		// 提交需求，联系客服 - 直接调用接口，不跳转
 		submitRequirement() {
 			// 获取选中的需求单ID
 			const selectedIds = this.selectedDraftIds
@@ -230,7 +229,7 @@
 					
 					// 跳转到成功页面
 					uni.redirectTo({
-						url: `/pages/inquiry/success?inquiry_no=${inquiryNo}&inquiry_info=询价已提交，客服将尽快联系您`
+						url: `/pages/inquiry/success?inquiry_no=${inquiryNo}&inquiry_info=商品信息已提交，客服将尽快联系您`
 					})
 				} else {
 					uni.showToast({

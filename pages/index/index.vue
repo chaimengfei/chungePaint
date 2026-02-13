@@ -81,7 +81,7 @@
                 联系客服
               </button>
               <button class="action-btn add-draft-btn" @click.stop="addToDraft(product.id)" @tap.stop="addToDraft(product.id)">
-                加入需求单
+                加入购物车
               </button>
             </view>
           </view>
@@ -408,7 +408,7 @@ export default {
         
         if (res.data.code === 0) {
           uni.showToast({
-            title: '已加入需求单',
+            title: '已加入购物车',
             icon: 'success'
           })
           
@@ -423,19 +423,18 @@ export default {
           }, 1000)
         } else {
           uni.showToast({
-            title: res.data.message || '添加需求单失败',
+            title: res.data.message || '添加购物车失败',
             icon: 'none'
           })
         }
       } catch (err) {
         uni.showToast({
-          title: '添加需求单失败',
+          title: '添加购物车失败',
           icon: 'none'
         })
       }
     },
     
-    // 立即询价 - 显示联系客服弹窗
     goToInquiry(product) {
       showContactService()
     },
@@ -472,7 +471,7 @@ export default {
     showProductDetail(product) {
       // 显示商品详细信息弹窗
       const productName = product.specification ? `${product.name} ${product.specification}` : product.name
-      const content = `商品名称：${productName}\n参考价：¥${product.reference_price} / ${product.unit}\n\n如需了解更多信息或询价，请联系客服。`
+      const content = `商品名称：${productName}\n参考价：¥${product.reference_price} / ${product.unit}\n\n如需了解更多信息或咨询价格，请联系客服。`
       uni.showModal({
         title: '商品详情',
         content: content,

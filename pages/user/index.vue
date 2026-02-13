@@ -40,7 +40,7 @@
     <view class="function-grid">
       <view class="function-item" @click="goToInquiry">
         <text class="function-icon">📋</text>
-        <text class="function-label">我的报价</text>
+        <text class="function-label">我的单据</text>
       </view>
       <view class="function-item" @click="contactService">
         <text class="function-icon">📞</text>
@@ -143,7 +143,7 @@ export default {
       })
     },
     
-    // 跳转到我的报价
+    // 跳转到我的单据
     goToInquiry() {
       uni.navigateTo({
         url: '/pages/inquiry/index'

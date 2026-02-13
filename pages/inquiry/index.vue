@@ -1,6 +1,5 @@
 <template>
   <view class="container">
-    <!-- 询价列表 -->
     <scroll-view class="order-list" scroll-y>
       <view v-if="orders.length > 0">
         <view 
@@ -75,7 +74,7 @@
       
       <view v-else class="empty-inquiry">
         <image src="/static/images/empty-inquiry.png" mode="aspectFit"></image>
-        <text class="tip">暂无询价</text>
+        <text class="tip">暂无数据</text>
         <button class="btn" @click="goToIndex">去逛逛</button>
       </view>
     </scroll-view>
@@ -190,13 +189,13 @@ export default {
           this.page++
         } else {
           uni.showToast({
-            title: res.message || '获取询价列表失败',
+            title: res.message || '获取单据列表失败',
             icon: 'none'
           })
         }
       } catch (err) {
         uni.showToast({
-          title: err.message || '获取询价列表失败',
+          title: err.message || '获取单据列表失败',
           icon: 'none'
         })
       } finally {

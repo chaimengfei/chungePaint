@@ -5,14 +5,14 @@
       <view class="nav-back" @click.stop="navigateBack" @tap.stop="navigateBack">
         <image src="/static/images/back.png" mode="aspectFit" class="back-icon"/>
       </view>
-      <text class="nav-title">询价详情</text>
+      <text class="nav-title">单据详情</text>
     </view>
 
     <!-- 订单卡片 -->
     <view class="order-card">
       <view class="order-header">
         <view class="order-no-wrapper">
-          <text class="order-no">询价单号：{{ order.inquiry_no }}</text>
+          <text class="order-no">单号：{{ order.inquiry_no }}</text>
         </view>
       </view>
 
@@ -37,7 +37,6 @@
         </view>
       </view>
 
-      <!-- 询价信息 -->
       <view class="order-info">
         <view class="info-row">
           <text class="info-label">创建时间</text>
@@ -84,7 +83,7 @@ const order = ref({
 
 const isInquiry = ref(true)
 
-// 加载询价详情
+// 加载单据详情
 const loadInquiryData = async (inquiryNo) => {
   try {
     const res = await getInquiryDetail(inquiryNo)
@@ -129,21 +128,20 @@ onLoad((options) => {
   if (inquiryNo) {
     loadInquiryData(inquiryNo)
   } else {
-    uni.showToast({ title: '询价单号缺失', icon: 'none' })
+    uni.showToast({ title: '单号缺失', icon: 'none' })
   }
 })
 
 // 分享给朋友（页面级分享）
 onShareAppMessage(() => {
   return {
-    title: `询价详情 - ${order.value.inquiry_no || ''}`,
-    desc: `询价单号：${order.value.inquiry_no || ''}`,
+    title: `单据详情 - ${order.value.inquiry_no || ''}`,
+    desc: `单号：${order.value.inquiry_no || ''}`,
     path: `/pages/inquiry/detail?inquiry_no=${order.value.inquiry_no || ''}`,
     imageUrl: ''
   }
 })
 
-// 计算询价状态
 const statusText = computed(() => {
   if (order.value.final_quote) {
     return '已报价'
