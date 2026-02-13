@@ -1,1 +1,4 @@
 /unpackage/
+
+# 微信开发者工具本地配置（不参与上传，勿提交）
+project.private.config.json
