@@ -32,7 +32,7 @@
         @confirm="onNicknameConfirm"
       />
       <text v-else class="username" @click="handleUsernameClick">{{ '微信用户' }}</text>
-      <text class="welcome-text">欢迎 如需采购请联系 李增春-13161621688</text>
+      <text class="welcome-text">如需采购请联系 李增春-13161621688</text>
       <button v-if="!isLogin" class="login-btn" @click="goLogin">登录/注册</button>
     </view>
     
