@@ -216,10 +216,11 @@ export default {
       }
     },
     
-    // 判断是否为本地临时路径（开发者工具或真机返回的 tmp 路径，不能直接传给后端）
+    // 判断是否为本地临时路径（不能直接传给后端，须先走 upload-avatar 再 update）
     isLocalTempAvatar(url) {
       if (!url || typeof url !== 'string') return false
       return (
+        url.startsWith('wxfile://') ||
         url.startsWith('http://tmp/') ||
         url.startsWith('https://tmp/') ||
         url.includes('/tmp/') ||
