@@ -63,6 +63,7 @@
 <script>
 import { showContactService } from '@/api/common.js'
 import { updateUserInfo, uploadAvatar } from '@/api/user.js'
+import { trySilentLogin } from '@/api/silentLogin.js'
 
 export default {
   data() {
@@ -71,9 +72,14 @@ export default {
       isLogin: false
     }
   },
-  onShow() {
-    // tab切换时显示确认提示
-    const token = uni.getStorageSync('token')
+  async onShow() {
+    let token = uni.getStorageSync('token')
+    if (!token) {
+      const ok = await trySilentLogin()
+      if (ok) {
+        token = uni.getStorageSync('token')
+      }
+    }
     if (!token) {
       this.checkLoginStatusWithPrompt()
     } else {

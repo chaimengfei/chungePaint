@@ -82,6 +82,7 @@
 		deleteDraftItem
 	} from '@/api/draft.js'
 	import { submitInquiry } from '@/api/inquiry.js'
+	import { trySilentLogin } from '@/api/silentLogin.js'
 
 
 
@@ -91,23 +92,24 @@
 				draftItems: [] // 需求单商品列表
 			}
 		},
-		onShow() {
-			// 检查是否首次登录（没有token）
-			const token = uni.getStorageSync('token')
+		async onShow() {
+			let token = uni.getStorageSync('token')
 			if (!token) {
-				// 显示确认提示
+				const ok = await trySilentLogin()
+				if (ok) {
+					token = uni.getStorageSync('token')
+				}
+			}
+			if (!token) {
 				uni.showModal({
 					title: '提示',
 					content: '您还未登录，是否注册登录？',
 					success: (res) => {
 						if (res.confirm) {
-							// 用户确认，跳转到登录页
 							uni.navigateTo({
 								url: '/pages/user/login'
 							})
 						} else {
-							// 用户取消，停留在当前页面（需求单页面，只是需求单里啥都没有）
-							// 不进行任何跳转，只清空需求单数据
 							this.draftItems = []
 						}
 					}

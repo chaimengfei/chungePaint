@@ -1,4 +1,5 @@
 import { BASE_URL } from './common'
+import { trySilentLogin } from './silentLogin.js'
 
 /**
  * 通用请求函数
@@ -55,7 +56,6 @@ export const request = (options) => {
       requestOptions.url += (queryString ? `?${queryString}` : '')
     }
     
-    const requestStartTime = Date.now()
     uni.request({
       ...requestOptions,
       success: (res) => {
@@ -75,69 +75,41 @@ export const request = (options) => {
           uni.setStorageSync('token', newToken)
         }
         
-        // 统一处理需要重新登录的情况（直接内联逻辑，避免函数引用问题）
-        let needReLogin = false
-        // 检查 401 状态码
-        if (res.statusCode === 401) {
-          needReLogin = true
-        } else if (res.data && typeof res.data === 'object') {
-          const message = res.data.message || ''
-          const code = res.data.code
-          
-          // 检查错误码（-1 通常表示需要登录）
-          if (code === -1) {
-            needReLogin = true
-          } else {
-            // 检查错误信息中是否包含重新登录的关键词
-            const reLoginKeywords = ['请重新登录', '重新登录', '登录已过期', 'token', '未登录', '需要登录']
-            const lowerMessage = message.toLowerCase()
-            for (const keyword of reLoginKeywords) {
-              if (lowerMessage.includes(keyword.toLowerCase())) {
-                needReLogin = true
-                break
-              }
-            }
-          }
-        }
+        // 仅 401 或 code=-1 视为需要登录，避免业务校验误弹「登录已过期」
+        const needReLogin = res.statusCode === 401 || (res.data && res.data.code === -1)
         
         if (needReLogin) {
-          // 先检查是否之前登录过（在清除之前检查）
-          const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
-          
-          // 清除无效的 token 和用户信息
-          uni.removeStorageSync('token')
-          uni.removeStorageSync('userInfo')
-          uni.removeStorageSync('hasStoredUserInfo')
-          uni.removeStorageSync('env')
-          
-          // 提示用户重新登录（直接内联逻辑，避免函数引用问题）
-          const title = hasStoredUserInfo ? '登录已过期' : '需要登录'
-          const content = res.data?.message && res.data.message !== '请重新登录' 
-            ? res.data.message 
-            : (hasStoredUserInfo ? '您的登录已过期，是否重新登录？' : '您还未登录，是否注册登录？')
-          
-          uni.showModal({
-            title: title,
-            content: content,
-            confirmText: '去登录',
-            cancelText: '稍后',
-            showCancel: true,
-            success: (modalRes) => {
-              if (modalRes.confirm) {
-                // 用户确认，跳转到登录页
-                uni.navigateTo({
-                  url: '/pages/user/login'
-                })
-              } else {
-                // 用户取消，显示提示
-                uni.showToast({
-                  title: '部分功能需要登录后使用',
-                  icon: 'none',
-                  duration: 2000
-                })
-              }
+          trySilentLogin().then((silentOk) => {
+            if (silentOk) {
+              request(options).then(resolve).catch(reject)
+              return
             }
+            const hasStoredUserInfo = uni.getStorageSync('hasStoredUserInfo')
+            uni.removeStorageSync('token')
+            uni.removeStorageSync('userInfo')
+            uni.removeStorageSync('hasStoredUserInfo')
+            uni.removeStorageSync('env')
+            const title = hasStoredUserInfo ? '登录已过期' : '需要登录'
+            const content = res.data?.message && res.data.message !== '请重新登录'
+              ? res.data.message
+              : (hasStoredUserInfo ? '您的登录已过期，是否重新登录？' : '您还未登录，是否注册登录？')
+            uni.showModal({
+              title,
+              content,
+              confirmText: '去登录',
+              cancelText: '稍后',
+              showCancel: true,
+              success: (modalRes) => {
+                if (modalRes.confirm) {
+                  uni.navigateTo({ url: '/pages/user/login' })
+                } else {
+                  uni.showToast({ title: '部分功能需要登录后使用', icon: 'none', duration: 2000 })
+                }
+              }
+            })
+            resolve(res)
           })
+          return
         }
         resolve(res)
       },
