@@ -64,6 +64,7 @@
         >
           <view class="product-image-wrapper">
             <image class="product-image" :src="product.image" mode="aspectFill" />
+            <view class="product-image-label">{{ getProductImageLabel(product) }}</view>
           </view>
           <view class="product-info">
             <view class="product-name-wrapper">
@@ -180,6 +181,13 @@ export default {
     }
   },
   methods: {
+    // 图片底部标签：商品名(规格)，避免模板多段插值错乱
+    getProductImageLabel(product) {
+      if (!product) return ''
+      const name = (product.name || '').trim()
+      const spec = (product.specification || '').trim()
+      return spec ? `${name}(${spec})` : name
+    },
     // 初始化页面
     async initPage() {
       try {
@@ -941,12 +949,32 @@ export default {
   height: 320rpx;
   background-color: #f5f5f5;
   overflow: hidden;
+  position: relative;
 }
 
 .product-image {
   width: 100%;
   height: 100%;
   border-radius: 0;
+}
+
+/* 图片底部商品名标签（区分同图商品） */
+.product-image-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 24rpx 20rpx;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4));
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.5);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .product-info {
@@ -1035,6 +1063,7 @@ export default {
   line-height: 1.4;
   margin-bottom: 16rpx;
 }
+
 
 .product-actions {
   display: flex;
